@@ -2,29 +2,41 @@
 
 Dokumen ini adalah titik lanjut untuk sesi kerja berikutnya, termasuk chat baru dengan asisten AI. Perbarui setiap akhir sesi.
 
-## Status: Fase 0 selesai di sisi kode (2026-09-23)
+## Status: Fase 0 selesai dan terverifikasi (2026-09-24)
 
-| Bagian           | Isi                                                                                                 | Sudah diverifikasi                                                                                                                                                                                                                                                                                                                   |
-| ---------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Monorepo         | go.work, pnpm + Turborepo, Makefile, lefthook, commitlint, Renovate, editorconfig                   | Ya                                                                                                                                                                                                                                                                                                                                   |
-| Database         | Image PostgreSQL (PostGIS, TimescaleDB, h3, pgvector, pg_trgm), bootstrap role + schema per layanan | SQL diuji di PostgreSQL 16 + TimescaleDB 2.21; image Docker belum pernah di-build                                                                                                                                                                                                                                                    |
-| Migrasi          | `services/geo-processor/migrations/00001_ref_region.sql`                                            | Naik-turun-naik lulus; semua constraint diuji menolak data buruk                                                                                                                                                                                                                                                                     |
-| Importer wilayah | Domain, parser dump SQL, use case, adapter pgx, CLI                                                 | Domain, parser, use case: unit test + fuzz, coverage 92–97%. Data asli Jawa Barat: 6.612 wilayah valid, upsert idempotent. Adapter pgx, CLI, dan test integrasi lolos type-check terhadap API pgx v5, dan SQL-nya diuji langsung dengan psql; belum pernah dikompilasi penuh karena proxy modul Go diblokir di lingkungan pembuatnya |
-| Kontrak          | Proto `siaga.common.v1`, `siaga.hazard.v1`; OpenAPI Core API 0.1.0                                  | buf lint, Redocly lint, generate TS, test TS lulus. Generate Go belum dijalankan                                                                                                                                                                                                                                                     |
-| Paket TS         | `@siaga/contracts`, `@siaga/api-client`                                                             | Lint strict, typecheck, test, build lulus                                                                                                                                                                                                                                                                                            |
-| Dev lokal        | Compose lite, k3d config, Tiltfile, manifest CNPG/Valkey/Mailpit/NATS                               | Sintaks YAML dan skrip valid; belum dijalankan                                                                                                                                                                                                                                                                                       |
-| CI               | `.github/workflows/ci.yml` (secret scan, Go, TS, kontrak, klien Dart, database, Trivy, commitlint)  | Belum pernah jalan                                                                                                                                                                                                                                                                                                                   |
+Semua bagian fase 0 lolos di laptop (WSL2) dan di CI GitHub Actions; keenam job CI hijau sejak commit `a91f17d`.
 
-## Langkah pertama di laptop (wajib, urut)
+| Bagian           | Isi                                                                                                | Terverifikasi                                                                                         |
+| ---------------- | -------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Monorepo         | go.work, pnpm + Turborepo, Makefile, lefthook, commitlint, Renovate, editorconfig                  | `make doctor`, `make check`, hook pre-commit dan commit-msg jalan                                     |
+| Database         | Image PostgreSQL 17 (PostGIS, TimescaleDB, h3, pgvector, pg_trgm), bootstrap role + schema         | Image di-build di laptop dan CI; Trivy tanpa temuan CRITICAL di paket Debian                          |
+| Migrasi          | `services/geo-processor/migrations/00001_ref_region.sql`                                           | Naik-turun-naik lulus di CI                                                                           |
+| Importer wilayah | Domain, parser dump SQL, use case, adapter pgx, CLI                                                | Unit test + fuzz (coverage domain + app 92–97%), test integrasi lulus, 6.612 wilayah Jawa Barat masuk |
+| Kontrak          | Proto `siaga.common.v1`, `siaga.hazard.v1`; OpenAPI Core API 0.1.0                                 | buf lint, Redocly lint, generate Go + TS; CI memastikan kode hasil generate sesuai kontrak            |
+| Paket TS         | `@siaga/contracts`, `@siaga/api-client`                                                            | Lint strict, typecheck, test, build lulus                                                             |
+| Dev lokal        | Compose lite, k3d config, Tiltfile, manifest CNPG/Valkey/Mailpit/NATS                              | Compose lite jalan (`make up`); profil full k3d + Tilt belum pernah dijalankan                        |
+| CI               | `.github/workflows/ci.yml` (secret scan, Go, TS, kontrak, klien Dart, database, Trivy, commitlint) | Hijau. Job commitlint hanya jalan di pull request, jadi belum pernah teruji                           |
 
-1. Ikuti `docs/setup/windows-wsl2.md` sampai `make doctor` hijau.
-2. `make deps`: membuat `go.sum` untuk tiap modul Go. Commit hasilnya (`chore(deps): kunci go.sum`).
-3. `make gen`: generate kode Go dari proto (`libs/go/contracts/gen`). Commit.
-4. `make lint test`: bila ada error kompilasi di `internal/adapters/postgres` atau `cmd/import-regions`, perbaiki di sini dulu.
-5. `make up seed`: image PostgreSQL di-build, migrasi jalan, 6.612 wilayah masuk.
-6. `make test-integration`.
-7. Buat repo GitHub `siaga` (publik, supaya CI dan secret scanning gratis), push, pastikan CI hijau.
-8. Opsional: `make k3d-up tilt` untuk profil full. Bila CloudNativePG menolak image, lihat ADR 0002.
+## Lingkungan kerja
+
+- Repo kerja: `~/code/siaga` di WSL2 Ubuntu 24.04. Jangan bekerja di `/mnt/c/...` (lambat, file watcher Tilt tidak jalan).
+- GitHub: `github.com/ramirezzServer/siaga` (publik), login lewat `gh`.
+- `C:\KULIAH\PROJECT CODE\siaga` adalah clone kedua untuk dibuka dari Windows. Perbarui dengan `git -C "/mnt/c/KULIAH/PROJECT CODE/siaga" pull --ff-only`; jangan diedit bersamaan dengan repo WSL.
+- Versi alat: Go 1.27.1 (minimum bahasa 1.26, ADR 0005), Node 22, pnpm 10.28.0 lewat corepack, golangci-lint 2.13.2, gitleaks 8.30.1.
+
+## Perubahan sesi 2026-09-24
+
+- Minimum Go naik ke 1.26 karena goose v3.28.0; toolchain 1.27.1 di `go.work` (ADR 0005).
+- `protoc-gen-go` dan `goose` dijalankan dengan `GOWORK=off`: `-modfile` ditolak di workspace mode, dan driver bawaan goose memicu ambiguous import genproto.
+- CI: gitleaks lewat CLI dengan verifikasi checksum (gitleaks-action gagal pada push pertama), trivy-action dipin ke commit v0.36.0, analisis klien Dart hanya gagal pada error, pnpm/action-setup v6.
+- `.trivyignore.yaml` mengecualikan CVE-2025-68121 hanya untuk `usr/local/bin/gosu` (gosu tidak memakai TLS). Kedaluwarsa 2027-03-31; setelah itu CI merah dan harus ditinjau ulang.
+
+## Utang kecil yang diketahui
+
+- Target migrasi di `Makefile` mencetak `DATABASE_URL` lengkap dengan password lokal ke terminal. Sembunyikan sebelum fase 1 menambah layanan.
+- Renovate sudah dikonfigurasi (`renovate.json`) tetapi GitHub App Renovate belum dipasang di repo.
+- Runner `ubuntu-latest` pindah ke Ubuntu 26 mulai 2026-10-19. Pantau run CI pertama setelah tanggal itu.
+- Profil full (`make k3d-up tilt`) belum pernah dicoba. Bila CloudNativePG menolak image, lihat ADR 0002.
 
 ## Berikutnya: Fase 1 (pipa data)
 
@@ -41,3 +53,5 @@ Titik pantau sungai (38 titik GloFAS + 7 sub-DAS indeks hujan) dan aturan tingka
 ## Catatan untuk asisten AI di chat baru
 
 Baca berurutan: `CLAUDE.md`, file ini, lalu dokumen arsitektur dan PRD (tautan di README). Semua keputusan produk sudah disepakati di sana; jangan buka ulang tanpa diminta. Keputusan teknis baru dicatat sebagai ADR di `docs/adr/`.
+
+Asisten tidak bisa menjangkau folder WSL secara langsung. File dari asisten dititipkan di `C:\KULIAH\PROJECT CODE\` (di luar folder repo), disalin ke `~/code/siaga` dengan `cp`, dicek hash-nya, lalu file titipan dihapus. Perintah dijalankan pengguna di WSL, dan commit selalu dibuat dari WSL supaya hook lefthook ikut jalan.
