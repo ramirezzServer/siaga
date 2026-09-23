@@ -1,0 +1,8 @@
+**
+!infra/db/bootstrap/*.sql
+!deploy/images/postgres/initdb/*.sh
+!services/**
+!libs/**
+!go.work
+!go.work.sum
+**/testdata/**

@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package siaga.common.v1;
+
+// Titik WGS84. Urutan field sengaja lintang dulu agar mudah dibaca manusia;
+// saat dikonversi ke GeoJSON urutannya menjadi [longitude, latitude].
+message Point {
+  // Lintang dalam derajat desimal, -90 sampai 90.
+  double latitude = 1;
+  // Bujur dalam derajat desimal, -180 sampai 180.
+  double longitude = 2;
+}
+
+// Referensi ke wilayah administrasi Kemendagri di ref.region.
+message RegionRef {
+  // Kode bertitik, misal "32.73.02.1003".
+  string code = 1;
+  // Nama wilayah saat event dibuat, untuk tampilan tanpa lookup.
+  string name = 2;
+}

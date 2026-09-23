@@ -1,0 +1,7 @@
+# Secret produksi dienkripsi dengan age sebelum di-commit.
+# Ganti recipient di bawah dengan public key hasil `age-keygen` (lihat docs/setup/secrets.md).
+# Private key TIDAK PERNAH di-commit.
+creation_rules:
+  - path_regex: deploy/k8s/prod/.*\.enc\.ya?ml$
+    encrypted_regex: ^(data|stringData)$
+    age: age1replace0with0your0public0key0000000000000000000000000000000

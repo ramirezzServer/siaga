@@ -1,0 +1,21 @@
+# Hook git lokal. Pasang dengan: pnpm exec lefthook install
+# CI menjalankan pemeriksaan yang sama, jadi melewati hook tidak meloloskan apa pun.
+pre-commit:
+  parallel: true
+  commands:
+    gitleaks:
+      run: gitleaks git --staged --redact --no-banner
+    prettier:
+      glob: "*.{ts,tsx,js,mjs,json,yaml,yml,md}"
+      run: pnpm exec prettier --check {staged_files}
+    golangci:
+      glob: "*.go"
+      run: make lint-go
+    buf:
+      glob: "*.proto"
+      run: pnpm run lint:proto
+
+commit-msg:
+  commands:
+    commitlint:
+      run: pnpm exec commitlint --edit {1}

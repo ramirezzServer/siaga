@@ -1,0 +1,172 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GO_MODULES: libs/go/platform libs/go/contracts services/geo-processor
+
+jobs:
+  secrets:
+    name: Pindai secret
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  go:
+    name: Go (lint + unit test)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.work
+      - name: go.mod dan go.sum rapi
+        run: |
+          for m in $GO_MODULES; do (cd "$m" && go mod tidy -diff); done
+      - uses: golangci/golangci-lint-action@v8
+        with:
+          version: v2.5.0
+          working-directory: services/geo-processor
+      - uses: golangci/golangci-lint-action@v8
+        with:
+          version: v2.5.0
+          working-directory: libs/go/platform
+      - name: Unit test
+        run: |
+          for m in $GO_MODULES; do (cd "$m" && go test -race -count=1 -coverprofile=coverage.out ./...); done
+      - name: Coverage domain >= 85%
+        run: |
+          cd services/geo-processor
+          go test -count=1 -coverprofile=domain.out ./internal/domain/... ./internal/app/... >/dev/null
+          total=$(go tool cover -func=domain.out | awk '/^total:/ {sub("%","",$3); print $3}')
+          echo "coverage domain+app: ${total}%"
+          awk -v t="$total" 'BEGIN { exit (t >= 85) ? 0 : 1 }'
+      - name: Fuzz singkat
+        run: |
+          cd services/geo-processor
+          go test ./internal/domain/region -run='^$' -fuzz=FuzzParseCode -fuzztime=20s
+          go test ./internal/domain/region -run='^$' -fuzz=FuzzParseLatLngPath -fuzztime=20s
+          go test ./internal/adapters/cahyadsn -run='^$' -fuzz=FuzzParseDump -fuzztime=20s
+
+  node:
+    name: TypeScript + kontrak
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.work
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run lint:proto
+      - name: Perubahan proto tidak merusak kompatibilitas
+        if: github.event_name == 'pull_request'
+        run: pnpm exec buf breaking --against ".git#branch=origin/${{ github.base_ref }}"
+      - run: pnpm run lint:openapi
+      - run: pnpm run format:check
+      - name: Kode hasil generate sesuai kontrak
+        run: |
+          pnpm run gen
+          git diff --exit-code -- libs/go/contracts/gen packages/contracts-ts/src/gen packages/api-client/src/gen
+      - run: pnpm exec turbo run lint typecheck test build
+
+  dart-client:
+    name: Klien Dart dari OpenAPI
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Generate klien dart-dio
+        run: |
+          docker run --rm -u "$(id -u):$(id -g)" -v "$PWD:/local" openapitools/openapi-generator-cli:v7.16.0 generate \
+            -i /local/contracts/openapi/core-api.yaml -g dart-dio -o /local/.cache/api-client-dart \
+            --additional-properties=pubName=siaga_api_client
+      - uses: dart-lang/setup-dart@v1
+      - name: Analisis klien
+        working-directory: .cache/api-client-dart
+        run: |
+          dart pub get
+          dart run build_runner build --delete-conflicting-outputs
+          dart analyze --fatal-infos lib
+
+  database:
+    name: PostgreSQL (migrasi + integrasi + import nyata)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.work
+      - name: Build image PostgreSQL
+        run: docker build -f deploy/images/postgres/Dockerfile -t siaga-postgres:ci .
+      - name: Jalankan PostgreSQL
+        run: |
+          cp .env.example .env
+          sed -i 's/=ganti-saya/=ci-password/' .env
+          docker run -d --name pg --env-file .env -p 5432:5432 siaga-postgres:ci
+          for i in $(seq 60); do docker exec pg pg_isready -U postgres -d siaga && break; sleep 2; done
+          docker exec pg psql -U postgres -d siaga -tAc "select string_agg(extname, ',' order by extname) from pg_extension"
+      - name: Migrasi naik, turun, naik
+        working-directory: services/geo-processor
+        env:
+          DB: postgres://siaga_geo:ci-password@localhost:5432/siaga?sslmode=disable
+        run: |
+          for step in up down up; do go tool goose -dir migrations -table ref.goose_db_version postgres "$DB" $step; done
+      - name: Test integrasi
+        working-directory: services/geo-processor
+        env:
+          SIAGA_TEST_DATABASE_URL: postgres://siaga_geo:ci-password@localhost:5432/siaga?sslmode=disable
+        run: go test -race -count=1 -tags integration ./...
+      - name: Import Jawa Barat dari data asli
+        env:
+          DATABASE_URL: postgres://siaga_geo:ci-password@localhost:5432/siaga?sslmode=disable
+        run: |
+          scripts/fetch-region-data.sh 32
+          cd services/geo-processor
+          go run ./cmd/import-regions -source ../../.cache/wilayah_boundaries/db -province 32
+          count=$(docker exec pg psql -U postgres -d siaga -tAc "select count(*) from ref.region where code like '32%'")
+          echo "wilayah Jawa Barat: $count"
+          test "$count" -ge 6600
+      - name: Pindai kerentanan image
+        uses: aquasecurity/trivy-action@0.33.1
+        with:
+          image-ref: siaga-postgres:ci
+          severity: CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+
+  commits:
+    name: Format pesan commit
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec commitlint --from "${{ github.event.pull_request.base.sha }}" --to "${{ github.event.pull_request.head.sha }}"

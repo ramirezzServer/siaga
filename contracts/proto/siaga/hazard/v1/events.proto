@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package siaga.hazard.v1;
+
+import "google/protobuf/timestamp.proto";
+import "siaga/hazard/v1/hazard.proto";
+
+// Diterbitkan ke subjek NATS `hazard.<jenis>.created` saat kejadian baru disimpan.
+message HazardCreated {
+  Hazard hazard = 1;
+}
+
+// Diterbitkan ke `hazard.<jenis>.updated` saat data atau tingkat berubah.
+message HazardUpdated {
+  Hazard hazard = 1;
+  AlertLevel previous_level = 2;
+}
+
+// Diterbitkan ke `hazard.<jenis>.expired` saat kejadian tidak aktif lagi.
+message HazardExpired {
+  string hazard_id = 1;
+  HazardKind kind = 2;
+  google.protobuf.Timestamp expired_at = 3;
+}

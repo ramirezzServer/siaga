@@ -1,0 +1,6 @@
+# Semua file teks memakai LF, termasuk saat di-checkout di Windows.
+# Skrip shell yang ber-CRLF akan gagal dijalankan di WSL dan container.
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.pmtiles binary

@@ -1,0 +1,105 @@
+syntax = "proto3";
+
+package siaga.hazard.v1;
+
+import "google/protobuf/timestamp.proto";
+import "siaga/common/v1/geo.proto";
+
+// Jenis bahaya yang dipantau SIAGA.
+enum HazardKind {
+  HAZARD_KIND_UNSPECIFIED = 0;
+  HAZARD_KIND_EARTHQUAKE = 1;
+  HAZARD_KIND_WEATHER = 2;
+  HAZARD_KIND_FLOOD = 3;
+  HAZARD_KIND_WILDFIRE = 4;
+  HAZARD_KIND_AIR_QUALITY = 5;
+}
+
+// Tingkat peringatan, urut dari paling ringan. Aturan penentuannya ada di PRD,
+// bagian Aturan bisnis.
+enum AlertLevel {
+  ALERT_LEVEL_UNSPECIFIED = 0;
+  ALERT_LEVEL_INFO = 1;
+  ALERT_LEVEL_WASPADA = 2;
+  ALERT_LEVEL_SIAGA = 3;
+  ALERT_LEVEL_BAHAYA = 4;
+}
+
+// Asal data mentah.
+enum Source {
+  SOURCE_UNSPECIFIED = 0;
+  SOURCE_BMKG = 1;
+  SOURCE_USGS = 2;
+  SOURCE_OPEN_METEO = 3;
+  SOURCE_NASA_FIRMS = 4;
+  SOURCE_OPENAQ = 5;
+  // Kejadian simulasi dari mode latihan. Tidak pernah dikirim ke pengguna di luar mode latihan.
+  SOURCE_DRILL = 6;
+}
+
+// Kejadian bahaya yang sudah dinormalisasi dan dideduplikasi oleh geo-processor.
+message Hazard {
+  // ID deterministik: hash dari sumber utama dan ID asli sumber, sehingga
+  // memproses ulang data yang sama menghasilkan ID yang sama.
+  string id = 1;
+  HazardKind kind = 2;
+  AlertLevel level = 3;
+  // Sumber utama (misal BMKG untuk gempa yang juga dilaporkan USGS).
+  Source primary_source = 4;
+  // ID kejadian di sumber utama.
+  string source_event_id = 5;
+  // Waktu kejadian menurut sumber.
+  google.protobuf.Timestamp occurred_at = 6;
+  // Waktu SIAGA pertama kali mendeteksi data ini.
+  google.protobuf.Timestamp detected_at = 7;
+  // Kapan kejadian dianggap tidak aktif lagi.
+  google.protobuf.Timestamp expires_at = 8;
+  // Titik representatif (episenter, pusat poligon peringatan, titik api).
+  siaga.common.v1.Point location = 9;
+  // Area terdampak sebagai GeoJSON geometry, bila ada.
+  string area_geojson = 10;
+  // Kelurahan/desa dalam area terdampak, terdekat lebih dulu. Bersifat estimasi.
+  repeated siaga.common.v1.RegionRef impacted_regions = 11;
+  // Teks judul dan ringkasan dalam bahasa Indonesia.
+  string title = 12;
+  string summary = 13;
+  // true untuk kejadian mode latihan.
+  bool drill = 14;
+
+  oneof detail {
+    EarthquakeDetail earthquake = 20;
+    WeatherWarningDetail weather = 21;
+  }
+}
+
+// Detail gempa.
+message EarthquakeDetail {
+  double magnitude = 1;
+  double depth_km = 2;
+  // Deskripsi wilayah dirasakan dari BMKG, apa adanya (misal "III Bandung").
+  string felt_description = 3;
+  bool tsunami_potential = 4;
+  string shakemap_url = 5;
+  // Sumber lain yang melaporkan kejadian yang sama (misal USGS).
+  repeated SourceReport corroborating_reports = 6;
+}
+
+// Laporan sumber sekunder untuk kejadian yang sama.
+message SourceReport {
+  Source source = 1;
+  string source_event_id = 2;
+  double magnitude = 3;
+  siaga.common.v1.Point location = 4;
+  google.protobuf.Timestamp occurred_at = 5;
+}
+
+// Detail peringatan dini cuaca (CAP BMKG).
+message WeatherWarningDetail {
+  // Nilai CAP apa adanya: Minor, Moderate, Severe, Extreme.
+  string cap_severity = 1;
+  string cap_event = 2;
+  string headline = 3;
+  // Teks asli BMKG, ditampilkan tanpa diubah.
+  string description = 4;
+  string instruction = 5;
+}

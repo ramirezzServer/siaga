@@ -1,0 +1,8 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+# Hanya paket berikut yang boleh menjalankan skrip install (keamanan supply chain).
+onlyBuiltDependencies:
+  - "@bufbuild/buf"
+  - lefthook

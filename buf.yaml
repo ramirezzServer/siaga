@@ -1,0 +1,10 @@
+# Kontrak event antar-layanan. Lihat docs/events.md untuk pemetaan ke subjek NATS.
+version: v2
+modules:
+  - path: contracts/proto
+lint:
+  use:
+    - STANDARD
+breaking:
+  use:
+    - WIRE_JSON

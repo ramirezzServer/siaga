@@ -1,0 +1,11 @@
+# Nilai Helm chart nats/nats untuk lokal: satu node, JetStream dengan penyimpanan file.
+config:
+  cluster:
+    enabled: false
+  jetstream:
+    enabled: true
+    fileStore:
+      pvc:
+        size: 2Gi
+natsBox:
+  enabled: true

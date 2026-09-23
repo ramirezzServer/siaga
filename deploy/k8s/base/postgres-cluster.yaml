@@ -1,0 +1,60 @@
+# PostgreSQL dikelola CloudNativePG. Image kustom dari deploy/images/postgres
+# (berbasis image resmi postgres, UID 999). Lihat docs/adr/0002.
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: siaga-db
+  namespace: siaga
+spec:
+  instances: 1
+  imageName: siaga-postgres
+  postgresUID: 999
+  postgresGID: 999
+  enableSuperuserAccess: true
+  postgresql:
+    shared_preload_libraries:
+      - timescaledb
+    parameters:
+      # Mengisi parameter pg_stat_statements membuat CNPG memuat ekstensinya otomatis.
+      pg_stat_statements.max: "5000"
+      pg_stat_statements.track: all
+      timescaledb.telemetry_level: "off"
+  bootstrap:
+    initdb:
+      database: siaga
+      owner: siaga_app
+      postInitApplicationSQLRefs:
+        configMapRefs:
+          - name: siaga-db-bootstrap
+            key: 001_extensions.sql
+          - name: siaga-db-bootstrap
+            key: 002_roles.sql
+          - name: siaga-db-bootstrap
+            key: 003_schemas.sql
+  managed:
+    roles:
+      - name: siaga_geo
+        ensure: present
+        login: true
+        passwordSecret: { name: siaga-db-geo }
+      - name: siaga_core
+        ensure: present
+        login: true
+        passwordSecret: { name: siaga-db-core }
+      - name: siaga_alert
+        ensure: present
+        login: true
+        passwordSecret: { name: siaga-db-alert }
+      - name: siaga_ai
+        ensure: present
+        login: true
+        passwordSecret: { name: siaga-db-ai }
+      - name: siaga_tiles
+        ensure: present
+        login: true
+        passwordSecret: { name: siaga-db-tiles }
+  storage:
+    size: 5Gi
+  resources:
+    requests: { memory: 512Mi, cpu: 250m }
+    limits: { memory: 2Gi }

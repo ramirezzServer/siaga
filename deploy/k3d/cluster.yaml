@@ -1,0 +1,22 @@
+# Cluster lokal satu node, meniru k3s produksi. Traefik bawaan k3s dipakai sebagai ingress.
+apiVersion: k3d.io/v1alpha5
+kind: Simple
+metadata:
+  name: siaga
+servers: 1
+agents: 0
+ports:
+  - port: 80:80
+    nodeFilters: [loadbalancer]
+  - port: 443:443
+    nodeFilters: [loadbalancer]
+registries:
+  create:
+    name: siaga-registry.localhost
+    host: "0.0.0.0"
+    hostPort: "5005"
+options:
+  k3s:
+    extraArgs:
+      - arg: --disable=metrics-server
+        nodeFilters: [server:*]

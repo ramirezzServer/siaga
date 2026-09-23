@@ -1,0 +1,25 @@
+# Dependencies & build
+node_modules/
+dist/
+.turbo/
+coverage/
+*.tsbuildinfo
+bin/
+.venv/
+__pycache__/
+
+# Data & cache (sumber data diunduh ulang lewat scripts/fetch-region-data.sh)
+.cache/
+*.pmtiles
+
+# Secrets: hanya file *.example dan *.enc.* yang boleh di-commit
+.env
+.env.*
+!.env.example
+*.agekey
+deploy/k8s/local/generated/
+
+# Editor / OS
+.idea/
+.DS_Store
+Thumbs.db

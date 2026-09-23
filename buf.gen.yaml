@@ -1,0 +1,16 @@
+# Semua plugin dijalankan lokal (tanpa Buf Schema Registry) supaya generate
+# bisa diulang persis dan tidak butuh jaringan. Lihat docs/adr/0004.
+version: v2
+clean: true
+managed:
+  enabled: true
+  override:
+    - file_option: go_package_prefix
+      value: github.com/ramirezzServer/siaga/libs/go/contracts/gen
+plugins:
+  - local: ["go", "tool", "-modfile=libs/go/contracts/go.mod", "protoc-gen-go"]
+    out: libs/go/contracts/gen
+    opt: paths=source_relative
+  - local: protoc-gen-es
+    out: packages/contracts-ts/src/gen
+    opt: target=ts,import_extension=js

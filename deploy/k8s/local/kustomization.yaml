@@ -1,0 +1,17 @@
+# Manifest lokal untuk Tilt. Build dengan: kustomize build --load-restrictor LoadRestrictionsNone
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: siaga
+resources:
+  - ../base/namespace.yaml
+  - ../base/postgres-cluster.yaml
+  - ../base/valkey.yaml
+  - ../base/mailpit.yaml
+configMapGenerator:
+  - name: siaga-db-bootstrap
+    files:
+      - ../../../infra/db/bootstrap/001_extensions.sql
+      - ../../../infra/db/bootstrap/002_roles.sql
+      - ../../../infra/db/bootstrap/003_schemas.sql
+generatorOptions:
+  disableNameSuffixHash: true

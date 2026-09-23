@@ -1,0 +1,241 @@
+openapi: 3.1.0
+info:
+  title: SIAGA Core API
+  version: 0.1.0
+  summary: API publik SIAGA untuk web dan mobile.
+  description: |
+    Fase 0 hanya mendefinisikan endpoint wilayah dan kesehatan layanan. Endpoint lain
+    ditambahkan per rilis sesuai PRD. Semua error memakai Problem Details (RFC 9457).
+  license:
+    name: MIT
+    identifier: MIT
+  contact:
+    name: SIAGA
+    url: https://github.com/ramirezzServer/siaga
+servers:
+  - url: /
+    description: Relatif terhadap host yang menyajikan API (lokal https://api.siaga.localhost)
+tags:
+  - name: health
+    description: Status layanan
+  - name: regions
+    description: Wilayah administrasi Kemendagri
+paths:
+  /healthz:
+    get:
+      operationId: getHealth
+      tags: [health]
+      summary: Status layanan
+      security: []
+      responses:
+        "200":
+          description: Layanan sehat
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+        "429":
+          $ref: "#/components/responses/Problem"
+        "503":
+          $ref: "#/components/responses/Problem"
+  /v1/regions:
+    get:
+      operationId: listRegions
+      tags: [regions]
+      summary: Daftar wilayah
+      description: Menyaring berdasarkan induk, level, atau nama (toleran salah ketik).
+      security: []
+      parameters:
+        - name: parent
+          in: query
+          description: Kode induk; hanya anak langsungnya yang dikembalikan.
+          schema:
+            $ref: "#/components/schemas/RegionCode"
+        - name: level
+          in: query
+          schema:
+            $ref: "#/components/schemas/RegionLevel"
+        - name: q
+          in: query
+          description: Pencarian nama, minimal 3 karakter.
+          schema:
+            type: string
+            minLength: 3
+            maxLength: 100
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: Satu halaman wilayah
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RegionPage"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "429":
+          $ref: "#/components/responses/Problem"
+  /v1/regions/{code}:
+    get:
+      operationId: getRegion
+      tags: [regions]
+      summary: Detail wilayah
+      security: []
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/RegionCode"
+        - name: include
+          in: query
+          description: Sertakan geometri batas (GeoJSON). Default tidak, karena ukurannya besar.
+          schema:
+            type: string
+            enum: [geometry]
+      responses:
+        "200":
+          description: Wilayah ditemukan
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Region"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+components:
+  parameters:
+    Limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 50
+    Cursor:
+      name: cursor
+      in: query
+      description: Kursor opak dari `next_cursor` halaman sebelumnya.
+      schema:
+        type: string
+        maxLength: 200
+  responses:
+    Problem:
+      description: Error dalam format Problem Details
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problem"
+  schemas:
+    Health:
+      type: object
+      required: [status, version]
+      properties:
+        status:
+          type: string
+          enum: [ok]
+        version:
+          type: string
+    RegionCode:
+      type: string
+      description: Kode wilayah Kemendagri bertitik.
+      pattern: '^[0-9]{2}(\.[0-9]{2}(\.[0-9]{2}(\.[12][0-9]{3})?)?)?$'
+      examples: ["32.73.02.1003"]
+    RegionLevel:
+      type: integer
+      description: 1 provinsi, 2 kabupaten/kota, 3 kecamatan, 4 desa/kelurahan.
+      enum: [1, 2, 3, 4]
+    RegionKind:
+      type: string
+      enum: [provinsi, kabupaten, kota, kecamatan, kelurahan, desa]
+    Point:
+      type: object
+      required: [latitude, longitude]
+      properties:
+        latitude:
+          type: number
+          minimum: -90
+          maximum: 90
+        longitude:
+          type: number
+          minimum: -180
+          maximum: 180
+    Region:
+      type: object
+      required: [code, name, level, kind, parent_code, label_point]
+      properties:
+        code:
+          $ref: "#/components/schemas/RegionCode"
+        name:
+          type: string
+        level:
+          $ref: "#/components/schemas/RegionLevel"
+        kind:
+          $ref: "#/components/schemas/RegionKind"
+        parent_code:
+          oneOf:
+            - $ref: "#/components/schemas/RegionCode"
+            - type: "null"
+        label_point:
+          $ref: "#/components/schemas/Point"
+        bbox:
+          type: array
+          description: "[min_lon, min_lat, max_lon, max_lat]"
+          items:
+            type: number
+          minItems: 4
+          maxItems: 4
+        geometry:
+          type: object
+          description: GeoJSON MultiPolygon, hanya bila include=geometry.
+          required: [type, coordinates]
+          properties:
+            type:
+              type: string
+              const: MultiPolygon
+            coordinates:
+              type: array
+              items:
+                type: array
+                items:
+                  type: array
+                  items:
+                    type: array
+                    items:
+                      type: number
+    RegionPage:
+      type: object
+      required: [items, next_cursor]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Region"
+        next_cursor:
+          oneOf:
+            - type: string
+            - type: "null"
+    Problem:
+      type: object
+      description: RFC 9457 Problem Details.
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri-reference
+        title:
+          type: string
+        status:
+          type: integer
+          minimum: 400
+          maximum: 599
+        detail:
+          type: string
+        instance:
+          type: string
+        trace_id:
+          type: string
+          description: ID trace OpenTelemetry untuk pelacakan.
+      additionalProperties: true

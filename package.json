@@ -1,0 +1,35 @@
+{
+  "name": "siaga",
+  "private": true,
+  "packageManager": "pnpm@10.28.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "gen": "pnpm run gen:proto && pnpm run gen:openapi",
+    "gen:proto": "buf generate",
+    "gen:openapi": "pnpm --filter @siaga/api-client run gen",
+    "lint:proto": "buf lint && buf format --diff --exit-code",
+    "lint:openapi": "redocly lint contracts/openapi/core-api.yaml",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "@bufbuild/buf": "1.73.0",
+    "@bufbuild/protoc-gen-es": "2.15.0",
+    "@commitlint/cli": "21.2.3",
+    "@commitlint/config-conventional": "21.2.3",
+    "@eslint/js": "10.0.1",
+    "@redocly/cli": "2.54.2",
+    "eslint": "10.11.0",
+    "lefthook": "2.1.14",
+    "prettier": "3.9.9",
+    "turbo": "2.11.3",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "8.70.1"
+  }
+}

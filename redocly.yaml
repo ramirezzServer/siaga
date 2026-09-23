@@ -1,0 +1,6 @@
+extends:
+  - recommended
+rules:
+  operation-4xx-response: error
+  no-server-example.com: error
+  security-defined: off

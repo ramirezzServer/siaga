@@ -1,0 +1,30 @@
+{
+  "name": "@siaga/api-client",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Klien bertipe untuk SIAGA Core API, dihasilkan dari contracts/openapi/core-api.yaml.",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "gen": "openapi-typescript ../../contracts/openapi/core-api.yaml -o src/gen/core-api.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint src",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "openapi-fetch": "0.17.0"
+  },
+  "devDependencies": {
+    "openapi-typescript": "7.13.0",
+    "vitest": "5.0.1"
+  }
+}

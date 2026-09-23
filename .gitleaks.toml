@@ -1,0 +1,10 @@
+# Aturan bawaan gitleaks + pengecualian sempit untuk file contoh.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "File contoh dan data uji yang sengaja berisi nilai palsu"
+paths = [
+  '''(^|/)\.env\.example$''',
+  '''(^|/)testdata/''',
+]
