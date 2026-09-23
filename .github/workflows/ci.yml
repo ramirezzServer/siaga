@@ -168,6 +168,9 @@ jobs:
       - name: Pindai kerentanan image
         # Dipin ke commit, bukan tag: tag action pihak ketiga bisa dipindah.
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        env:
+          # Pengecualian terdokumentasi dan kedaluwarsa; lihat .trivyignore.yaml.
+          TRIVY_IGNOREFILE: .trivyignore.yaml
         with:
           image-ref: siaga-postgres:ci
           severity: CRITICAL

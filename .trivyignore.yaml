@@ -1,0 +1,13 @@
+# Pengecualian Trivy. Setiap entri wajib punya alasan, cakupan path sesempit
+# mungkin, dan tanggal kedaluwarsa supaya ditinjau ulang.
+vulnerabilities:
+  - id: CVE-2025-68121
+    paths:
+      - usr/local/bin/gosu
+    statement: >-
+      Celah ada di crypto/tls (session resumption). gosu dari image resmi postgres hanya
+      menurunkan hak akses root ke user postgres saat container start dan tidak memakai
+      TLS maupun jaringan, jadi jalur kode yang rentan tidak terjangkau. Upstream gosu tidak
+      me-rebuild binary untuk CVE stdlib Go yang tidak terjangkau. Tinjau ulang saat tag
+      image postgres dinaikkan.
+    expired_at: 2027-03-31
