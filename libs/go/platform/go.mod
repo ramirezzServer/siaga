@@ -1,3 +1,3 @@
 module github.com/ramirezzServer/siaga/libs/go/platform
 
-go 1.24.0
+go 1.26.0

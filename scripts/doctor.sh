@@ -24,7 +24,7 @@ check docker   "docker version --format '{{.Server.Version}}'" "Docker Desktop +
 check compose  "docker compose version --short" "ikut Docker Desktop" 1
 check git      "git --version" "sudo apt install git" 1
 check make     "make --version" "sudo apt install make" 1
-check go       "go version" "https://go.dev/dl (>= 1.24)" 1
+check go       "go version" "https://go.dev/dl (>= 1.26)" 1
 check node     "node --version" "nvm install 22" 1
 check pnpm     "pnpm --version" "corepack enable" 1
 check openssl  "openssl version" "sudo apt install openssl" 1

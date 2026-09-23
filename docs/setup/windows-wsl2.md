@@ -44,7 +44,7 @@ Setelah repo ada di GitHub, cukup `git clone` ke `~/code/siaga`. Buka di VS Code
 sudo apt update && sudo apt install -y build-essential make git openssl age curl unzip
 
 # Go (cek versi terbaru di https://go.dev/dl)
-curl -fsSL https://go.dev/dl/go1.25.1.linux-amd64.tar.gz | sudo tar -C /usr/local -xz
+curl -fsSL https://go.dev/dl/go1.27.1.linux-amd64.tar.gz | sudo tar -C /usr/local -xz
 echo 'export PATH=$PATH:/usr/local/go/bin:$HOME/go/bin' >> ~/.bashrc && source ~/.bashrc
 
 # Node 22 lewat nvm, lalu pnpm lewat corepack
@@ -52,7 +52,7 @@ curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bas
 source ~/.bashrc && nvm install 22 && corepack enable
 
 # golangci-lint dan gitleaks
-curl -sSfL https://golangci-lint.run/install.sh | sh -s -- -b "$(go env GOPATH)/bin" v2.5.0
+curl -sSfL https://golangci-lint.run/install.sh | sh -s -- -b "$(go env GOPATH)/bin" v2.13.2
 go install github.com/zricethezav/gitleaks/v8@latest
 
 # Profil full: k3d, kubectl, helm, tilt

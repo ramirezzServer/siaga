@@ -40,11 +40,11 @@ jobs:
           for m in $GO_MODULES; do (cd "$m" && go mod tidy -diff); done
       - uses: golangci/golangci-lint-action@v8
         with:
-          version: v2.5.0
+          version: v2.13.2
           working-directory: services/geo-processor
       - uses: golangci/golangci-lint-action@v8
         with:
-          version: v2.5.0
+          version: v2.13.2
           working-directory: libs/go/platform
       - name: Unit test
         run: |
