@@ -8,7 +8,7 @@ managed:
     - file_option: go_package_prefix
       value: github.com/ramirezzServer/siaga/libs/go/contracts/gen
 plugins:
-  - local: ["go", "tool", "-modfile=libs/go/contracts/go.mod", "protoc-gen-go"]
+  - local: ["env", "GOWORK=off", "go", "-C", "libs/go/contracts", "tool", "protoc-gen-go"]
     out: libs/go/contracts/gen
     opt: paths=source_relative
   - local: protoc-gen-es

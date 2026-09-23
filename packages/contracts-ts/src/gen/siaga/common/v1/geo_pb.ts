@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file siaga/common/v1/geo.proto.
  */
 export const file_siaga_common_v1_geo: GenFile = /*@__PURE__*/
-  fileDesc("ChlzaWFnYS9jb21tb24vdjEvZ2VvLnByb3RvEg9zaWFnYS5jb21tb24udjEiLAoFUG9pbnQSEAoIbGF0aXR1ZGUYASABKAESEQoJbG9uZ2l0dWRlGAIgASgBIicKCVJlZ2lvblJlZhIMCgRjb2RlGAEgASgJEgwKBG5hbWUYAiABKAliBnByb3RvMw");
+  fileDesc("ChlzaWFnYS9jb21tb24vdjEvZ2VvLnByb3RvEg9zaWFnYS5jb21tb24udjEiLAoFUG9pbnQSEAoIbGF0aXR1ZGUYASABKAESEQoJbG9uZ2l0dWRlGAIgASgBIicKCVJlZ2lvblJlZhIMCgRjb2RlGAEgASgJEgwKBG5hbWUYAiABKAlCzQEKE2NvbS5zaWFnYS5jb21tb24udjFCCEdlb1Byb3RvUAFaTmdpdGh1Yi5jb20vcmFtaXJlenpTZXJ2ZXIvc2lhZ2EvbGlicy9nby9jb250cmFjdHMvZ2VuL3NpYWdhL2NvbW1vbi92MTtjb21tb252MaICA1NDWKoCD1NpYWdhLkNvbW1vbi5WMcoCD1NpYWdhXENvbW1vblxWMeICG1NpYWdhXENvbW1vblxWMVxHUEJNZXRhZGF0YeoCEVNpYWdhOjpDb21tb246OlYxYgZwcm90bzM");
 
 /**
  * Titik WGS84. Urutan field sengaja lintang dulu agar mudah dibaca manusia;
