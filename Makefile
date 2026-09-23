@@ -54,14 +54,15 @@ psql: ## Buka psql sebagai superuser
 
 ##@ Database
 .PHONY: migrate migrate-down migrate-status regions-fetch regions-import seed
+# goose dijalankan dengan GOWORK=off: driver bawaannya memicu ambiguous import genproto di workspace mode.
 migrate: ## Jalankan migrasi semua layanan
-	cd services/geo-processor && go tool goose -dir migrations -table ref.goose_db_version postgres "$(GEO_DATABASE_URL)" up
+	cd services/geo-processor && GOWORK=off go tool goose -dir migrations -table ref.goose_db_version postgres "$(GEO_DATABASE_URL)" up
 
 migrate-down: ## Mundurkan satu migrasi geo-processor
-	cd services/geo-processor && go tool goose -dir migrations -table ref.goose_db_version postgres "$(GEO_DATABASE_URL)" down
+	cd services/geo-processor && GOWORK=off go tool goose -dir migrations -table ref.goose_db_version postgres "$(GEO_DATABASE_URL)" down
 
 migrate-status: ## Status migrasi
-	cd services/geo-processor && go tool goose -dir migrations -table ref.goose_db_version postgres "$(GEO_DATABASE_URL)" status
+	cd services/geo-processor && GOWORK=off go tool goose -dir migrations -table ref.goose_db_version postgres "$(GEO_DATABASE_URL)" status
 
 regions-fetch: ## Unduh data batas wilayah (PROVINCE=32)
 	scripts/fetch-region-data.sh $(PROVINCE)

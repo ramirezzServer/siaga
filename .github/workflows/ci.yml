@@ -131,7 +131,7 @@ jobs:
         env:
           DB: postgres://siaga_geo:ci-password@localhost:5432/siaga?sslmode=disable
         run: |
-          for step in up down up; do go tool goose -dir migrations -table ref.goose_db_version postgres "$DB" $step; done
+          for step in up down up; do GOWORK=off go tool goose -dir migrations -table ref.goose_db_version postgres "$DB" $step; done
       - name: Test integrasi
         working-directory: services/geo-processor
         env:
