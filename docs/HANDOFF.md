@@ -2,31 +2,47 @@
 
 Dokumen ini adalah titik lanjut untuk sesi kerja berikutnya, termasuk chat baru dengan asisten AI. Perbarui setiap akhir sesi.
 
-## Status: Fase 1a selesai di workspace asisten, menunggu verifikasi di WSL (2026-09-24)
+## Status: Fase 1b selesai di workspace asisten, menunggu verifikasi di WSL (2026-09-24)
 
-Fase 0 selesai dan terverifikasi (keenam job CI hijau sejak `a91f17d`). Fase 1 dipecah menjadi 1a–1e (lihat Berikutnya). Irisan 1a sudah ditulis, di-lint, dan dites di workspace asisten, termasuk uji ujung ke ujung ingest → NATS JetStream dengan payload BMKG dan USGS asli; belum dijalankan di WSL dan CI.
+Fase 0 terverifikasi (CI hijau sejak `a91f17d`). Fase 1a (ingest gempa) sudah di-commit dari WSL (`d5068c8`, `e396d6f`). Irisan 1b sudah ditulis, di-lint, dan dites di workspace asisten, termasuk uji integrasi PostgreSQL + PostGIS, uji ujung ke ujung dengan JetStream, dan replay payload BMKG/USGS asli lewat ingest → geo-processor; belum dijalankan di WSL dan CI.
 
-### Fase 1a: ingest gempa
+### Fase 1b: geo-processor gempa
 
-| Bagian         | Isi                                                                                                                                           | Terverifikasi di workspace asisten                                                            |
-| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| Kontrak        | `siaga.raw.v1` (`FetchMeta`, `QuakeReport`), `libs/go/contracts/streams` (stream `RAW`, `HAZARD`, pembentuk subjek), `subjects.raw()`         | buf lint, generate Go + TS, test TS                                                           |
-| Platform       | `natsx` (koneksi, `EnsureStream` dengan cek pemilik), `natstest` (server JetStream dalam proses untuk test)                                   | Test dengan server JetStream sungguhan                                                        |
-| Layanan ingest | Domain (validasi gempa, GCRA, backoff, ID pesan), use case poll + runner, adapter HTTP, arsip file, JetStream, `/healthz` `/readyz` `/status` | golangci-lint bersih, `go test -race`, coverage domain + app 98,7%, fuzz 4 target             |
-| Konektor       | BMKG `autogempa`, `gempaterkini`, `gempadirasakan` (tiap 30/60 dtk); USGS `2.5_day` disaring kotak Indonesia (60 dtk)                         | Fixture payload asli; ingest jalan melawan nats-server 2.15, restart tidak menggandakan pesan |
-| Perekam        | `make ingest-record` = ingest `-once -publish=false`, arsip jadi bahan replay                                                                 | Menghasilkan 4 arsip `.gz`                                                                    |
-| Repo           | Makefile (`ingest`, `ingest-record`, fuzz baru, URL database disamarkan), CI (lint, coverage, fuzz ingest), ADR 0006, `docs/events.md`        | —                                                                                             |
+| Bagian         | Isi                                                                                                                                                                                                                                              | Terverifikasi di workspace asisten                                                                                                 |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Kontrak        | `HazardExpired.reason/merged_into_hazard_id/revision`, `Hazard.revision/impacted_region_count`, `EarthquakeDetail.felt_radius_km/magnitude_type`, `SourceReport.depth_km/source_url`; stream `DLQ` milik bersama, `DLQSubject`, `subjects.dlq()` | buf lint, buf breaking terhadap `e396d6f`, generate Go + TS identik, test TS                                                       |
+| Domain `quake` | Penyimpanan laporan tanpa bergantung urutan, gabungan feed, pengelompokan BMKG–USGS dengan `Settle`, radius dirasakan, tingkat PRD, digest isi                                                                                                   | Coverage 98,9%; 6 target fuzz, termasuk properti "satu kejadian per gempa untuk urutan apa pun" dan invarian saat gempa berdesakan |
+| Use case       | `quakes` (satu transaksi per pesan + advisory lock, outbox), `consume` (ack/retry/DLQ), `relay`, kedaluwarsa 6 jam, `calibrate`                                                                                                                  | Coverage domain + app 96,9%; fuzz tingkat use case dengan penyimpanan memori                                                       |
+| Database       | `00002_hazard_quake.sql`: `hazard.event`, `quake`, `event_source`, `impact_region`, `outbox`, grant baca untuk layanan lain                                                                                                                      | Naik-turun-naik di PostgreSQL 16 + PostGIS 3.4; uji constraint menolak invarian yang dilanggar                                     |
+| Adapter        | pgx (`quakestore`), JetStream (consumer durable, DLQ, publisher), dekoder raw, encoder hazard, `/healthz` `/readyz` `/status`                                                                                                                    | Test dengan server JetStream dalam proses; test integrasi PostgreSQL; uji ujung ke ujung gempa Cianjur 2022                        |
+| Kalibrasi      | `cmd/calibrate-dedup`, `scripts/fetch-calibration-data.sh`, `docs/calibration/dedup-gempa.md`, ADR 0008                                                                                                                                          | Laporan dihasilkan dari data asli; angka sama dengan analisis Python terpisah                                                      |
+| Repo           | `make geo`, `make calibrate-dedup`, fuzz baru di `make fuzz` dan CI, `test-integration` dengan `-p 1`, ADR 0007–0008, `docs/events.md`                                                                                                           | —                                                                                                                                  |
+
+Replay payload asli (fixture ingest 1a) lewat ingest → NATS → geo-processor: 6 laporan → 6 kejadian, 6 `hazard.quake.created`, lalu 6 `expired` setelah masa aktif habis, DLQ kosong.
 
 ### Verifikasi yang perlu dijalankan di WSL
 
 ```bash
-make deps              # membuat go.sum ingest dan platform, merapikan go.mod geo-processor
+make deps              # go.mod/go.sum geo-processor (nats.go, protobuf, contracts jadi dependensi langsung)
 make check             # lint + test semua modul
-make up && make ingest # biarkan beberapa menit, cek http://127.0.0.1:8081/status
-make ingest-record     # arsip payload asli di .cache/ingest-archive
+make up migrate        # migrasi 00002
+make test-integration  # PostgreSQL + JetStream, termasuk uji ujung ke ujung
+make fuzz              # opsional, ±7 menit
+make ingest            # terminal 1
+make geo               # terminal 2; cek http://127.0.0.1:8082/status
+make calibrate-dedup   # harus menghasilkan docs/calibration/dedup-gempa.md tanpa diff
 ```
 
-Setelah `make ingest` jalan, isi stream `RAW` terlihat di http://127.0.0.1:8222/jsz?streams=true (jumlah pesan bertambah saat ada gempa baru, tidak bertambah saat ingest di-restart).
+Setelah `make ingest` dan `make geo` jalan beberapa menit: `psql` → `SELECT status, level, title FROM hazard.event ORDER BY occurred_at DESC LIMIT 10;` dan stream `HAZARD` di http://127.0.0.1:8222/jsz?streams=true.
+
+### Temuan yang perlu ditindaklanjuti
+
+- **Rumus radius dirasakan PRD terlalu kecil untuk gempa menengah.** Di fixture asli, gempa M4,6 kedalaman 20 km di selatan Sumur dilaporkan BMKG "dirasakan II–III", tetapi rumus PRD memberi radius 0 (R = 19,95 km < kedalaman). Kalibrasi rumus dengan arsip `gempadirasakan` perlu dijadwalkan (PRD memang menyebutnya).
+- **Recall deduplikasi 98,5%**, di bawah target T4 99%. Sisa yang terlewat adalah pasangan berjarak > 100 km. Kalibrasi berikutnya memakai arsip real-time ingest (fase 1e). Detail di ADR 0008.
+
+### Fase 1a: ingest gempa
+
+Kontrak `siaga.raw.v1`, stream `RAW`/`HAZARD`, layanan ingest dengan konektor BMKG `autogempa`, `gempaterkini`, `gempadirasakan` dan USGS `2.5_day`, perekam payload (`make ingest-record`). Detail di ADR 0006 dan `docs/events.md`. Status CI commit `e396d6f` belum dicek asisten (workspace tidak bisa membuka API GitHub).
 
 ### Fase 0: fondasi
 
@@ -48,30 +64,25 @@ Setelah `make ingest` jalan, isi stream `RAW` terlihat di http://127.0.0.1:8222/
 - `C:\KULIAH\PROJECT CODE\siaga` adalah clone kedua untuk dibuka dari Windows. Perbarui dengan `git -C "/mnt/c/KULIAH/PROJECT CODE/siaga" pull --ff-only`; jangan diedit bersamaan dengan repo WSL.
 - Versi alat: Go 1.27.1 (minimum bahasa 1.26, ADR 0005), Node 22, pnpm 10.28.0 lewat corepack, golangci-lint 2.13.2, gitleaks 8.30.1.
 
-## Perubahan sesi 2026-09-24
-
-- Minimum Go naik ke 1.26 karena goose v3.28.0; toolchain 1.27.1 di `go.work` (ADR 0005).
-- `protoc-gen-go` dan `goose` dijalankan dengan `GOWORK=off`: `-modfile` ditolak di workspace mode, dan driver bawaan goose memicu ambiguous import genproto.
-- CI: gitleaks lewat CLI dengan verifikasi checksum (gitleaks-action gagal pada push pertama), trivy-action dipin ke commit v0.36.0, analisis klien Dart hanya gagal pada error, pnpm/action-setup v6.
-- `.trivyignore.yaml` mengecualikan CVE-2025-68121 hanya untuk `usr/local/bin/gosu` (gosu tidak memakai TLS). Kedaluwarsa 2027-03-31; setelah itu CI merah dan harus ditinjau ulang.
-
 ## Utang kecil yang diketahui
 
-- Compose lite memakai `nats:2.11-alpine`, sedangkan test memakai server 2.15 dalam proses. Fitur yang dipakai (dedup `Nats-Msg-Id`, `Nats-Expected-Stream`) ada di keduanya; naikkan image saat Renovate aktif.
-- ingest belum punya Dockerfile dan manifest Kubernetes; dijalankan lewat `make ingest`. Ditambahkan di fase 1e bersama Garage dan OpenTelemetry.
+- Compose lite memakai `nats:2.11-alpine`, sedangkan test memakai server 2.15 dalam proses. Fitur yang dipakai (dedup `Nats-Msg-Id`, `Nats-Expected-Stream`, pull consumer, `NakWithDelay`) ada di keduanya; naikkan image saat Renovate aktif.
+- ingest dan geo-processor belum punya Dockerfile dan manifest Kubernetes; dijalankan lewat `make ingest` dan `make geo`. Ditambahkan di fase 1e bersama Garage dan OpenTelemetry.
+- `/status` geo-processor menampilkan ambang dengan durasi dalam nanodetik (JSON bawaan `time.Duration`). Kosmetik; rapikan saat dashboard Grafana dibuat.
 - Renovate sudah dikonfigurasi (`renovate.json`) tetapi GitHub App Renovate belum dipasang di repo.
 - Runner `ubuntu-latest` pindah ke Ubuntu 26 mulai 2026-10-19. Pantau run CI pertama setelah tanggal itu.
 - Profil full (`make k3d-up tilt`) belum pernah dicoba. Bila CloudNativePG menolak image, lihat ADR 0002.
+- `.trivyignore.yaml` mengecualikan CVE-2025-68121 untuk gosu sampai 2027-03-31; setelah itu CI merah dan harus ditinjau ulang.
 
 ## Berikutnya: sisa Fase 1 (pipa data)
 
 Target demo fase 1: dashboard Grafana berisi data live semua sumber.
 
 - [x] **1a** Kontrak `raw.*`, stream `RAW`/`HAZARD`, ingest dengan konektor gempa BMKG + USGS, perekam payload.
-- [ ] **1b** geo-processor sebagai consumer `raw.quake.*` (durable pull consumer, stream `DLQ`): normalisasi, deduplikasi BMKG–USGS (≤ 90 dtk, ≤ 75 km, Δmag ≤ 0,7) dengan property test, tabel `hazard.event` / `hazard.event_source` / `hazard.impact_region` (constraint di DB), radius dirasakan dari PRD × poligon kelurahan, terbit `hazard.quake.created|updated`. Kalibrasi awal dedup dengan katalog USGS historis Jawa Barat.
-- [ ] **1c** BMKG CAP nowcast (RSS + XML CAP) dan prakiraan adm4 (sapuan ±5.900 desa, sub-anggaran 50/menit di dalam anggaran BMKG).
+- [x] **1b** geo-processor gempa: consumer durable + DLQ, deduplikasi BMKG–USGS terkalibrasi (ADR 0007–0008), `hazard.event`/`event_source`/`impact_region`/`outbox`, wilayah terdampak, `hazard.quake.created|updated|expired`.
+- [ ] **1c** BMKG CAP nowcast (RSS + XML CAP) dan prakiraan adm4 (sapuan ±5.900 desa, sub-anggaran 50/menit di dalam anggaran BMKG). geo-processor: kejadian `weather` dari poligon CAP (tabel `hazard.event` sudah umum; `event_source` perlu kolom CAP atau tabel detail sendiri).
 - [ ] **1d** Open-Meteo (cuaca grid 0,25°, kualitas udara, banjir 38 titik), OpenAQ, NASA FIRMS (key gratis lewat SOPS), hypertable `ts.*`.
-- [ ] **1e** Arsip ke Garage, uji replay dari arsip, OpenTelemetry (trace ID di header `traceparent`) + dashboard Grafana Cloud, Dockerfile + manifest ingest dan geo-processor.
+- [ ] **1e** Arsip ke Garage, uji replay dari arsip (termasuk set berlabel untuk T4 dan kalibrasi radius dirasakan), OpenTelemetry (trace ID di header `traceparent`) + dashboard Grafana Cloud, Dockerfile + manifest ingest dan geo-processor.
 
 Titik pantau sungai (38 titik GloFAS + 7 sub-DAS indeks hujan) dan aturan tingkat peringatan ada di PRD, bagian Sungai yang dipantau dan Aturan bisnis.
 
@@ -79,6 +90,15 @@ Titik pantau sungai (38 titik GloFAS + 7 sub-DAS indeks hujan) dan aturan tingka
 
 Baca berurutan: `CLAUDE.md`, file ini, lalu dokumen arsitektur dan PRD (tautan di README). Semua keputusan produk sudah disepakati di sana; jangan buka ulang tanpa diminta. Keputusan teknis baru dicatat sebagai ADR di `docs/adr/`.
 
-Workspace cloud asisten tidak bisa menjangkau `proxy.golang.org`; asisten memakai toolchain Go dari rilis GitHub dan mirror modul dari repo GitHub untuk build, lint, dan test. Karena itu `go.sum` dari asisten tidak dipakai: patch dari asisten tidak menyertakan `go.sum`/`go.work.sum`, dan `make deps` di WSL yang membuatnya.
+Workspace cloud asisten tidak bisa menjangkau `proxy.golang.org`, `go.dev`, atau API GitHub, tetapi bisa `git clone` dari GitHub dan `apt`/`npm`/`pip`. Cara kerja yang terbukti di sesi 1b:
 
-Asisten tidak bisa menjangkau folder WSL secara langsung. File dari asisten dititipkan di `C:\KULIAH\PROJECT CODE\` (di luar folder repo), disalin ke `~/code/siaga` dengan `cp`, dicek hash-nya, lalu file titipan dihapus. Perintah dijalankan pengguna di WSL, dan commit selalu dibuat dari WSL supaya hook lefthook ikut jalan.
+- Go 1.27.1 di-build dari tag `go1.27.1` repo `golang/go` (bootstrap Go 1.24 bawaan).
+- Modul Go dengan path non-GitHub (`golang.org/x/*`, `google.golang.org/protobuf`) diganti lewat `replace` di file `go.work` sementara di luar repo (`GOWORK=...`), menunjuk clone mirror GitHub-nya; modul yang tidak dikompilasi cukup diberi `go.mod` kosong. `GOPROXY=direct GOSUMDB=off`.
+- golangci-lint 2.13.2 di-build dari source dengan cara yang sama (linter `decorder` dibuang karena hostnya GitLab; tidak dipakai config SIAGA).
+- `protoc-gen-go` v1.36.10 di-build dari mirror, dipakai lewat template `buf.gen.yaml` sementara; hasil generate identik dengan CI.
+- PostgreSQL 16 + PostGIS 3.4 dari apt untuk test integrasi (tanpa TimescaleDB/h3/pgvector; migrasi gempa tidak memakainya).
+- Menjalankan skrip pihak ketiga yang diunduh (misal `extract_tsv.py` repo-gempa) ditolak kebijakan workspace; pakai data yang sudah jadi.
+
+Karena itu `go.sum` dari asisten tidak dipakai: patch tidak menyertakan `go.sum`/`go.work.sum`, dan `make deps` di WSL yang membuatnya.
+
+Asisten bisa menulis ke `C:\KULIAH\PROJECT CODE\` lewat bridge desktop app (bukan ke folder WSL). File dari asisten dititipkan di sana (di luar folder repo), disalin ke `~/code/siaga`, dicek hash-nya, lalu file titipan dihapus. Perintah dijalankan pengguna di WSL, dan commit selalu dibuat dari WSL supaya hook lefthook ikut jalan.

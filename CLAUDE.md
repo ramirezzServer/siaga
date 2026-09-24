@@ -16,7 +16,7 @@ Baca `docs/HANDOFF.md` dulu: di sana status terakhir dan langkah berikutnya.
 
 ## Perintah
 
-- `make check` sebelum commit; `make test-integration` butuh `make up migrate`.
+- `make check` sebelum commit; `make test-integration` butuh `make up migrate` (paket berbagi database, jadi dijalankan `-p 1`).
 - Test fuzz: `make fuzz`. Property test memakai fuzzing bawaan Go (`testing.F`), bukan library luar.
 
 ## Gerbang kualitas
