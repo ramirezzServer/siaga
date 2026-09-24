@@ -106,6 +106,9 @@ jobs:
           fz ./internal/adapters/bmkg FuzzParseForecastDocument
           fz ./internal/adapters/usgs FuzzParse
           fz ./internal/adapters/openmeteo FuzzParse
+          fz ./internal/domain/airquality FuzzClean
+          fz ./internal/adapters/firms FuzzParseFIRMS
+          fz ./internal/adapters/openaq FuzzParseOpenAQ
 
   node:
     name: TypeScript + kontrak
