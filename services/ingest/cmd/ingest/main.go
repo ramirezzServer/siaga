@@ -5,8 +5,11 @@
 //	ingest -once -publish=false    # rekam payload sekali ke arsip, tanpa NATS
 //
 // Konektor: gempa BMKG dan USGS (raw.quake.*), peringatan dini cuaca BMKG
-// (bmkg-cap, raw.weather.bmkg), dan sapuan prakiraan BMKG per kelurahan/desa
-// (bmkg-prakiraan, raw.forecast.bmkg).
+// (bmkg-cap, raw.weather.bmkg), sapuan prakiraan BMKG per kelurahan/desa
+// (bmkg-prakiraan, raw.forecast.bmkg), dan Open-Meteo: cuaca grid 0,25°
+// (openmeteo-cuaca, raw.forecast.openmeteo), kualitas udara CAMS
+// (openmeteo-udara, raw.aq.openmeteo), debit sungai GloFAS
+// (openmeteo-sungai, raw.flood.openmeteo).
 //
 // Konfigurasi lewat environment variable; lihat config() di bawah.
 package main
@@ -40,7 +43,9 @@ import (
 	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/httpstatus"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/jspub"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/nopub"
+	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/openmeteo"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/regionlist"
+	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/sitelist"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/sysclock"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/usgs"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/app/capfeed"
@@ -48,6 +53,7 @@ import (
 	"github.com/ramirezzServer/siaga/services/ingest/internal/app/runner"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/app/sweep"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/domain/forecast"
+	"github.com/ramirezzServer/siaga/services/ingest/internal/domain/series"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/ports"
 )
 
@@ -78,6 +84,11 @@ type settings struct {
 	forecastFocus     []string
 	forecastInterval  time.Duration
 	forecastLimit     int
+
+	openMeteoWeatherURL string
+	openMeteoAirURL     string
+	openMeteoFloodURL   string
+	openMeteoProvinces  []string
 }
 
 func config(lookup envx.Lookup) (settings, error) {
@@ -95,7 +106,11 @@ func config(lookup envx.Lookup) (settings, error) {
 		forecastURL:       env.Default("BMKG_FORECAST_URL", bmkg.DefaultForecastURL),
 		forecastProvinces: list(env.Default("INGEST_FORECAST_PROVINCES", "32")),
 		// Zona fokus Bandung Raya lebih dulu: Kota Bandung, Kab. Bandung, Kab. Bandung Barat, Cimahi.
-		forecastFocus: list(env.Default("INGEST_FORECAST_FOCUS", "32.73,32.04,32.17,32.77")),
+		forecastFocus:       list(env.Default("INGEST_FORECAST_FOCUS", "32.73,32.04,32.17,32.77")),
+		openMeteoWeatherURL: env.Default("OPENMETEO_WEATHER_URL", openmeteo.DefaultWeatherURL),
+		openMeteoAirURL:     env.Default("OPENMETEO_AIR_URL", openmeteo.DefaultAirURL),
+		openMeteoFloodURL:   env.Default("OPENMETEO_FLOOD_URL", openmeteo.DefaultFloodURL),
+		openMeteoProvinces:  list(env.Default("INGEST_OPENMETEO_PROVINCES", "32")),
 	}
 	var errs []error
 	level, err := logx.ParseLevel(env.Default("LOG_LEVEL", "info"))
@@ -137,6 +152,8 @@ func budgets() (map[string]*runner.Limiter, error) {
 		{"bmkg", 55, 5},
 		{"usgs", 6, 2},
 		{"bmkg-prakiraan", 50, 1},
+		// Per request HTTP; kuota Open-Meteo dihitung per titik (ADR 0011).
+		{"openmeteo", 10, 3},
 	} {
 		l, err := runner.NewLimiter(b.name, b.perMinute, b.burst)
 		if err != nil {
@@ -170,6 +187,50 @@ func connectors(s settings) []connectorSpec {
 	return out
 }
 
+// Interval Open-Meteo (dokumen arsitektur): grid cuaca dan udara tiap jam,
+// titik pantau sungai tiap 6 jam (GloFAS diperbarui sekali sehari).
+const (
+	openMeteoGridInterval  = time.Hour
+	openMeteoFloodInterval = 6 * time.Hour
+)
+
+// openMeteoConnectors membuat konektor Open-Meteo untuk provinsi yang
+// dikonfigurasi. Satu konektor memuat semua titik semua provinsi.
+func openMeteoConnectors(s settings, now func() time.Time) ([]connectorSpec, error) {
+	if len(s.openMeteoProvinces) == 0 {
+		return nil, nil
+	}
+	var grid, rivers []series.Site
+	for _, p := range s.openMeteoProvinces {
+		g, err := sitelist.Grid(p)
+		if err != nil {
+			return nil, err
+		}
+		r, err := sitelist.Rivers(p)
+		if err != nil {
+			return nil, err
+		}
+		grid, rivers = append(grid, g...), append(rivers, r...)
+	}
+	weather, err := openmeteo.NewWeatherConnector(s.openMeteoWeatherURL, grid, now)
+	if err != nil {
+		return nil, err
+	}
+	air, err := openmeteo.NewAirQualityConnector(s.openMeteoAirURL, grid, now)
+	if err != nil {
+		return nil, err
+	}
+	flood, err := openmeteo.NewDischargeConnector(s.openMeteoFloodURL, rivers, now)
+	if err != nil {
+		return nil, err
+	}
+	return []connectorSpec{
+		{conn: weather, interval: openMeteoGridInterval, budget: "openmeteo"},
+		{conn: air, interval: openMeteoGridInterval, budget: "openmeteo"},
+		{conn: flood, interval: openMeteoFloodInterval, budget: "openmeteo"},
+	}, nil
+}
+
 // Interval polling RSS peringatan dini (dokumen arsitektur: 2 menit).
 const capInterval = 2 * time.Minute
 
@@ -186,8 +247,12 @@ type deps struct {
 // plan merakit semua job polling dan sapuan sesuai konfigurasi.
 func plan(cfg settings, d deps) ([]runner.Job, []*sweep.Sweeper, error) {
 	enabled := func(name string) bool { return len(cfg.connectors) == 0 || slices.Contains(cfg.connectors, name) }
+	om, err := openMeteoConnectors(cfg, d.clock.Now)
+	if err != nil {
+		return nil, nil, err
+	}
 	var jobs []runner.Job
-	for _, spec := range connectors(cfg) {
+	for _, spec := range append(connectors(cfg), om...) {
 		if !enabled(spec.conn.Name()) {
 			continue
 		}

@@ -91,8 +91,13 @@ func TestPlan(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(jobs) != 5 || len(sweepers) != 1 || jobs[4].Poller.Name() != "bmkg-cap" || jobs[4].Interval != 2*time.Minute {
-		t.Fatalf("%d job, %d sapuan", len(jobs), len(sweepers))
+	byName := map[string]time.Duration{}
+	for _, j := range jobs {
+		byName[j.Poller.Name()] = j.Interval
+	}
+	if len(jobs) != 8 || len(sweepers) != 1 || byName["bmkg-cap"] != 2*time.Minute ||
+		byName["openmeteo-cuaca"] != time.Hour || byName["openmeteo-udara"] != time.Hour || byName["openmeteo-sungai"] != 6*time.Hour {
+		t.Fatalf("%d job, %d sapuan: %v", len(jobs), len(sweepers), byName)
 	}
 	st := sweepers[0].Snapshot()
 	if st.Codes != 5957 || st.Interval != 6*time.Hour {
@@ -115,6 +120,7 @@ func TestPlan(t *testing.T) {
 	for _, env := range []map[string]string{
 		{"INGEST_CONNECTORS": "tidak-ada"},
 		{"INGEST_FORECAST_PROVINCES": "99"},
+		{"INGEST_OPENMETEO_PROVINCES": "99"},
 	} {
 		s, _ := config(lookup(env))
 		if _, _, err := plan(s, d); err == nil {
@@ -146,5 +152,32 @@ func TestForecastBudgetLeavesRoomForAlerts(t *testing.T) {
 	// 55/menit bersama − 50/menit prakiraan = 5/menit untuk request biasa.
 	if perMinute > 55-50 {
 		t.Fatalf("request biasa BMKG %.1f/menit tidak muat di sisa anggaran", perMinute)
+	}
+}
+
+// Kuota Open-Meteo gratis dihitung per lokasi: 600/menit, 5.000/jam,
+// 10.000/hari. Polling rutin harus menyisakan kuota untuk river-snap,
+// backfill, dan percobaan ulang.
+func TestOpenMeteoQuota(t *testing.T) {
+	s, _ := config(lookup(nil))
+	specs, err := openMeteoConnectors(s, time.Now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var perDay, burst float64
+	for _, c := range specs {
+		sites := float64(c.conn.(interface{ Sites() int }).Sites())
+		perDay += sites * float64(24*time.Hour) / float64(c.interval)
+		burst += sites
+		if c.budget != "openmeteo" {
+			t.Fatalf("%s memakai anggaran %s", c.conn.Name(), c.budget)
+		}
+	}
+	if perDay > 6000 || burst > 300 {
+		t.Fatalf("Open-Meteo %.0f lokasi/hari, %.0f lokasi sekaligus", perDay, burst)
+	}
+	s, _ = config(lookup(map[string]string{"INGEST_OPENMETEO_PROVINCES": ","}))
+	if specs, err := openMeteoConnectors(s, time.Now); err != nil || len(specs) != 0 {
+		t.Fatalf("tanpa provinsi: %d konektor, %v", len(specs), err)
 	}
 }

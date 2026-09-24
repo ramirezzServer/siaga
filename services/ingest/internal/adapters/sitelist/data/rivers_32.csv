@@ -1,0 +1,42 @@
+# Titik pantau debit sungai provinsi 32 (PRD, bagian Sungai yang dipantau).
+# Koordinat = pusat sel GloFAS terpilih. Dibuat `make river-snap` dari docs/calibration/titik-sungai-32.csv; jangan diedit manual.
+# 38 titik
+id,sungai,nama,lat,lon
+citarum-majalaya,Citarum,Majalaya,-7.0750,107.7250
+citarum-dayeuhkolot,Citarum,Dayeuhkolot,-6.9750,107.6250
+citarum-nanjung,Citarum,Nanjung,-6.9750,107.5250
+citarum-hilir-jatiluhur,Citarum,Hilir Jatiluhur,-6.4750,107.3250
+citarum-karawang,Citarum,Karawang,-6.3250,107.2750
+citarum-muara,Citarum,Muara,-5.9750,107.0250
+cimanuk-garut,Cimanuk,Garut kota,-7.1750,107.9250
+cimanuk-hulu-jatigede,Cimanuk,Hulu Jatigede,-6.9750,108.0250
+cimanuk-hilir-jatigede,Cimanuk,Hilir Jatigede,-6.7750,108.0750
+cimanuk-jatibarang,Cimanuk,Jatibarang,-6.4250,108.2750
+cimanuk-muara,Cimanuk,Muara,-6.3250,108.3250
+bekasi-cileungsi,Cileungsi,Cileungsi,-6.4250,106.9250
+bekasi-cikeas,Cikeas,Cikeas,-6.4250,106.8750
+bekasi-p2c,Kali Bekasi,Pertemuan Cileungsi-Cikeas,-6.2750,106.9750
+bekasi-kota,Kali Bekasi,Bekasi kota,-6.2250,106.9750
+cisadane-hulu,Cisadane,Hulu Salak,-6.6750,106.7750
+cisadane-bogor,Cisadane,Kota Bogor,-6.5750,106.7750
+cisadane-batas-banten,Cisadane,Batas Banten,-6.4250,106.6250
+ciliwung-katulampa,Ciliwung,Katulampa,-6.6750,106.8250
+ciliwung-bogor,Ciliwung,Kota Bogor,-6.5750,106.8250
+ciliwung-depok,Ciliwung,Depok,-6.4250,106.8750
+cisanggarung-kuningan,Cisanggarung,Kuningan,-6.9750,108.6250
+cisanggarung-cirebon-timur,Cisanggarung,Cirebon timur,-6.9250,108.7250
+cisanggarung-muara,Cisanggarung,Muara,-6.8250,108.8250
+cipunagara-subang,Cipunagara,Subang tengah,-6.5250,107.9250
+cipunagara-pamanukan,Cipunagara,Pamanukan,-6.3250,107.7750
+cilamaya-hilir,Cilamaya,Hilir,-6.2750,107.5750
+citanduy-tasikmalaya,Citanduy,Tasikmalaya,-7.2750,108.1750
+citanduy-ciamis,Citanduy,Ciamis,-7.3750,108.3750
+citanduy-banjar,Citanduy,Kota Banjar,-7.3250,108.5250
+citanduy-muara,Citanduy,Muara,-7.6750,108.7750
+cimandiri-tengah,Cimandiri,Tengah,-7.0250,106.7250
+cimandiri-palabuhanratu,Cimandiri,Palabuhanratu,-7.0250,106.5250
+ciwulan-tengah,Ciwulan,Tengah,-7.4750,108.1250
+ciwulan-muara,Ciwulan,Muara,-7.7250,108.0750
+cilaki-muara,Cilaki,Muara,-7.6750,107.6750
+cikaso-muara,Cikaso,Muara,-7.3750,106.8250
+cibuni-muara,Cibuni,Muara,-7.4250,107.0750
