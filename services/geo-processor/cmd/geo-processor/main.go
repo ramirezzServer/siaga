@@ -1,8 +1,9 @@
-// Command geo-processor mengonsumsi event raw.quake.* dan raw.weather.* dari
-// NATS JetStream, mengelompokkan laporan BMKG dan USGS menjadi kejadian gempa,
-// menyusun pesan CAP BMKG menjadi kejadian cuaca, menghitung wilayah
-// terdampak, menyimpannya di schema hazard, dan menerbitkan hazard.* lewat
-// outbox transaksional.
+// Command geo-processor mengonsumsi event raw.* dari NATS JetStream,
+// mengelompokkan laporan BMKG dan USGS menjadi kejadian gempa, menyusun pesan
+// CAP BMKG menjadi kejadian cuaca, menghitung wilayah terdampak, menyimpannya
+// di schema hazard, dan menerbitkan hazard.* lewat outbox transaksional.
+// Prakiraan cuaca, kualitas udara, dan debit sungai disimpan ke hypertable
+// schema ts.
 //
 // Konfigurasi lewat environment variable; lihat config() di bawah.
 package main
@@ -35,12 +36,15 @@ import (
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/adapters/natsjs"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/adapters/postgres"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/adapters/rawquake"
+	"github.com/ramirezzServer/siaga/services/geo-processor/internal/adapters/rawseries"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/adapters/rawweather"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/app/consume"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/app/quakes"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/app/relay"
+	"github.com/ramirezzServer/siaga/services/geo-processor/internal/app/timeseries"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/app/warnings"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/domain/quake"
+	"github.com/ramirezzServer/siaga/services/geo-processor/internal/domain/series"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/domain/weather"
 )
 
@@ -162,7 +166,7 @@ func serve(ctx context.Context, cfg settings, log *slog.Logger) error {
 	outbox := relay.New(store, natsjs.NewPublisher(js, streams.Hazard.Name), log, time.Now, 100)
 	quakeHandler, err := consume.New(rawquake.Decode, func(ctx context.Context, r quake.Report) (consume.Outcome, error) {
 		res, err := svc.Process(ctx, r)
-		return consume.Outcome(res), err
+		return consume.Outcome{Changed: res.Changed, Created: res.Created, Updated: res.Updated, Ended: res.Ended}, err
 	}, []error{quake.ErrInvalid}, consume.DefaultOptions(), time.Now)
 	if err != nil {
 		return err
@@ -177,9 +181,30 @@ func serve(ctx context.Context, cfg settings, log *slog.Logger) error {
 	if err != nil {
 		return err
 	}
+	tsvc := timeseries.New(postgres.NewSeriesStore(pool), time.Now)
+	forecastBMKG, err := seriesHandler(rawseries.DecodeRegionForecast, tsvc.Weather)
+	if err != nil {
+		return err
+	}
+	forecastGrid, err := seriesHandler(rawseries.DecodeGridWeather, tsvc.Weather)
+	if err != nil {
+		return err
+	}
+	airQuality, err := seriesHandler(rawseries.DecodeAirQuality, tsvc.AirQuality)
+	if err != nil {
+		return err
+	}
+	discharge, err := seriesHandler(rawseries.DecodeDischarge, tsvc.Discharge)
+	if err != nil {
+		return err
+	}
 	consumers := []consumerJob{
 		{spec: natsjs.QuakeConsumer, handler: quakeHandler},
 		{spec: natsjs.WeatherConsumer, handler: weatherHandler},
+		{spec: natsjs.ForecastBMKGConsumer, handler: forecastBMKG},
+		{spec: natsjs.ForecastOpenMeteoConsumer, handler: forecastGrid},
+		{spec: natsjs.AirQualityOpenMeteoConsumer, handler: airQuality},
+		{spec: natsjs.FloodOpenMeteoConsumer, handler: discharge},
 	}
 
 	var consumersReady atomic.Int32
@@ -201,6 +226,12 @@ func serve(ctx context.Context, cfg settings, log *slog.Logger) error {
 	status := func() any {
 		return map[string]any{
 			"consumer": quakeHandler.Snapshot(), "weather_consumer": weatherHandler.Snapshot(),
+			"series_consumers": map[string]consume.Stats{
+				natsjs.ForecastBMKGConsumer.Durable:        forecastBMKG.Snapshot(),
+				natsjs.ForecastOpenMeteoConsumer.Durable:   forecastGrid.Snapshot(),
+				natsjs.AirQualityOpenMeteoConsumer.Durable: airQuality.Snapshot(),
+				natsjs.FloodOpenMeteoConsumer.Durable:      discharge.Snapshot(),
+			},
 			"outbox": outbox.Snapshot(), "rules": cfg.rules, "weather_policy": cfg.weather,
 		}
 	}
@@ -245,13 +276,26 @@ func serve(ctx context.Context, cfg settings, log *slog.Logger) error {
 			}
 		})
 	}
-	log.Info("geo-processor berjalan", slog.Any("consumers", []string{natsjs.QuakeConsumer.Durable, natsjs.WeatherConsumer.Durable}),
+	names := make([]string, len(consumers))
+	for i, c := range consumers {
+		names[i] = c.spec.Durable
+	}
+	log.Info("geo-processor berjalan", slog.Any("consumers", names),
 		slog.String("dedup_cross_source", fmt.Sprintf("%+v", cfg.rules.CrossSource)),
 		slog.Float64("weather_min_coverage", cfg.weather.MinCoverage))
 	<-ctx.Done()
 	wg.Wait()
 	log.Info("geo-processor berhenti")
 	return nil
+}
+
+// seriesHandler membuat handler consumer deret waktu: pesan yang melanggar
+// invarian series langsung ke DLQ, galat database dicoba ulang.
+func seriesHandler[R any](decode consume.Decoder[R], process func(context.Context, R) (timeseries.Result, error)) (*consume.Handler[R], error) {
+	return consume.New(decode, func(ctx context.Context, r R) (consume.Outcome, error) {
+		res, err := process(ctx, r)
+		return consume.Outcome{Changed: res.Changed, Rows: res.Rows}, err
+	}, []error{series.ErrInvalid}, consume.DefaultOptions(), time.Now)
 }
 
 // consumerJob adalah satu durable consumer beserta handler-nya.

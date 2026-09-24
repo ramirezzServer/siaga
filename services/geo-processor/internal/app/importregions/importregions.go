@@ -39,6 +39,9 @@ type Options struct {
 	// satu baris bermasalah pun membatalkan import, supaya data tidak hilang diam-diam.
 	MaxSkipped int
 	DryRun     bool // validasi saja, tanpa menulis
+	// GridStep > 0 mengisi Report.Grid dengan simpul grid berjarak GridStep
+	// derajat yang menyentuh kelurahan/desa provinsi (make grid-list).
+	GridStep float64
 }
 
 // Report merangkum satu kali import.
@@ -56,6 +59,9 @@ type Report struct {
 	// Villages adalah kode kelurahan/desa (adm4) yang diterima, urut kode.
 	// Dipakai untuk daftar sapuan prakiraan ingest (make adm4-list).
 	Villages []string
+	// Grid adalah simpul grid untuk cuaca dan kualitas udara Open-Meteo
+	// (make grid-list), bila Options.GridStep diisi.
+	Grid []region.GridNode
 }
 
 // SkippedTotal menjumlahkan semua baris yang dilewati.
@@ -124,10 +130,17 @@ func Run(ctx context.Context, src ports.RegionSource, store ports.RegionStore, o
 
 	accepted := dropOrphans(byCode, skip)
 	rep.Accepted = len(accepted)
+	var villages []region.MultiPolygon
 	for _, r := range accepted {
 		rep.PerKind[r.Kind()]++
 		if r.Code.Level() == region.LevelDesaKelurahan {
 			rep.Villages = append(rep.Villages, r.Code.String())
+			villages = append(villages, r.Boundary)
+		}
+	}
+	if opt.GridStep > 0 {
+		if rep.Grid, err = region.GridNodes(villages, opt.GridStep); err != nil {
+			return rep, err
 		}
 	}
 

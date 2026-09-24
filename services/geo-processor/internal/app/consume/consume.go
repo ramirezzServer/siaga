@@ -67,6 +67,8 @@ type Outcome struct {
 	Created int
 	Updated int
 	Ended   int
+	// Rows adalah baris deret waktu yang ditambah atau diubah (consumer ts.*).
+	Rows int
 }
 
 // Decoder mengubah payload menjadi nilai domain R.
@@ -96,6 +98,7 @@ type Stats struct {
 	Created      int64     `json:"created"`
 	Updated      int64     `json:"updated"`
 	Ended        int64     `json:"ended"`
+	Rows         int64     `json:"rows"`
 	LastSuccess  time.Time `json:"last_success,omitzero"`
 	LastError    string    `json:"last_error,omitempty"`
 	LastErrorAt  time.Time `json:"last_error_at,omitzero"`
@@ -139,6 +142,7 @@ func (h *Handler[R]) Handle(ctx context.Context, data []byte, delivered int) Dec
 			s.Created += int64(res.Created)
 			s.Updated += int64(res.Updated)
 			s.Ended += int64(res.Ended)
+			s.Rows += int64(res.Rows)
 			s.LastSuccess = h.now()
 		})
 		return Decision{Action: Ack}

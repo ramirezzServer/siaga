@@ -1,5 +1,6 @@
 // Package natsjs menghubungkan geo-processor dengan NATS JetStream:
-// durable pull consumer untuk raw.quake.* dan raw.weather.*, DLQ, dan
+// durable pull consumer untuk raw.quake.*, raw.weather.*, dan deret waktu
+// (raw.forecast.*, raw.aq.openmeteo, raw.flood.openmeteo), DLQ, dan
 // publisher hazard.*.
 package natsjs
 
@@ -75,6 +76,24 @@ var (
 	WeatherConsumer = ConsumerSpec{
 		Durable: "geo-processor-weather", Filter: "raw.weather.>",
 		Description: "geo-processor: peringatan dini cuaca CAP",
+	}
+	// Deret waktu: satu consumer per subjek karena tiap subjek membawa jenis
+	// pesan Protobuf yang berbeda (ADR 0012).
+	ForecastBMKGConsumer = ConsumerSpec{
+		Durable: "geo-processor-forecast-bmkg", Filter: "raw.forecast.bmkg",
+		Description: "geo-processor: prakiraan cuaca BMKG per kelurahan/desa ke ts.weather_forecast",
+	}
+	ForecastOpenMeteoConsumer = ConsumerSpec{
+		Durable: "geo-processor-forecast-openmeteo", Filter: "raw.forecast.openmeteo",
+		Description: "geo-processor: prakiraan cuaca grid Open-Meteo ke ts.weather_forecast",
+	}
+	AirQualityOpenMeteoConsumer = ConsumerSpec{
+		Durable: "geo-processor-aq-openmeteo", Filter: "raw.aq.openmeteo",
+		Description: "geo-processor: prakiraan kualitas udara CAMS ke ts.aq_forecast",
+	}
+	FloodOpenMeteoConsumer = ConsumerSpec{
+		Durable: "geo-processor-flood-openmeteo", Filter: "raw.flood.openmeteo",
+		Description: "geo-processor: debit sungai GloFAS ke ts.river_discharge",
 	}
 )
 

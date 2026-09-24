@@ -189,4 +189,17 @@ func TestHeaderValue(t *testing.T) {
 	if w := ConsumerConfig(WeatherConsumer); w.Durable != "geo-processor-weather" || w.FilterSubject != "raw.weather.>" {
 		t.Errorf("config cuaca %+v", w)
 	}
+	// Consumer deret waktu: satu per subjek, nama durable unik.
+	seen := map[string]bool{}
+	for spec, subject := range map[ConsumerSpec]string{
+		ForecastBMKGConsumer:        "raw.forecast.bmkg",
+		ForecastOpenMeteoConsumer:   "raw.forecast.openmeteo",
+		AirQualityOpenMeteoConsumer: "raw.aq.openmeteo",
+		FloodOpenMeteoConsumer:      "raw.flood.openmeteo",
+	} {
+		if spec.Filter != subject || seen[spec.Durable] || spec.Description == "" {
+			t.Errorf("%+v", spec)
+		}
+		seen[spec.Durable] = true
+	}
 }

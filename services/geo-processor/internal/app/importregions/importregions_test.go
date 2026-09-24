@@ -161,3 +161,26 @@ func TestRunPropagatesStoreError(t *testing.T) {
 		t.Errorf("error = %v; want db mati", err)
 	}
 }
+
+func TestRunGridFromVillages(t *testing.T) {
+	t.Parallel()
+	src := fakeSource{rows: []ports.RawRegion{
+		raw("32", "Jawa Barat"), raw("32.73", "Kota Bandung"),
+		raw("32.73.02", "Coblong"), raw("32.73.02.1003", "Sadang Serang"),
+	}}
+	rep, err := importregions.Run(context.Background(), src, nil, importregions.Options{Province: "32", DryRun: true, GridStep: 0.25})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Titik batas segitiga uji (-6,9; 107,6), (-6,9; 107,7), (-6,8; 107,7) jatuh di tiga sel.
+	if len(rep.Grid) != 3 || rep.Grid[0].Lat() != -7 || rep.Grid[0].Lon() != 107.5 || rep.Grid[2].Lat() != -6.75 || rep.Grid[2].Lon() != 107.75 {
+		t.Fatalf("grid %v", rep.Grid)
+	}
+	rep, err = importregions.Run(context.Background(), src, nil, importregions.Options{Province: "32", DryRun: true})
+	if err != nil || rep.Grid != nil {
+		t.Fatalf("tanpa GridStep: %v %v", rep.Grid, err)
+	}
+	if _, err := importregions.Run(context.Background(), src, nil, importregions.Options{Province: "32", DryRun: true, GridStep: 9}); err == nil {
+		t.Fatal("jarak grid tidak valid harus ditolak")
+	}
+}

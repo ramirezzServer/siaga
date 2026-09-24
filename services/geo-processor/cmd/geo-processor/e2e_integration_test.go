@@ -59,6 +59,11 @@ func TestEndToEnd(t *testing.T) {
 			`DELETE FROM hazard.event_source WHERE occurred_at < '2002-01-01'`,
 			`UPDATE hazard.event SET merged_into = NULL, status = 'expired' WHERE occurred_at < '2002-01-01' AND status = 'merged'`,
 			`DELETE FROM hazard.event WHERE occurred_at < '2002-01-01'`,
+			`DELETE FROM ts.weather_forecast WHERE site_id IN ('adm4:98.01.01.2001', 'grid:-6.75:107.00')`,
+			`DELETE FROM ts.aq_forecast WHERE site_id = 'grid:-6.75:107.00'`,
+			`DELETE FROM ts.river_discharge WHERE site_id = 'river:uji-e2e'`,
+			`DELETE FROM ts.series WHERE site_id IN ('adm4:98.01.01.2001', 'grid:-6.75:107.00', 'river:uji-e2e')`,
+			`DELETE FROM ts.site WHERE id IN ('adm4:98.01.01.2001', 'grid:-6.75:107.00', 'river:uji-e2e')`,
 		} {
 			if _, err := pg.Exec(ctx, q); err != nil {
 				t.Fatal(err)
@@ -170,6 +175,7 @@ func TestEndToEnd(t *testing.T) {
 		h.GetTitle(), h.GetLevel(), h.GetImpactedRegionCount(), h.GetImpactedRegions()[0].GetName(), eq.GetFeltRadiusKm())
 
 	checkWeather(ctx, t, js)
+	checkSeries(ctx, t, js, dbURL)
 
 	stop()
 	if err := <-done; err != nil {
@@ -271,6 +277,113 @@ func checkWeather(ctx context.Context, t *testing.T, js jetstream.JetStream) {
 		t.Fatalf("expired %v", &e)
 	}
 	t.Logf("%s: tingkat %s, %d kelurahan/desa terdampak, area %.0f km²", h.GetTitle(), h.GetLevel(), h.GetImpactedRegionCount(), w.GetAreaKm2())
+}
+
+// checkSeries menguji jalur deret waktu: prakiraan BMKG per desa, cuaca dan
+// kualitas udara grid Open-Meteo, dan debit sungai masuk ke hypertable ts.*;
+// pesan ulangan tidak menambah baris, pesan rusak masuk DLQ.
+func checkSeries(ctx context.Context, t *testing.T, js jetstream.JetStream, dbURL string) {
+	t.Helper()
+	now := time.Now().UTC().Truncate(time.Hour)
+	meta := func(c string) *rawv1.FetchMeta {
+		return &rawv1.FetchMeta{Connector: c, FetchedAt: timestamppb.New(now), ArchiveKey: c + "/k.json.gz"}
+	}
+	pf := func(v float64) *float64 { return &v }
+	publish := func(subject, id string, m proto.Message) {
+		b, err := proto.Marshal(m)
+		if err != nil {
+			t.Fatal(err)
+		}
+		msg := nats.NewMsg(subject)
+		msg.Data = b
+		msg.Header.Set(jetstream.MsgIDHeader, id)
+		if _, err := js.PublishMsg(ctx, msg); err != nil {
+			t.Fatal(err)
+		}
+	}
+	bmkg := &rawv1.RegionForecast{
+		Meta: meta("bmkg-prakiraan"), Source: hazardv1.Source_SOURCE_BMKG, RegionCode: "98.01.01.2001", Village: "Desa Episenter",
+		Location: &commonv1.Point{Latitude: -6.85, Longitude: 107.03}, AnalysisTime: timestamppb.New(now.Add(-6 * time.Hour)),
+	}
+	for h := range 3 {
+		bmkg.Steps = append(bmkg.Steps, &rawv1.ForecastStep{
+			ValidTime:    timestamppb.New(now.Add(time.Duration(3*h) * time.Hour)),
+			TemperatureC: 24, RelativeHumidityPct: 90, CloudCoverPct: 100, PrecipitationMm: 1.2, WeatherCode: 61, WindSpeedKmh: 5, WindFromDeg: 270,
+		})
+	}
+	grid := &rawv1.ModelSite{
+		Id: "grid:-6.75:107.00", Requested: &commonv1.Point{Latitude: -6.75, Longitude: 107},
+		Cell: &commonv1.Point{Latitude: -6.76, Longitude: 107.01}, ElevationM: pf(420),
+	}
+	code := int32(3)
+	wx := &rawv1.GridWeatherForecast{Meta: meta("openmeteo-cuaca"), Source: hazardv1.Source_SOURCE_OPEN_METEO, Site: grid, Model: "best_match"}
+	aq := &rawv1.AirQualityForecast{Meta: meta("openmeteo-udara"), Source: hazardv1.Source_SOURCE_OPEN_METEO, Site: grid, Model: "cams_global"}
+	for h := range 4 {
+		at := timestamppb.New(now.Add(time.Duration(h) * time.Hour))
+		wx.Steps = append(wx.Steps, &rawv1.GridWeatherStep{ValidTime: at, TemperatureC: pf(22), RelativeHumidityPct: pf(80), WeatherCode: &code})
+		aq.Steps = append(aq.Steps, &rawv1.AirQualityStep{ValidTime: at, Pm2_5Ugm3: pf(35), Pm10Ugm3: pf(40)})
+	}
+	day := now.Truncate(24 * time.Hour)
+	flood := &rawv1.RiverDischargeForecast{
+		Meta: meta("openmeteo-sungai"), Source: hazardv1.Source_SOURCE_OPEN_METEO, Model: "glofas_v4",
+		Site: &rawv1.ModelSite{
+			Id: "river:uji-e2e", Name: "Titik Uji", River: "Sungai Uji",
+			Requested: &commonv1.Point{Latitude: -6.85, Longitude: 107.03}, Cell: &commonv1.Point{Latitude: -6.85, Longitude: 107.03},
+		},
+		Steps: []*rawv1.DischargeStep{
+			{ValidDate: timestamppb.New(day), DischargeM3S: pf(8.8)},
+			{ValidDate: timestamppb.New(day.AddDate(0, 0, 1)), DischargeM3S: pf(9.4), EnsembleMinM3S: pf(5), EnsembleMaxM3S: pf(17)},
+		},
+	}
+	publish("raw.forecast.bmkg", "fc-1", bmkg)
+	publish("raw.forecast.bmkg", "fc-1-ulang", bmkg) // isi sama setelah restart ingest
+	publish("raw.forecast.openmeteo", "om-1", wx)
+	publish("raw.aq.openmeteo", "aq-1", aq)
+	publish("raw.flood.openmeteo", "fl-1", flood)
+	msg := nats.NewMsg("raw.aq.openmeteo")
+	msg.Data = []byte("bukan protobuf")
+	if _, err := js.PublishMsg(ctx, msg); err != nil {
+		t.Fatal(err)
+	}
+
+	pg := mustPool(ctx, t, dbURL)
+	defer pg.Close()
+	counts := func() (int, int, int, int, uint64) {
+		var bm, om, a, f int
+		_ = pg.QueryRow(ctx, `SELECT
+			(SELECT count(*) FROM ts.weather_forecast WHERE site_id = 'adm4:98.01.01.2001'),
+			(SELECT count(*) FROM ts.weather_forecast WHERE site_id = 'grid:-6.75:107.00'),
+			(SELECT count(*) FROM ts.aq_forecast WHERE site_id = 'grid:-6.75:107.00'),
+			(SELECT count(*) FROM ts.river_discharge WHERE site_id = 'river:uji-e2e')`).Scan(&bm, &om, &a, &f)
+		var dlq uint64
+		if st, err := js.Stream(ctx, streams.DLQ.Name); err == nil {
+			if info, _ := st.Info(ctx); info != nil {
+				dlq = info.State.Msgs
+			}
+		}
+		return bm, om, a, f, dlq
+	}
+	deadline := time.Now().Add(30 * time.Second)
+	for {
+		bm, om, a, f, dlq := counts()
+		if bm == 3 && om == 4 && a == 4 && f == 2 && dlq >= 2 {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("deret waktu tidak lengkap dalam 30 detik: bmkg %d, grid %d, udara %d, debit %d, DLQ %d", bm, om, a, f, dlq)
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+	var region string
+	if err := pg.QueryRow(ctx, `SELECT region_code FROM ts.site WHERE id = 'river:uji-e2e'`).Scan(&region); err != nil || region != "98.01.01.2001" {
+		t.Fatalf("region_code titik sungai %q, %v", region, err)
+	}
+	var fresh int
+	if err := pg.QueryRow(ctx, `SELECT count(*) FROM ts.series WHERE site_id IN ('adm4:98.01.01.2001', 'grid:-6.75:107.00', 'river:uji-e2e')
+		AND last_fetched_at = $1`, now).Scan(&fresh); err != nil || fresh != 4 {
+		t.Fatalf("ts.series: %d deret segar, %v", fresh, err)
+	}
+	t.Logf("deret waktu: 3 langkah BMKG, 4 jam cuaca grid, 4 jam udara, 2 hari debit; titik sungai di %s", region)
 }
 
 func keys(m map[string][]*jetstream.RawStreamMsg) map[string]int {

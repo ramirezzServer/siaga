@@ -67,7 +67,7 @@ func TestHandleRetriesQuicklyOnShutdown(t *testing.T) {
 }
 
 func TestStatsAndActionString(t *testing.T) {
-	h := handler(t, nil, nil, Outcome{Changed: true, Created: 1, Updated: 2, Ended: 1})
+	h := handler(t, nil, nil, Outcome{Changed: true, Created: 1, Updated: 2, Ended: 1, Rows: 96})
 	h.Handle(context.Background(), nil, 1)
 	u := handler(t, nil, nil, Outcome{})
 	u.Handle(context.Background(), nil, 1)
@@ -76,7 +76,7 @@ func TestStatsAndActionString(t *testing.T) {
 	r := handler(t, nil, errors.New("x"), Outcome{})
 	r.Handle(context.Background(), nil, 1)
 
-	if s := h.Snapshot(); s.Received != 1 || s.Applied != 1 || s.Created != 1 || s.Updated != 2 || s.Ended != 1 || !s.LastSuccess.Equal(now) {
+	if s := h.Snapshot(); s.Received != 1 || s.Applied != 1 || s.Created != 1 || s.Updated != 2 || s.Ended != 1 || s.Rows != 96 || !s.LastSuccess.Equal(now) {
 		t.Errorf("stats berhasil %+v", s)
 	}
 	if s := u.Snapshot(); s.Unchanged != 1 || s.Applied != 0 {

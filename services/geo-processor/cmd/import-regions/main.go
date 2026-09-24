@@ -2,6 +2,7 @@
 //
 //	import-regions -source .cache/wilayah_boundaries/db -province 32
 //	import-regions -dry-run -adm4-out adm4_32.txt   # daftar kelurahan/desa untuk sapuan prakiraan
+//	import-regions -dry-run -grid-out grid025_32.txt # simpul grid 0,25° untuk Open-Meteo
 //
 // Koneksi database dibaca dari DATABASE_URL (role siaga_geo).
 package main
@@ -15,6 +16,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"syscall"
 
@@ -25,6 +27,7 @@ import (
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/adapters/cahyadsn"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/adapters/postgres"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/app/importregions"
+	"github.com/ramirezzServer/siaga/services/geo-processor/internal/domain/region"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/ports"
 )
 
@@ -43,6 +46,8 @@ func run() error {
 		maxSkipped = flag.Int("max-skipped", 0, "jumlah baris bermasalah yang ditoleransi")
 		dryRun     = flag.Bool("dry-run", false, "validasi saja tanpa menulis ke database")
 		adm4Out    = flag.String("adm4-out", "", "tulis daftar kode kelurahan/desa yang diterima ke file ini")
+		gridOut    = flag.String("grid-out", "", "tulis simpul grid yang menyentuh kelurahan/desa ke file ini")
+		gridStep   = flag.Float64("grid-step", 0.25, "jarak simpul grid dalam derajat untuk -grid-out")
 	)
 	flag.Parse()
 
@@ -89,6 +94,7 @@ func run() error {
 
 	rep, err := importregions.Run(ctx, src, store, importregions.Options{
 		Province: *province, MaxSkipped: *maxSkipped, DryRun: *dryRun,
+		GridStep: gridStepFor(*gridOut, *gridStep),
 	})
 	log.Info("ringkasan import",
 		slog.String("source", src.Name()), slog.String("version", src.Version()),
@@ -111,7 +117,38 @@ func run() error {
 		}
 		log.Info("daftar kelurahan/desa ditulis", slog.String("file", *adm4Out), slog.Int("codes", len(rep.Villages)))
 	}
+	if err == nil && *gridOut != "" {
+		if err := writeGrid(*gridOut, src, *province, *gridStep, rep.Grid); err != nil {
+			return err
+		}
+		log.Info("simpul grid ditulis", slog.String("file", *gridOut), slog.Int("nodes", len(rep.Grid)))
+	}
 	return err
+}
+
+// gridStepFor mengaktifkan perhitungan grid hanya bila -grid-out diisi.
+func gridStepFor(out string, step float64) float64 {
+	if out == "" {
+		return 0
+	}
+	return step
+}
+
+// writeGrid menulis simpul grid untuk konektor Open-Meteo ingest, satu
+// "lintang,bujur" per baris, diawali komentar asal data.
+func writeGrid(path string, src *cahyadsn.DirSource, province string, step float64, nodes []region.GridNode) error {
+	var b strings.Builder
+	fmt.Fprintf(&b, "# Simpul grid %s° yang selnya menyentuh kelurahan/desa provinsi %s, untuk cuaca dan kualitas udara Open-Meteo.\n",
+		strings.ReplaceAll(strconv.FormatFloat(step, 'f', -1, 64), ".", ","), province)
+	fmt.Fprintf(&b, "# Dibuat `make grid-list` dari %s@%.12s; jangan diedit manual.\n", src.Name(), src.Version())
+	fmt.Fprintf(&b, "# %d titik\n", len(nodes))
+	for _, n := range nodes {
+		fmt.Fprintf(&b, "%.2f,%.2f\n", n.Lat(), n.Lon())
+	}
+	if err := os.WriteFile(path, []byte(b.String()), 0o600); err != nil {
+		return fmt.Errorf("menulis %s: %w", path, err)
+	}
+	return nil
 }
 
 // writeVillages menulis daftar kode adm4 untuk sapuan prakiraan ingest,
