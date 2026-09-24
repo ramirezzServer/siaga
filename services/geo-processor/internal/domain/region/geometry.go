@@ -80,6 +80,11 @@ func ParseLatLngPath(raw []byte) (MultiPolygon, GeometryRepair, error) {
 }
 
 func convertPolygon(rings [][][2]float64, repair *GeometryRepair) (Polygon, bool) {
+	if len(rings) == 0 {
+		// Poligon kosong (`[]` di dalam multipoligon) tidak punya cincin luar.
+		repair.DroppedPolygon++
+		return nil, false
+	}
 	out := make(Polygon, 0, len(rings))
 	for i, ring := range rings {
 		converted, closed, ok := convertRing(ring)

@@ -52,13 +52,14 @@ func TestParseLatLngPathDropsDegenerateParts(t *testing.T) {
 	t.Parallel()
 	raw := []byte(`[
 	  [[[-6.9,107.6],[-6.9,107.7],[-6.8,107.7],[-6.9,107.6]], [[-6.85,107.65],[-6.86,107.66]]],
-	  [[[-7.0,107.0],[-7.0,107.1]]]
+	  [[[-7.0,107.0],[-7.0,107.1]]],
+	  []
 	]`)
 	mp, rep, err := region.ParseLatLngPath(raw)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(mp) != 1 || len(mp[0]) != 1 || rep.DroppedRings != 1 || rep.DroppedPolygon != 1 {
+	if len(mp) != 1 || len(mp[0]) != 1 || rep.DroppedRings != 1 || rep.DroppedPolygon != 2 {
 		t.Errorf("mp=%v rep=%+v", mp, rep)
 	}
 }
@@ -73,6 +74,7 @@ func TestParseLatLngPathRejects(t *testing.T) {
 		"lintang di luar": `[[[-96,107.6],[-6.9,107.7],[-6.8,107.7],[-96,107.6]]]`,
 		"semua rusak":     `[[[-6.9,107.6],[-6.9,107.7]]]`,
 		"kosong":          `[]`,
+		"poligon kosong":  `[[[[]]], []]`,
 	} {
 		if _, _, err := region.ParseLatLngPath([]byte(raw)); !errors.Is(err, region.ErrInvalidGeometry) {
 			t.Errorf("%s: error = %v; want ErrInvalidGeometry", name, err)
