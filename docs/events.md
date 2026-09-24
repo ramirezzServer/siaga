@@ -22,29 +22,36 @@ Pemilik adalah satu-satunya layanan yang membuat dan memperbarui konfigurasi str
 
 ## Consumer
 
-| Consumer (durable)      | Stream | Filter          | Layanan       | Ack                         |
-| ----------------------- | ------ | --------------- | ------------- | --------------------------- |
-| `geo-processor-quake`   | `RAW`  | `raw.quake.>`   | geo-processor | eksplisit, `AckWait` 30 dtk |
-| `geo-processor-weather` | `RAW`  | `raw.weather.>` | geo-processor | eksplisit, `AckWait` 30 dtk |
+| Consumer (durable)                 | Stream | Filter                   | Layanan       | Ack                         |
+| ---------------------------------- | ------ | ------------------------ | ------------- | --------------------------- |
+| `geo-processor-quake`              | `RAW`  | `raw.quake.>`            | geo-processor | eksplisit, `AckWait` 30 dtk |
+| `geo-processor-weather`            | `RAW`  | `raw.weather.>`          | geo-processor | eksplisit, `AckWait` 30 dtk |
+| `geo-processor-forecast-bmkg`      | `RAW`  | `raw.forecast.bmkg`      | geo-processor | eksplisit, `AckWait` 30 dtk |
+| `geo-processor-forecast-openmeteo` | `RAW`  | `raw.forecast.openmeteo` | geo-processor | eksplisit, `AckWait` 30 dtk |
+| `geo-processor-aq-openmeteo`       | `RAW`  | `raw.aq.openmeteo`       | geo-processor | eksplisit, `AckWait` 30 dtk |
+| `geo-processor-flood-openmeteo`    | `RAW`  | `raw.flood.openmeteo`    | geo-processor | eksplisit, `AckWait` 30 dtk |
 
-Belum ada konsumen `raw.forecast.>`; hypertable `ts.weather_forecast` dan consumer-nya dibuat di fase 1d. Stream `RAW` menyimpan 7 hari, jadi consumer baru membaca dari awal tanpa kehilangan data (ADR 0009).
+Consumer deret waktu satu per subjek karena tiap subjek membawa jenis pesan yang berbeda; semuanya menulis ke hypertable schema `ts` (ADR 0012). Consumer baru membaca stream `RAW` dari awal (retensi 7 hari), jadi prakiraan BMKG yang terbit sejak fase 1c ikut tersimpan.
 
 Batas percobaan diatur aplikasi, bukan server (`MaxDeliver = -1`): galat sementara dicoba ulang dengan jeda 1, 5, 15, 30 detik; pesan yang rusak, melanggar invarian, atau gagal 5 kali disalin ke `dlq.<layanan>` lalu dihentikan (`Term`). Lihat ADR 0007.
 
 ## Subjek
 
-| Subjek                   | Pesan                           | Penerbit      | Stream   |
-| ------------------------ | ------------------------------- | ------------- | -------- |
-| `raw.quake.bmkg`         | `siaga.raw.v1.QuakeReport`      | ingest        | `RAW`    |
-| `raw.quake.usgs`         | `siaga.raw.v1.QuakeReport`      | ingest        | `RAW`    |
-| `raw.weather.bmkg`       | `siaga.raw.v1.WeatherWarning`   | ingest        | `RAW`    |
-| `raw.forecast.bmkg`      | `siaga.raw.v1.RegionForecast`   | ingest        | `RAW`    |
-| `hazard.<jenis>.created` | `siaga.hazard.v1.HazardCreated` | geo-processor | `HAZARD` |
-| `hazard.<jenis>.updated` | `siaga.hazard.v1.HazardUpdated` | geo-processor | `HAZARD` |
-| `hazard.<jenis>.expired` | `siaga.hazard.v1.HazardExpired` | geo-processor | `HAZARD` |
-| `dlq.<layanan>`          | payload asli, apa adanya        | konsumen      | `DLQ`    |
+| Subjek                   | Pesan                                 | Penerbit      | Stream   |
+| ------------------------ | ------------------------------------- | ------------- | -------- |
+| `raw.quake.bmkg`         | `siaga.raw.v1.QuakeReport`            | ingest        | `RAW`    |
+| `raw.quake.usgs`         | `siaga.raw.v1.QuakeReport`            | ingest        | `RAW`    |
+| `raw.weather.bmkg`       | `siaga.raw.v1.WeatherWarning`         | ingest        | `RAW`    |
+| `raw.forecast.bmkg`      | `siaga.raw.v1.RegionForecast`         | ingest        | `RAW`    |
+| `raw.forecast.openmeteo` | `siaga.raw.v1.GridWeatherForecast`    | ingest        | `RAW`    |
+| `raw.aq.openmeteo`       | `siaga.raw.v1.AirQualityForecast`     | ingest        | `RAW`    |
+| `raw.flood.openmeteo`    | `siaga.raw.v1.RiverDischargeForecast` | ingest        | `RAW`    |
+| `hazard.<jenis>.created` | `siaga.hazard.v1.HazardCreated`       | geo-processor | `HAZARD` |
+| `hazard.<jenis>.updated` | `siaga.hazard.v1.HazardUpdated`       | geo-processor | `HAZARD` |
+| `hazard.<jenis>.expired` | `siaga.hazard.v1.HazardExpired`       | geo-processor | `HAZARD` |
+| `dlq.<layanan>`          | payload asli, apa adanya              | konsumen      | `DLQ`    |
 
-`<jenis>`: `quake`, `weather`, `flood`, `fire`, `aq`. Subjek `raw.<jenis>.<sumber>` untuk banjir, udara, dan titik api ditambahkan di fase 1d; `aq.*`, `report.*`, `notify.*` di fase 3–4.
+`<jenis>`: `quake`, `weather`, `flood`, `fire`, `aq`. Subjek raw OpenAQ (`raw.aq.openaq`) dan NASA FIRMS (`raw.fire.firms`) ditambahkan di fase 1d-2; `aq.*`, `report.*`, `notify.*` di fase 3–4.
 
 ## Event raw
 
@@ -55,6 +62,7 @@ Event `raw.*` adalah satu record dari satu feed sumber, sudah divalidasi dan wak
 - **ID kejadian BMKG** adalah waktu kejadian UTC `YYYYMMDDhhmmss`, karena BMKG tidak menerbitkan ID. Nilainya sama di `autogempa`, `gempaterkini`, dan `gempadirasakan`, jadi geo-processor bisa menggabungkan ketiganya.
 - **Peringatan cuaca** (`raw.weather.bmkg`): satu event per pesan CAP BMKG (Alert, Update, Cancel) dengan teks bahasa Indonesia wajib dan bahasa Inggris bila tersedia; ID record = identifier CAP. Hanya provinsi di `INGEST_CAP_PROVINCES` (default `32`) yang diambil; pesan latihan, uji, draft, `Ack`, dan `Error` tidak diteruskan. Terjemahan yang datang belakangan terbit ulang sebagai revisi (ADR 0009).
 - **Prakiraan cuaca** (`raw.forecast.bmkg`): satu event per kelurahan/desa (kode adm4) berisi 20 langkah per 3 jam; ID record = kode adm4. Hanya prakiraan yang isinya berubah yang terbit.
+- **Keluaran model grid Open-Meteo** (`raw.forecast.openmeteo`, `raw.aq.openmeteo`, `raw.flood.openmeteo`): satu event per titik pantau (`site.id` = `grid:<lintang>:<bujur>` atau `river:<slug>`), berisi semua langkah jendela yang diminta (cuaca dan udara per jam dari 00.00 UTC hari ini sampai +3 hari, debit harian 4 hari lalu sampai +9 hari). `site.cell` adalah pusat sel model yang dijawab sumber; field kosong berarti model tidak memberi nilai. Hanya titik yang isinya berubah yang terbit; waktu terbit keluaran di `ts.*` adalah `meta.fetched_at` (ADR 0011, 0012).
 - **USGS** hanya diteruskan untuk gempa di kotak Indonesia (lintang −12..7, bujur 94..142). Flag `tsunami` USGS tidak dipakai karena bukan peringatan.
 
 ## Event hazard

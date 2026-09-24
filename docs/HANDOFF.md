@@ -2,45 +2,53 @@
 
 Dokumen ini adalah titik lanjut untuk sesi kerja berikutnya, termasuk chat baru dengan asisten AI. Perbarui setiap akhir sesi.
 
-## Status: Fase 1c selesai di workspace asisten, menunggu verifikasi di WSL (2026-09-24)
+## Status: Fase 1d-1 selesai di workspace asisten, menunggu verifikasi di WSL (2026-09-24)
 
-Fase 0 dan 1a terverifikasi. Fase 1b terverifikasi di WSL dan CI (hijau setelah `2108fd5`). Irisan 1c sudah ditulis, di-lint, dan dites di workspace asisten, termasuk uji integrasi PostgreSQL + PostGIS, uji ujung ke ujung dengan JetStream, dan replay ingest → NATS 2.11.9 → geo-processor dengan server BMKG tiruan; belum dijalankan di WSL dan CI.
+Fase 0, 1a, 1b terverifikasi di WSL dan CI. Fase 1c diterapkan dan diuji di WSL lewat skrip titipan (`bfd3099`); status CI-nya belum dicek asisten. Irisan 1d-1 sudah ditulis, di-lint, dan dites di workspace asisten, termasuk uji integrasi PostgreSQL 16 + PostGIS 3.4 + TimescaleDB 2.30.1, uji ujung ke ujung dengan JetStream, dan replay ingest → NATS 2.11.9 → geo-processor dengan server Open-Meteo dan BMKG tiruan dari rekaman asli; belum dijalankan di WSL dan CI.
 
-### Fase 1c: peringatan dini cuaca (CAP) dan prakiraan adm4
+Fase 1d dipecah dua: **1d-1** Open-Meteo (tanpa key) dan schema `ts`; **1d-2** OpenAQ dan NASA FIRMS (butuh key gratis).
 
-| Bagian              | Isi                                                                                                                                                                                                                                                                                               | Terverifikasi di workspace asisten                                                                                                                                                 |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Kontrak             | `siaga.raw.v1.WeatherWarning` (CAP 1.2 lengkap) dan `RegionForecast` (20 langkah per 3 jam), subjek `raw.weather.bmkg`, `raw.forecast.bmkg`; `WeatherWarningDetail` diperluas (teks Inggris, msgType, area, jumlah pesan)                                                                         | buf lint, buf breaking terhadap `2108fd5`, generate Go + TS identik, test TS                                                                                                       |
-| Ingest              | Konektor `bmkg-cap` (RSS → dokumen CAP id + en, saring provinsi dari ID, terjemahan susulan sebagai revisi), sapuan `bmkg-prakiraan` (5.957 desa, zona fokus dulu, ETag, jeda saat gagal beruntun), jalur prioritas rendah `ReserveLow` di anggaran BMKG, daftar adm4 tersemat (`make adm4-list`) | Coverage domain + app 92–100%; fuzz `FuzzPriorityHeadroom`, `FuzzOrder`, `FuzzParseReferences`, `FuzzParseCAPDocuments`, `FuzzParseForecastDocument`; payload asli BMKG 2026-09-24 |
-| Domain `weather`    | Invarian pesan CAP, rantai lewat `references`, ID kejadian dari pendiri rantai, `Derive` (isi, status, tingkat dari severity), wilayah terdampak dengan ambang cakupan                                                                                                                            | Coverage 99,6%; `FuzzDeriveOrderIndependent`                                                                                                                                       |
-| Use case `warnings` | Satu transaksi per pesan + advisory lock, gabung rantai yang tersambung belakangan (termasuk menghidupkan lagi kejadian yang pernah digabung), created → expired untuk peringatan yang sudah lewat, kedaluwarsa tiap 30 detik                                                                     | Coverage 91%; `FuzzServiceOrderIndependent` (menemukan dua bug urutan yang sudah diperbaiki, input regresi disimpan)                                                               |
-| Database            | `00003_hazard_weather.sql`: `hazard.cap_message`, `cap_reference`, `weather`; `event.area` jadi MultiPolygon untuk semua jenis; `impact_region.coverage`                                                                                                                                          | Naik-turun-naik (00002 + 00003) di PostgreSQL 16 + PostGIS 3.4                                                                                                                     |
-| Adapter             | Dekoder `rawweather`, encoder hazard cuaca, `weatherstore` (ST_MakeValid + ST_UnaryUnion, irisan per desa), consumer durable `geo-processor-weather`                                                                                                                                              | Test integrasi `TestWeatherStoreLifecycle`; `TestEndToEnd` kini juga menguji `raw.weather.*` → `hazard.weather.created/expired`                                                    |
-| Repo                | ADR 0009–0010, `docs/events.md`, `make adm4-list`, target fuzz baru di `make fuzz` dan CI (nama target di-anchor `^…$` karena paket `bmkg` kini punya tiga target berawalan `FuzzParse`)                                                                                                          | —                                                                                                                                                                                  |
+### Fase 1d-1: Open-Meteo dan deret waktu `ts.*`
 
-Replay lengkap di workspace asisten: RSS asli 11 peringatan se-Indonesia + rantai CAP sintetis Jawa Barat (Alert Dayeuhkolot → Update Severe Dayeuhkolot + Baleendah → Cancel) disajikan server tiruan. Ingest mengambil hanya dokumen Jawa Barat (id + en), geo-processor membentuk satu kejadian: Waspada, 6 desa Dayeuhkolot (cakupan 0,92–0,98) → Siaga, 17 desa → `retracted`; tiga pesan `hazard.weather.*`, DLQ kosong. Sapuan 6 kode prakiraan: 1 terbit, 5 dicatat 404.
+| Bagian                | Isi                                                                                                                                                                                                                                                 | Terverifikasi di workspace asisten                                                                                        |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Kontrak               | `siaga.raw.v1.ModelSite`, `GridWeatherForecast`, `AirQualityForecast`, `RiverDischargeForecast`; subjek `raw.forecast.openmeteo`, `raw.aq.openmeteo`, `raw.flood.openmeteo`                                                                         | buf lint, buf breaking terhadap `bfd3099`, generate Go + TS identik dengan CI                                             |
+| Ingest                | Konektor `openmeteo-cuaca` (grid 0,25°, per jam), `openmeteo-udara` (CAMS, per jam), `openmeteo-sungai` (GloFAS, 6 jam); satu request untuk semua titik, jendela tanggal UTC tetap; `domain/series` (variabel, satuan, batas); anggaran `openmeteo` | Coverage domain + app 95–100%; `FuzzParse` (openmeteo); payload asli 2026-09-24; `TestOpenMeteoQuota` (3.512 lokasi/hari) |
+| Titik pantau          | `make grid-list` (70 simpul dari batas desa, `import-regions -grid-out`), `make river-snap` (sel GloFAS alur utama terdekat, laporan `docs/calibration/titik-sungai.md`), sumber `docs/calibration/titik-sungai-32.csv`                             | `river-snap` dijalankan terhadap rekaman asli sel di sekitar 38 titik                                                     |
+| Domain `series` (geo) | Invarian titik, deret, langkah, urutan ensemble dalam presisi `real`                                                                                                                                                                                | Coverage 99%; `FuzzWeatherValidate`                                                                                       |
+| Database              | `00004_ts_series.sql`: `ts.site`, `ts.series`, hypertable `weather_forecast`, `aq_forecast`, `river_discharge` (columnstore 7 hari, retensi 1 tahun), tampilan `*_current`                                                                          | Naik-turun-naik; `TestSeriesStoreLifecycle`, `TestSeriesConstraints`                                                      |
+| Consumer              | `geo-processor-forecast-bmkg`, `-forecast-openmeteo`, `-aq-openmeteo`, `-flood-openmeteo` → use case `timeseries` → `SeriesStore` (satu transaksi per pesan, `unnest`)                                                                              | `TestEndToEnd` kini juga menguji keempat subjek, pesan ulangan, dan DLQ                                                   |
+| Repo                  | ADR 0011–0012, `docs/events.md`, README, `.env.example`, target fuzz baru di `make fuzz` dan CI                                                                                                                                                     | —                                                                                                                         |
+
+Replay di workspace asisten: ingest `-once` terhadap server tiruan (rekaman Open-Meteo 2026-09-24 dan prakiraan BMKG dari 1c) menerbitkan 70 + 70 + 38 titik Open-Meteo dan 3 desa BMKG (2 kode lain 404); geo-processor menyimpan 6.720 baris cuaca grid, 6.720 baris udara, 532 baris debit, 60 baris prakiraan BMKG, DLQ kosong. 48 dari 70 simpul grid dan 36 dari 38 titik sungai berada di dalam desa `ref.region`.
 
 ### Verifikasi yang perlu dijalankan di WSL
 
 ```bash
 make deps              # go.sum ingest/geo-processor (patch tidak membawa go.sum)
 make check             # lint + test semua modul
-make up migrate        # migrasi 00003
-make test-integration  # termasuk TestWeatherStoreLifecycle dan TestEndToEnd (gempa + cuaca)
-make fuzz              # opsional, ±10 menit (20 target × 30 detik)
-make adm4-list         # harus tanpa diff di services/ingest/internal/adapters/regionlist/data/adm4_32.txt
-make ingest            # terminal 1; peringatan Jawa Barat biasanya muncul sore–malam
-make geo               # terminal 2; cek http://127.0.0.1:8082/status bagian weather_consumer
+make up migrate        # migrasi 00004 (butuh TimescaleDB di image, sudah ada sejak fase 0)
+make test-integration  # termasuk TestSeriesStoreLifecycle dan TestEndToEnd (gempa + cuaca + deret waktu)
+make fuzz              # opsional, ±12 menit (23 target × 30 detik)
+make grid-list         # harus tanpa diff di services/ingest/internal/adapters/sitelist/data/grid025_32.txt
+make ingest            # terminal 1
+make geo               # terminal 2; cek http://127.0.0.1:8082/status bagian series_consumers
 ```
 
-Setelah jalan: `psql` → `SELECT e.status, e.level, e.title, w.message_count FROM hazard.event e JOIN hazard.weather w ON w.event_id = e.id ORDER BY e.detected_at DESC LIMIT 10;` dan kemajuan sapuan prakiraan di http://127.0.0.1:8081/status bagian `sweeps`.
+Setelah jalan beberapa menit: `psql` → `SELECT dataset, model, count(*), max(last_fetched_at) FROM ts.series GROUP BY 1, 2;` (harus ada `weather/best_match` 70, `air_quality/cams_global` 70, `discharge/glofas_v4` 38, dan `weather/bmkg` bertambah sejalan sapuan prakiraan). Consumer `geo-processor-forecast-bmkg` membaca stream `RAW` dari awal, jadi prakiraan BMKG yang sudah terbit sejak 1c langsung tersimpan.
 
 ### Temuan yang perlu ditindaklanjuti
 
-- **Belum ada rekaman CAP Jawa Barat asli.** Saat direkam (2026-09-24 siang) tidak ada peringatan untuk Jawa Barat; uji Update/Cancel memakai dokumen sintetis. Rekam dengan `make ingest-record` saat ada peringatan Jawa Barat, lalu simpan satu rantai sebagai fixture.
-- **Ambang cakupan `WEATHER_MIN_COVERAGE` 0,1** belum dikalibrasi; butuh arsip CAP Jawa Barat (fase 1e), bandingkan daftar kecamatan di teks BMKG dengan desa yang lolos ambang.
-- **Kode adm4 yang tidak dikenal BMKG**: dari replay belum bisa dinilai (server tiruan). Setelah sapuan penuh pertama di WSL, cek `not_found` dan `not_found_sample` di `/status`; bila banyak, BMKG memakai versi kode Kemendagri yang berbeda dari `ref.region`.
-- **Rumus radius dirasakan PRD** dan **recall deduplikasi 98,5%** (dari 1b) masih terbuka, menunggu arsip fase 1e.
+- **17 dari 38 titik sungai perlu diperiksa manual** (tanda di `docs/calibration/titik-sungai.md`). Koordinat awal adalah perkiraan dari nama lokasi, dan debit musim kemarau kecil membuat alur utama sulit dibedakan (misal Cikeas dan Ciliwung di Depok memakai sel yang sama, dan beberapa titik muara jatuh di sel yang debitnya lebih kecil dari titik hulunya). Cara: buka sel di peta OSM, tulis koordinat sel yang benar di `docs/calibration/titik-sungai-32.csv` dengan radius 0 dan catatan asal verifikasinya, lalu `make river-snap`. Titik bertanda belum boleh dipakai untuk ambang banjir.
+- **Batas Open-Meteo 600/menit dihitung per lokasi.** Rekaman pertama kena HTTP 429 tanpa `Retry-After`. Polling rutin memakai 178 lokasi sekaligus; `river-snap` membatasi diri 400 lokasi/menit. Jangan menjalankan `river-snap` dua kali bersamaan.
+- **Ambang banjir belum ada.** Persentil reanalisis GloFAS 1984–2022 butuh ±1.000 panggilan per titik (±38.000 total), jadi harus dicicil beberapa hari dalam kuota 10.000/hari; masuk fase 1e bersama arsip dan kalibrasi. `hazard.flood.*` belum diterbitkan.
+- **Grid 70 simpul**, bukan ±120 seperti perkiraan dokumen arsitektur: hanya sel yang menyentuh desa Jawa Barat.
+- **CAMS global** memberi PM2,5 ±135 µg/m³ di Bandung pada 00 UTC rekaman; wajar sebagai model mentah, bahan koreksi bias fase 4.
+- Temuan 1c masih terbuka: rekaman CAP Jawa Barat asli, kalibrasi `WEATHER_MIN_COVERAGE`, cek `not_found` sapuan prakiraan BMKG; dari 1b: rumus radius dirasakan dan recall deduplikasi 98,5%.
+
+### Fase 1c: peringatan dini cuaca (CAP) dan prakiraan adm4
+
+Konektor `bmkg-cap` (RSS → CAP id + en) dan sapuan `bmkg-prakiraan` (5.957 desa, jalur prioritas rendah di anggaran BMKG), kejadian `weather` dari rantai pesan CAP dengan wilayah terdampak dari irisan poligon, `hazard.weather.created|updated|expired` (ADR 0009–0010).
 
 ### Fase 1b: geo-processor gempa
 
@@ -72,7 +80,7 @@ Kontrak `siaga.raw.v1`, stream `RAW`/`HAZARD`, layanan ingest dengan konektor BM
 
 ## Utang kecil yang diketahui
 
-- Compose lite memakai `nats:2.11-alpine`, sedangkan test memakai server 2.15 dalam proses. Replay 1c sudah dijalankan dengan binary `nats-server` 2.11.9 tanpa masalah; naikkan image saat Renovate aktif.
+- Compose lite memakai `nats:2.11-alpine`, sedangkan test memakai server 2.15 dalam proses. Replay 1c dan 1d-1 sudah dijalankan dengan binary `nats-server` 2.11.9 tanpa masalah; naikkan image saat Renovate aktif.
 - ingest dan geo-processor belum punya Dockerfile dan manifest Kubernetes; dijalankan lewat `make ingest` dan `make geo`. Ditambahkan di fase 1e bersama Garage dan OpenTelemetry.
 - `/status` geo-processor menampilkan ambang dengan durasi dalam nanodetik (JSON bawaan `time.Duration`). Kosmetik; rapikan saat dashboard Grafana dibuat.
 - Renovate sudah dikonfigurasi (`renovate.json`) tetapi GitHub App Renovate belum dipasang di repo.
@@ -87,8 +95,9 @@ Target demo fase 1: dashboard Grafana berisi data live semua sumber.
 - [x] **1a** Kontrak `raw.*`, stream `RAW`/`HAZARD`, ingest dengan konektor gempa BMKG + USGS, perekam payload.
 - [x] **1b** geo-processor gempa: consumer durable + DLQ, deduplikasi BMKG–USGS terkalibrasi (ADR 0007–0008), `hazard.event`/`event_source`/`impact_region`/`outbox`, wilayah terdampak, `hazard.quake.created|updated|expired`.
 - [x] **1c** BMKG CAP nowcast (RSS + dokumen CAP id/en) dan sapuan prakiraan adm4 (5.957 desa, jalur prioritas rendah 50/menit di anggaran BMKG) (ADR 0009). geo-processor: kejadian `weather` dari rantai pesan CAP, wilayah terdampak dari irisan poligon (ADR 0010).
-- [ ] **1d** Open-Meteo (cuaca grid 0,25°, kualitas udara, banjir 38 titik), OpenAQ, NASA FIRMS (key gratis lewat SOPS), hypertable `ts.*`, termasuk consumer `raw.forecast.>` → `ts.weather_forecast` (prakiraan BMKG sudah terbit sejak 1c).
-- [ ] **1e** Arsip ke Garage, uji replay dari arsip (termasuk set berlabel untuk T4 dan kalibrasi radius dirasakan), OpenTelemetry (trace ID di header `traceparent`) + dashboard Grafana Cloud, Dockerfile + manifest ingest dan geo-processor.
+- [x] **1d-1** Open-Meteo (cuaca grid 0,25°, kualitas udara CAMS, debit GloFAS 38 titik) dan schema `ts` (`site`, `series`, hypertable `weather_forecast`, `aq_forecast`, `river_discharge`), consumer `raw.forecast.bmkg` → `ts.weather_forecast` (ADR 0011–0012).
+- [ ] **1d-2** OpenAQ v3 (sensor dalam kotak Jawa Barat tiap 15 menit, `X-API-Key`) → `raw.aq.openaq` → `ts.aq_observation`; NASA FIRMS (VIIRS/MODIS NRT, satu kotak tiap 30 menit, MAP_KEY) → `raw.fire.firms` → `ts.hotspot`. Key gratis disimpan di `.env` (lokal) dan SOPS (produksi); ingest menolak jalan tanpa key hanya untuk konektor itu.
+- [ ] **1e** Arsip ke Garage, uji replay dari arsip (termasuk set berlabel untuk T4 dan kalibrasi radius dirasakan), OpenTelemetry (trace ID di header `traceparent`) + dashboard Grafana Cloud, Dockerfile + manifest ingest dan geo-processor, backfill reanalisis GloFAS untuk ambang persentil banjir.
 
 Titik pantau sungai (38 titik GloFAS + 7 sub-DAS indeks hujan) dan aturan tingkat peringatan ada di PRD, bagian Sungai yang dipantau dan Aturan bisnis.
 
@@ -102,7 +111,8 @@ Workspace cloud asisten tidak bisa menjangkau `proxy.golang.org`, `go.dev`, atau
 - Modul Go dengan path non-GitHub (`golang.org/x/*`, `google.golang.org/protobuf`) diganti lewat `replace` di file `go.work` sementara di luar repo (`GOWORK=...`), menunjuk clone mirror GitHub-nya; modul yang tidak dikompilasi cukup diberi `go.mod` kosong. `GOPROXY=direct GOSUMDB=off`.
 - golangci-lint 2.13.2 di-build dari source dengan cara yang sama (linter `decorder` dibuang karena hostnya GitLab; tidak dipakai config SIAGA).
 - `protoc-gen-go` v1.36.10 di-build dari mirror, dipakai lewat template `buf.gen.yaml` sementara; hasil generate identik dengan CI.
-- PostgreSQL 16 + PostGIS 3.4 dari apt untuk test integrasi (tanpa TimescaleDB/h3/pgvector; migrasi gempa dan cuaca tidak memakainya).
+- PostgreSQL 16 + PostGIS 3.4 dari apt untuk test integrasi; TimescaleDB 2.30.1 di-build dari tag GitHub (`./bootstrap -DREGRESS_CHECKS=OFF -DTAP_CHECKS=OFF`, lalu `make install`) karena repo packagecloud tidak terjangkau. Tanpa h3/pgvector (belum dipakai migrasi).
+- Open-Meteo juga tidak terjangkau dari workspace maupun shell desktop app; rekaman asli diambil pengguna dari WSL dengan skrip titipan, lalu diputar lewat server tiruan Python.
 - Host BMKG (`www.bmkg.go.id`, `api.bmkg.go.id`) tidak selalu terjangkau dari workspace; replay memakai server tiruan (`BMKG_CAP_BASE_URL`, `BMKG_FORECAST_URL`) dan binary `nats-server` dari rilis GitHub.
 - Menjalankan skrip pihak ketiga yang diunduh (misal `extract_tsv.py` repo-gempa) ditolak kebijakan workspace; pakai data yang sudah jadi.
 
