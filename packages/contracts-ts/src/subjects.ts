@@ -11,8 +11,11 @@ const kindToken: Record<Exclude<HazardKind, HazardKind.UNSPECIFIED>, string> = {
 
 type Transition = "created" | "updated" | "expired";
 
-/** Potongan subjek untuk data raw dari ingest. Harus sama dengan libs/go/contracts/streams. */
-export type RawKind = "quake" | "weather" | "flood" | "fire" | "aq";
+/**
+ * Potongan subjek untuk data raw dari ingest. Harus sama dengan libs/go/contracts/streams.
+ * `forecast` hanya ada di raw: prakiraan bukan kejadian bahaya.
+ */
+export type RawKind = "quake" | "weather" | "flood" | "fire" | "aq" | "forecast";
 export type RawSource = "bmkg" | "usgs" | "openmeteo" | "openaq" | "firms";
 
 /** Pembentuk nama subjek NATS. */

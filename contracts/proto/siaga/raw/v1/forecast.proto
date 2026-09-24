@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+package siaga.raw.v1;
+
+import "google/protobuf/timestamp.proto";
+import "siaga/common/v1/geo.proto";
+import "siaga/hazard/v1/hazard.proto";
+import "siaga/raw/v1/fetch.proto";
+
+// Prakiraan cuaca satu kelurahan/desa (adm4) dari satu sumber, sudah
+// divalidasi dan waktunya UTC. Subjek NATS: raw.forecast.<sumber> (bmkg).
+message RegionForecast {
+  FetchMeta meta = 1;
+  siaga.hazard.v1.Source source = 2;
+  // Kode Kemendagri adm4 bertitik, misal "32.73.01.1001".
+  string region_code = 3;
+  // Nama wilayah menurut sumber, apa adanya.
+  string province = 4;
+  string regency = 5;
+  string district = 6;
+  string village = 7;
+  // Titik acuan prakiraan menurut sumber.
+  siaga.common.v1.Point location = 8;
+  // Waktu analisis model sumber (BMKG analysis_date).
+  google.protobuf.Timestamp analysis_time = 9;
+  // Langkah prakiraan, urut waktu tanpa duplikat.
+  repeated ForecastStep steps = 10;
+}
+
+// Satu langkah prakiraan (BMKG: per 3 jam).
+message ForecastStep {
+  google.protobuf.Timestamp valid_time = 1;
+  double temperature_c = 2;
+  double relative_humidity_pct = 3;
+  double cloud_cover_pct = 4;
+  double precipitation_mm = 5;
+  // Kode cuaca sumber (BMKG: 0 cerah, 1 cerah berawan, ..., 95 hujan petir).
+  int32 weather_code = 6;
+  string weather_desc = 7;
+  string weather_desc_en = 8;
+  double wind_speed_kmh = 9;
+  // Arah asal angin dalam derajat (0 = utara) dan mata angin, misal "NW".
+  double wind_from_deg = 10;
+  string wind_from = 11;
+  // Jarak pandang, bila sumber mengisinya.
+  optional double visibility_m = 12;
+  string visibility_text = 13;
+}

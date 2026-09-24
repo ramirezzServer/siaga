@@ -119,7 +119,7 @@ export enum ExpiryReason {
   UNSPECIFIED = 0,
 
   /**
-   * Masa aktif habis (gempa: 6 jam sejak kejadian).
+   * Masa aktif habis (gempa: 6 jam sejak kejadian; cuaca: waktu expires CAP).
    *
    * @generated from enum value: EXPIRY_REASON_ELAPSED = 1;
    */
@@ -133,7 +133,8 @@ export enum ExpiryReason {
   MERGED = 2,
 
   /**
-   * Semua sumber menarik laporannya (misal USGS menandai "deleted").
+   * Sumber menarik laporannya: USGS menandai "deleted", atau BMKG
+   * menerbitkan CAP Cancel.
    *
    * @generated from enum value: EXPIRY_REASON_RETRACTED = 3;
    */

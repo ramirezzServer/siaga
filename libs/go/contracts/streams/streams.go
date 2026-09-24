@@ -74,12 +74,14 @@ var DLQ = Spec{
 type Kind string
 
 // Jenis data. Nilainya sama dengan subjects.ts di @siaga/contracts.
+// KindForecast hanya dipakai untuk data raw (prakiraan bukan kejadian bahaya).
 const (
-	KindQuake   Kind = "quake"
-	KindWeather Kind = "weather"
-	KindFlood   Kind = "flood"
-	KindFire    Kind = "fire"
-	KindAQ      Kind = "aq"
+	KindQuake    Kind = "quake"
+	KindWeather  Kind = "weather"
+	KindFlood    Kind = "flood"
+	KindFire     Kind = "fire"
+	KindAQ       Kind = "aq"
+	KindForecast Kind = "forecast"
 )
 
 // Source adalah potongan subjek untuk sumber data raw.

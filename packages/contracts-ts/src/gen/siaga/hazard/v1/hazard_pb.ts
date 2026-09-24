@@ -14,7 +14,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file siaga/hazard/v1/hazard.proto.
  */
 export const file_siaga_hazard_v1_hazard: GenFile = /*@__PURE__*/
-  fileDesc("ChxzaWFnYS9oYXphcmQvdjEvaGF6YXJkLnByb3RvEg9zaWFnYS5oYXphcmQudjEimgUKBkhhemFyZBIKCgJpZBgBIAEoCRIpCgRraW5kGAIgASgOMhsuc2lhZ2EuaGF6YXJkLnYxLkhhemFyZEtpbmQSKgoFbGV2ZWwYAyABKA4yGy5zaWFnYS5oYXphcmQudjEuQWxlcnRMZXZlbBIvCg5wcmltYXJ5X3NvdXJjZRgEIAEoDjIXLnNpYWdhLmhhemFyZC52MS5Tb3VyY2USFwoPc291cmNlX2V2ZW50X2lkGAUgASgJEi8KC29jY3VycmVkX2F0GAYgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIvCgtkZXRlY3RlZF9hdBgHIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASLgoKZXhwaXJlc19hdBgIIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASKAoIbG9jYXRpb24YCSABKAsyFi5zaWFnYS5jb21tb24udjEuUG9pbnQSFAoMYXJlYV9nZW9qc29uGAogASgJEjQKEGltcGFjdGVkX3JlZ2lvbnMYCyADKAsyGi5zaWFnYS5jb21tb24udjEuUmVnaW9uUmVmEg0KBXRpdGxlGAwgASgJEg8KB3N1bW1hcnkYDSABKAkSDQoFZHJpbGwYDiABKAgSEAoIcmV2aXNpb24YDyABKA0SHQoVaW1wYWN0ZWRfcmVnaW9uX2NvdW50GBAgASgNEjcKCmVhcnRocXVha2UYFCABKAsyIS5zaWFnYS5oYXphcmQudjEuRWFydGhxdWFrZURldGFpbEgAEjgKB3dlYXRoZXIYFSABKAsyJS5zaWFnYS5oYXphcmQudjEuV2VhdGhlcldhcm5pbmdEZXRhaWxIAEIICgZkZXRhaWwi8AEKEEVhcnRocXVha2VEZXRhaWwSEQoJbWFnbml0dWRlGAEgASgBEhAKCGRlcHRoX2ttGAIgASgBEhgKEGZlbHRfZGVzY3JpcHRpb24YAyABKAkSGQoRdHN1bmFtaV9wb3RlbnRpYWwYBCABKAgSFAoMc2hha2VtYXBfdXJsGAUgASgJEjwKFWNvcnJvYm9yYXRpbmdfcmVwb3J0cxgGIAMoCzIdLnNpYWdhLmhhemFyZC52MS5Tb3VyY2VSZXBvcnQSFgoOZmVsdF9yYWRpdXNfa20YByABKAESFgoObWFnbml0dWRlX3R5cGUYCCABKAki5AEKDFNvdXJjZVJlcG9ydBInCgZzb3VyY2UYASABKA4yFy5zaWFnYS5oYXphcmQudjEuU291cmNlEhcKD3NvdXJjZV9ldmVudF9pZBgCIAEoCRIRCgltYWduaXR1ZGUYAyABKAESKAoIbG9jYXRpb24YBCABKAsyFi5zaWFnYS5jb21tb24udjEuUG9pbnQSLwoLb2NjdXJyZWRfYXQYBSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEhAKCGRlcHRoX2ttGAYgASgBEhIKCnNvdXJjZV91cmwYByABKAkiewoUV2VhdGhlcldhcm5pbmdEZXRhaWwSFAoMY2FwX3NldmVyaXR5GAEgASgJEhEKCWNhcF9ldmVudBgCIAEoCRIQCghoZWFkbGluZRgDIAEoCRITCgtkZXNjcmlwdGlvbhgEIAEoCRITCgtpbnN0cnVjdGlvbhgFIAEoCSqsAQoKSGF6YXJkS2luZBIbChdIQVpBUkRfS0lORF9VTlNQRUNJRklFRBAAEhoKFkhBWkFSRF9LSU5EX0VBUlRIUVVBS0UQARIXChNIQVpBUkRfS0lORF9XRUFUSEVSEAISFQoRSEFaQVJEX0tJTkRfRkxPT0QQAxIYChRIQVpBUkRfS0lORF9XSUxERklSRRAEEhsKF0hBWkFSRF9LSU5EX0FJUl9RVUFMSVRZEAUqhwEKCkFsZXJ0TGV2ZWwSGwoXQUxFUlRfTEVWRUxfVU5TUEVDSUZJRUQQABIUChBBTEVSVF9MRVZFTF9JTkZPEAESFwoTQUxFUlRfTEVWRUxfV0FTUEFEQRACEhUKEUFMRVJUX0xFVkVMX1NJQUdBEAMSFgoSQUxFUlRfTEVWRUxfQkFIQVlBEAQqlQEKBlNvdXJjZRIWChJTT1VSQ0VfVU5TUEVDSUZJRUQQABIPCgtTT1VSQ0VfQk1LRxABEg8KC1NPVVJDRV9VU0dTEAISFQoRU09VUkNFX09QRU5fTUVURU8QAxIVChFTT1VSQ0VfTkFTQV9GSVJNUxAEEhEKDVNPVVJDRV9PUEVOQVEQBRIQCgxTT1VSQ0VfRFJJTEwQBkLQAQoTY29tLnNpYWdhLmhhemFyZC52MUILSGF6YXJkUHJvdG9QAVpOZ2l0aHViLmNvbS9yYW1pcmV6elNlcnZlci9zaWFnYS9saWJzL2dvL2NvbnRyYWN0cy9nZW4vc2lhZ2EvaGF6YXJkL3YxO2hhemFyZHYxogIDU0hYqgIPU2lhZ2EuSGF6YXJkLlYxygIPU2lhZ2FcSGF6YXJkXFYx4gIbU2lhZ2FcSGF6YXJkXFYxXEdQQk1ldGFkYXRh6gIRU2lhZ2E6OkhhemFyZDo6VjFiBnByb3RvMw", [file_google_protobuf_timestamp, file_siaga_common_v1_geo]);
+  fileDesc("ChxzaWFnYS9oYXphcmQvdjEvaGF6YXJkLnByb3RvEg9zaWFnYS5oYXphcmQudjEimgUKBkhhemFyZBIKCgJpZBgBIAEoCRIpCgRraW5kGAIgASgOMhsuc2lhZ2EuaGF6YXJkLnYxLkhhemFyZEtpbmQSKgoFbGV2ZWwYAyABKA4yGy5zaWFnYS5oYXphcmQudjEuQWxlcnRMZXZlbBIvCg5wcmltYXJ5X3NvdXJjZRgEIAEoDjIXLnNpYWdhLmhhemFyZC52MS5Tb3VyY2USFwoPc291cmNlX2V2ZW50X2lkGAUgASgJEi8KC29jY3VycmVkX2F0GAYgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIvCgtkZXRlY3RlZF9hdBgHIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASLgoKZXhwaXJlc19hdBgIIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASKAoIbG9jYXRpb24YCSABKAsyFi5zaWFnYS5jb21tb24udjEuUG9pbnQSFAoMYXJlYV9nZW9qc29uGAogASgJEjQKEGltcGFjdGVkX3JlZ2lvbnMYCyADKAsyGi5zaWFnYS5jb21tb24udjEuUmVnaW9uUmVmEg0KBXRpdGxlGAwgASgJEg8KB3N1bW1hcnkYDSABKAkSDQoFZHJpbGwYDiABKAgSEAoIcmV2aXNpb24YDyABKA0SHQoVaW1wYWN0ZWRfcmVnaW9uX2NvdW50GBAgASgNEjcKCmVhcnRocXVha2UYFCABKAsyIS5zaWFnYS5oYXphcmQudjEuRWFydGhxdWFrZURldGFpbEgAEjgKB3dlYXRoZXIYFSABKAsyJS5zaWFnYS5oYXphcmQudjEuV2VhdGhlcldhcm5pbmdEZXRhaWxIAEIICgZkZXRhaWwi8AEKEEVhcnRocXVha2VEZXRhaWwSEQoJbWFnbml0dWRlGAEgASgBEhAKCGRlcHRoX2ttGAIgASgBEhgKEGZlbHRfZGVzY3JpcHRpb24YAyABKAkSGQoRdHN1bmFtaV9wb3RlbnRpYWwYBCABKAgSFAoMc2hha2VtYXBfdXJsGAUgASgJEjwKFWNvcnJvYm9yYXRpbmdfcmVwb3J0cxgGIAMoCzIdLnNpYWdhLmhhemFyZC52MS5Tb3VyY2VSZXBvcnQSFgoOZmVsdF9yYWRpdXNfa20YByABKAESFgoObWFnbml0dWRlX3R5cGUYCCABKAki5AEKDFNvdXJjZVJlcG9ydBInCgZzb3VyY2UYASABKA4yFy5zaWFnYS5oYXphcmQudjEuU291cmNlEhcKD3NvdXJjZV9ldmVudF9pZBgCIAEoCRIRCgltYWduaXR1ZGUYAyABKAESKAoIbG9jYXRpb24YBCABKAsyFi5zaWFnYS5jb21tb24udjEuUG9pbnQSLwoLb2NjdXJyZWRfYXQYBSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEhAKCGRlcHRoX2ttGAYgASgBEhIKCnNvdXJjZV91cmwYByABKAkiqQMKFFdlYXRoZXJXYXJuaW5nRGV0YWlsEhQKDGNhcF9zZXZlcml0eRgBIAEoCRIRCgljYXBfZXZlbnQYAiABKAkSEAoIaGVhZGxpbmUYAyABKAkSEwoLZGVzY3JpcHRpb24YBCABKAkSEwoLaW5zdHJ1Y3Rpb24YBSABKAkSFgoOY2FwX2lkZW50aWZpZXIYBiABKAkSFAoMY2FwX21zZ190eXBlGAcgASgJEhMKC2NhcF91cmdlbmN5GAggASgJEhUKDWNhcF9jZXJ0YWludHkYCSABKAkSFgoOY2FwX2V2ZW50X2NvZGUYCiABKAkSFAoMY2FwX2V2ZW50X2VuGAsgASgJEhMKC2hlYWRsaW5lX2VuGAwgASgJEhYKDmRlc2NyaXB0aW9uX2VuGA0gASgJEhYKDmluc3RydWN0aW9uX2VuGA4gASgJEhEKCWFyZWFfZGVzYxgPIAEoCRIPCgd3ZWJfdXJsGBAgASgJEhIKCnNvdXJjZV91cmwYESABKAkSEAoIYXJlYV9rbTIYEiABKAESFQoNbWVzc2FnZV9jb3VudBgTIAEoDSqsAQoKSGF6YXJkS2luZBIbChdIQVpBUkRfS0lORF9VTlNQRUNJRklFRBAAEhoKFkhBWkFSRF9LSU5EX0VBUlRIUVVBS0UQARIXChNIQVpBUkRfS0lORF9XRUFUSEVSEAISFQoRSEFaQVJEX0tJTkRfRkxPT0QQAxIYChRIQVpBUkRfS0lORF9XSUxERklSRRAEEhsKF0hBWkFSRF9LSU5EX0FJUl9RVUFMSVRZEAUqhwEKCkFsZXJ0TGV2ZWwSGwoXQUxFUlRfTEVWRUxfVU5TUEVDSUZJRUQQABIUChBBTEVSVF9MRVZFTF9JTkZPEAESFwoTQUxFUlRfTEVWRUxfV0FTUEFEQRACEhUKEUFMRVJUX0xFVkVMX1NJQUdBEAMSFgoSQUxFUlRfTEVWRUxfQkFIQVlBEAQqlQEKBlNvdXJjZRIWChJTT1VSQ0VfVU5TUEVDSUZJRUQQABIPCgtTT1VSQ0VfQk1LRxABEg8KC1NPVVJDRV9VU0dTEAISFQoRU09VUkNFX09QRU5fTUVURU8QAxIVChFTT1VSQ0VfTkFTQV9GSVJNUxAEEhEKDVNPVVJDRV9PUEVOQVEQBRIQCgxTT1VSQ0VfRFJJTEwQBkLQAQoTY29tLnNpYWdhLmhhemFyZC52MUILSGF6YXJkUHJvdG9QAVpOZ2l0aHViLmNvbS9yYW1pcmV6elNlcnZlci9zaWFnYS9saWJzL2dvL2NvbnRyYWN0cy9nZW4vc2lhZ2EvaGF6YXJkL3YxO2hhemFyZHYxogIDU0hYqgIPU2lhZ2EuSGF6YXJkLlYxygIPU2lhZ2FcSGF6YXJkXFYx4gIbU2lhZ2FcSGF6YXJkXFYxXEdQQk1ldGFkYXRh6gIRU2lhZ2E6OkhhemFyZDo6VjFiBnByb3RvMw", [file_google_protobuf_timestamp, file_siaga_common_v1_geo]);
 
 /**
  * Kejadian bahaya yang sudah dinormalisasi dan dideduplikasi oleh geo-processor.
@@ -272,7 +272,8 @@ export const SourceReportSchema: GenMessage<SourceReport> = /*@__PURE__*/
   messageDesc(file_siaga_hazard_v1_hazard, 2);
 
 /**
- * Detail peringatan dini cuaca (CAP BMKG).
+ * Detail peringatan dini cuaca (CAP BMKG). Isinya dari pesan CAP terbaru
+ * dalam rantai pembaruan kejadian; area-nya ada di Hazard.area_geojson.
  *
  * @generated from message siaga.hazard.v1.WeatherWarningDetail
  */
@@ -305,6 +306,94 @@ export type WeatherWarningDetail = Message<"siaga.hazard.v1.WeatherWarningDetail
    * @generated from field: string instruction = 5;
    */
   instruction: string;
+
+  /**
+   * ID pesan CAP terbaru (alert/identifier).
+   *
+   * @generated from field: string cap_identifier = 6;
+   */
+  capIdentifier: string;
+
+  /**
+   * Nilai CAP apa adanya: msgType (Alert, Update, Cancel), urgency, certainty.
+   *
+   * @generated from field: string cap_msg_type = 7;
+   */
+  capMsgType: string;
+
+  /**
+   * @generated from field: string cap_urgency = 8;
+   */
+  capUrgency: string;
+
+  /**
+   * @generated from field: string cap_certainty = 9;
+   */
+  capCertainty: string;
+
+  /**
+   * Kode jenis kejadian, misal "OET-194".
+   *
+   * @generated from field: string cap_event_code = 10;
+   */
+  capEventCode: string;
+
+  /**
+   * Teks versi bahasa Inggris dari sumber; kosong bila sumber tidak menyediakan.
+   *
+   * @generated from field: string cap_event_en = 11;
+   */
+  capEventEn: string;
+
+  /**
+   * @generated from field: string headline_en = 12;
+   */
+  headlineEn: string;
+
+  /**
+   * @generated from field: string description_en = 13;
+   */
+  descriptionEn: string;
+
+  /**
+   * @generated from field: string instruction_en = 14;
+   */
+  instructionEn: string;
+
+  /**
+   * Nama area menurut sumber, misal "Jawa Barat".
+   *
+   * @generated from field: string area_desc = 15;
+   */
+  areaDesc: string;
+
+  /**
+   * URL infografis atau halaman peringatan di situs sumber.
+   *
+   * @generated from field: string web_url = 16;
+   */
+  webUrl: string;
+
+  /**
+   * URL dokumen CAP di situs sumber.
+   *
+   * @generated from field: string source_url = 17;
+   */
+  sourceUrl: string;
+
+  /**
+   * Luas area peringatan (km²) setelah poligon digabung dan diperbaiki.
+   *
+   * @generated from field: double area_km2 = 18;
+   */
+  areaKm2: number;
+
+  /**
+   * Jumlah pesan CAP dalam rantai kejadian ini (pesan awal + pembaruan).
+   *
+   * @generated from field: uint32 message_count = 19;
+   */
+  messageCount: number;
 };
 
 /**

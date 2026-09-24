@@ -10,6 +10,9 @@ func TestRawSubject(t *testing.T) {
 	if err != nil || got != "raw.quake.bmkg" {
 		t.Fatalf("RawSubject = %q, %v", got, err)
 	}
+	if got, err := RawSubject(KindForecast, SourceBMKG); err != nil || got != "raw.forecast.bmkg" {
+		t.Fatalf("RawSubject(forecast) = %q, %v", got, err)
+	}
 	for _, bad := range []struct {
 		k Kind
 		s Source

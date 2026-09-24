@@ -630,7 +630,8 @@ func (x *SourceReport) GetSourceUrl() string {
 	return ""
 }
 
-// Detail peringatan dini cuaca (CAP BMKG).
+// Detail peringatan dini cuaca (CAP BMKG). Isinya dari pesan CAP terbaru
+// dalam rantai pembaruan kejadian; area-nya ada di Hazard.area_geojson.
 type WeatherWarningDetail struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Nilai CAP apa adanya: Minor, Moderate, Severe, Extreme.
@@ -638,8 +639,31 @@ type WeatherWarningDetail struct {
 	CapEvent    string `protobuf:"bytes,2,opt,name=cap_event,json=capEvent,proto3" json:"cap_event,omitempty"`
 	Headline    string `protobuf:"bytes,3,opt,name=headline,proto3" json:"headline,omitempty"`
 	// Teks asli BMKG, ditampilkan tanpa diubah.
-	Description   string `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
-	Instruction   string `protobuf:"bytes,5,opt,name=instruction,proto3" json:"instruction,omitempty"`
+	Description string `protobuf:"bytes,4,opt,name=description,proto3" json:"description,omitempty"`
+	Instruction string `protobuf:"bytes,5,opt,name=instruction,proto3" json:"instruction,omitempty"`
+	// ID pesan CAP terbaru (alert/identifier).
+	CapIdentifier string `protobuf:"bytes,6,opt,name=cap_identifier,json=capIdentifier,proto3" json:"cap_identifier,omitempty"`
+	// Nilai CAP apa adanya: msgType (Alert, Update, Cancel), urgency, certainty.
+	CapMsgType   string `protobuf:"bytes,7,opt,name=cap_msg_type,json=capMsgType,proto3" json:"cap_msg_type,omitempty"`
+	CapUrgency   string `protobuf:"bytes,8,opt,name=cap_urgency,json=capUrgency,proto3" json:"cap_urgency,omitempty"`
+	CapCertainty string `protobuf:"bytes,9,opt,name=cap_certainty,json=capCertainty,proto3" json:"cap_certainty,omitempty"`
+	// Kode jenis kejadian, misal "OET-194".
+	CapEventCode string `protobuf:"bytes,10,opt,name=cap_event_code,json=capEventCode,proto3" json:"cap_event_code,omitempty"`
+	// Teks versi bahasa Inggris dari sumber; kosong bila sumber tidak menyediakan.
+	CapEventEn    string `protobuf:"bytes,11,opt,name=cap_event_en,json=capEventEn,proto3" json:"cap_event_en,omitempty"`
+	HeadlineEn    string `protobuf:"bytes,12,opt,name=headline_en,json=headlineEn,proto3" json:"headline_en,omitempty"`
+	DescriptionEn string `protobuf:"bytes,13,opt,name=description_en,json=descriptionEn,proto3" json:"description_en,omitempty"`
+	InstructionEn string `protobuf:"bytes,14,opt,name=instruction_en,json=instructionEn,proto3" json:"instruction_en,omitempty"`
+	// Nama area menurut sumber, misal "Jawa Barat".
+	AreaDesc string `protobuf:"bytes,15,opt,name=area_desc,json=areaDesc,proto3" json:"area_desc,omitempty"`
+	// URL infografis atau halaman peringatan di situs sumber.
+	WebUrl string `protobuf:"bytes,16,opt,name=web_url,json=webUrl,proto3" json:"web_url,omitempty"`
+	// URL dokumen CAP di situs sumber.
+	SourceUrl string `protobuf:"bytes,17,opt,name=source_url,json=sourceUrl,proto3" json:"source_url,omitempty"`
+	// Luas area peringatan (km²) setelah poligon digabung dan diperbaiki.
+	AreaKm2 float64 `protobuf:"fixed64,18,opt,name=area_km2,json=areaKm2,proto3" json:"area_km2,omitempty"`
+	// Jumlah pesan CAP dalam rantai kejadian ini (pesan awal + pembaruan).
+	MessageCount  uint32 `protobuf:"varint,19,opt,name=message_count,json=messageCount,proto3" json:"message_count,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -709,6 +733,104 @@ func (x *WeatherWarningDetail) GetInstruction() string {
 	return ""
 }
 
+func (x *WeatherWarningDetail) GetCapIdentifier() string {
+	if x != nil {
+		return x.CapIdentifier
+	}
+	return ""
+}
+
+func (x *WeatherWarningDetail) GetCapMsgType() string {
+	if x != nil {
+		return x.CapMsgType
+	}
+	return ""
+}
+
+func (x *WeatherWarningDetail) GetCapUrgency() string {
+	if x != nil {
+		return x.CapUrgency
+	}
+	return ""
+}
+
+func (x *WeatherWarningDetail) GetCapCertainty() string {
+	if x != nil {
+		return x.CapCertainty
+	}
+	return ""
+}
+
+func (x *WeatherWarningDetail) GetCapEventCode() string {
+	if x != nil {
+		return x.CapEventCode
+	}
+	return ""
+}
+
+func (x *WeatherWarningDetail) GetCapEventEn() string {
+	if x != nil {
+		return x.CapEventEn
+	}
+	return ""
+}
+
+func (x *WeatherWarningDetail) GetHeadlineEn() string {
+	if x != nil {
+		return x.HeadlineEn
+	}
+	return ""
+}
+
+func (x *WeatherWarningDetail) GetDescriptionEn() string {
+	if x != nil {
+		return x.DescriptionEn
+	}
+	return ""
+}
+
+func (x *WeatherWarningDetail) GetInstructionEn() string {
+	if x != nil {
+		return x.InstructionEn
+	}
+	return ""
+}
+
+func (x *WeatherWarningDetail) GetAreaDesc() string {
+	if x != nil {
+		return x.AreaDesc
+	}
+	return ""
+}
+
+func (x *WeatherWarningDetail) GetWebUrl() string {
+	if x != nil {
+		return x.WebUrl
+	}
+	return ""
+}
+
+func (x *WeatherWarningDetail) GetSourceUrl() string {
+	if x != nil {
+		return x.SourceUrl
+	}
+	return ""
+}
+
+func (x *WeatherWarningDetail) GetAreaKm2() float64 {
+	if x != nil {
+		return x.AreaKm2
+	}
+	return 0
+}
+
+func (x *WeatherWarningDetail) GetMessageCount() uint32 {
+	if x != nil {
+		return x.MessageCount
+	}
+	return 0
+}
+
 var File_siaga_hazard_v1_hazard_proto protoreflect.FileDescriptor
 
 const file_siaga_hazard_v1_hazard_proto_rawDesc = "" +
@@ -758,13 +880,33 @@ const file_siaga_hazard_v1_hazard_proto_rawDesc = "" +
 	"occurredAt\x12\x19\n" +
 	"\bdepth_km\x18\x06 \x01(\x01R\adepthKm\x12\x1d\n" +
 	"\n" +
-	"source_url\x18\a \x01(\tR\tsourceUrl\"\xb6\x01\n" +
+	"source_url\x18\a \x01(\tR\tsourceUrl\"\x91\x05\n" +
 	"\x14WeatherWarningDetail\x12!\n" +
 	"\fcap_severity\x18\x01 \x01(\tR\vcapSeverity\x12\x1b\n" +
 	"\tcap_event\x18\x02 \x01(\tR\bcapEvent\x12\x1a\n" +
 	"\bheadline\x18\x03 \x01(\tR\bheadline\x12 \n" +
 	"\vdescription\x18\x04 \x01(\tR\vdescription\x12 \n" +
-	"\vinstruction\x18\x05 \x01(\tR\vinstruction*\xac\x01\n" +
+	"\vinstruction\x18\x05 \x01(\tR\vinstruction\x12%\n" +
+	"\x0ecap_identifier\x18\x06 \x01(\tR\rcapIdentifier\x12 \n" +
+	"\fcap_msg_type\x18\a \x01(\tR\n" +
+	"capMsgType\x12\x1f\n" +
+	"\vcap_urgency\x18\b \x01(\tR\n" +
+	"capUrgency\x12#\n" +
+	"\rcap_certainty\x18\t \x01(\tR\fcapCertainty\x12$\n" +
+	"\x0ecap_event_code\x18\n" +
+	" \x01(\tR\fcapEventCode\x12 \n" +
+	"\fcap_event_en\x18\v \x01(\tR\n" +
+	"capEventEn\x12\x1f\n" +
+	"\vheadline_en\x18\f \x01(\tR\n" +
+	"headlineEn\x12%\n" +
+	"\x0edescription_en\x18\r \x01(\tR\rdescriptionEn\x12%\n" +
+	"\x0einstruction_en\x18\x0e \x01(\tR\rinstructionEn\x12\x1b\n" +
+	"\tarea_desc\x18\x0f \x01(\tR\bareaDesc\x12\x17\n" +
+	"\aweb_url\x18\x10 \x01(\tR\x06webUrl\x12\x1d\n" +
+	"\n" +
+	"source_url\x18\x11 \x01(\tR\tsourceUrl\x12\x19\n" +
+	"\barea_km2\x18\x12 \x01(\x01R\aareaKm2\x12#\n" +
+	"\rmessage_count\x18\x13 \x01(\rR\fmessageCount*\xac\x01\n" +
 	"\n" +
 	"HazardKind\x12\x1b\n" +
 	"\x17HAZARD_KIND_UNSPECIFIED\x10\x00\x12\x1a\n" +

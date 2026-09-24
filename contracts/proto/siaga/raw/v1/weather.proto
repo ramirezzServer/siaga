@@ -1,0 +1,132 @@
+syntax = "proto3";
+
+package siaga.raw.v1;
+
+import "google/protobuf/timestamp.proto";
+import "siaga/common/v1/geo.proto";
+import "siaga/hazard/v1/hazard.proto";
+import "siaga/raw/v1/fetch.proto";
+
+// Status pesan CAP 1.2 (elemen alert/status).
+enum CapStatus {
+  CAP_STATUS_UNSPECIFIED = 0;
+  CAP_STATUS_ACTUAL = 1;
+  CAP_STATUS_EXERCISE = 2;
+  CAP_STATUS_SYSTEM = 3;
+  CAP_STATUS_TEST = 4;
+  CAP_STATUS_DRAFT = 5;
+}
+
+// Jenis pesan CAP 1.2 (elemen alert/msgType).
+enum CapMsgType {
+  CAP_MSG_TYPE_UNSPECIFIED = 0;
+  // Peringatan baru.
+  CAP_MSG_TYPE_ALERT = 1;
+  // Menggantikan pesan di references.
+  CAP_MSG_TYPE_UPDATE = 2;
+  // Membatalkan pesan di references.
+  CAP_MSG_TYPE_CANCEL = 3;
+  CAP_MSG_TYPE_ACK = 4;
+  CAP_MSG_TYPE_ERROR = 5;
+}
+
+// Keparahan CAP (info/severity). Menentukan tingkat peringatan SIAGA
+// (PRD, Aturan bisnis: Minor = Info, Moderate = Waspada, Severe = Siaga, Extreme = Bahaya).
+enum CapSeverity {
+  CAP_SEVERITY_UNSPECIFIED = 0;
+  CAP_SEVERITY_EXTREME = 1;
+  CAP_SEVERITY_SEVERE = 2;
+  CAP_SEVERITY_MODERATE = 3;
+  CAP_SEVERITY_MINOR = 4;
+  CAP_SEVERITY_UNKNOWN = 5;
+}
+
+// Urgensi CAP (info/urgency).
+enum CapUrgency {
+  CAP_URGENCY_UNSPECIFIED = 0;
+  CAP_URGENCY_IMMEDIATE = 1;
+  CAP_URGENCY_EXPECTED = 2;
+  CAP_URGENCY_FUTURE = 3;
+  CAP_URGENCY_PAST = 4;
+  CAP_URGENCY_UNKNOWN = 5;
+}
+
+// Kepastian CAP (info/certainty).
+enum CapCertainty {
+  CAP_CERTAINTY_UNSPECIFIED = 0;
+  CAP_CERTAINTY_OBSERVED = 1;
+  CAP_CERTAINTY_LIKELY = 2;
+  CAP_CERTAINTY_POSSIBLE = 3;
+  CAP_CERTAINTY_UNLIKELY = 4;
+  CAP_CERTAINTY_UNKNOWN = 5;
+}
+
+// Rujukan ke pesan CAP sebelumnya (elemen references: "sender,identifier,sent").
+message CapReference {
+  string sender = 1;
+  string identifier = 2;
+  google.protobuf.Timestamp sent = 3;
+}
+
+// Satu cincin poligon. Titik pertama sama dengan titik terakhir (CAP 1.2).
+message Ring {
+  repeated siaga.common.v1.Point points = 1;
+}
+
+// Satu elemen info/area CAP.
+message CapArea {
+  // Nama wilayah apa adanya dari sumber, misal "Jawa Barat".
+  string area_desc = 1;
+  // Poligon area. BMKG menulis satu poligon per kecamatan; poligon boleh
+  // bertumpuk atau bersinggungan dan belum tentu valid secara OGC.
+  repeated Ring polygons = 2;
+}
+
+// Teks peringatan dalam satu bahasa, apa adanya dari sumber.
+message CapText {
+  // Kode bahasa CAP, misal "id" atau "en".
+  string language = 1;
+  string event = 2;
+  string headline = 3;
+  string description = 4;
+  string instruction = 5;
+  string sender_name = 6;
+}
+
+// Satu pesan CAP peringatan dini cuaca, sudah divalidasi dan waktunya UTC,
+// tetapi belum dikaitkan dengan wilayah atau pesan lain.
+// Subjek NATS: raw.weather.<sumber> (bmkg).
+message WeatherWarning {
+  FetchMeta meta = 1;
+  siaga.hazard.v1.Source source = 2;
+  // ID pesan CAP (alert/identifier), unik per pesan. BMKG memakai OID WMO,
+  // misal "2.49.0.1.360.0.2026.09.24.07.32.001".
+  string identifier = 3;
+  string sender = 4;
+  google.protobuf.Timestamp sent = 5;
+  CapStatus status = 6;
+  CapMsgType msg_type = 7;
+  // Pesan yang digantikan atau dibatalkan (untuk UPDATE dan CANCEL).
+  repeated CapReference references = 8;
+  // Kategori CAP, misal "Met".
+  string category = 9;
+  // Kode jenis kejadian, misal "OET-194" (OASIS Event Terms).
+  string event_code = 10;
+  CapUrgency urgency = 11;
+  CapSeverity severity = 12;
+  CapCertainty certainty = 13;
+  // Mulai berlaku. Sama dengan sent bila sumber tidak mengisinya.
+  google.protobuf.Timestamp effective = 14;
+  // Perkiraan mulai kejadian, bila sumber mengisinya.
+  google.protobuf.Timestamp onset = 15;
+  google.protobuf.Timestamp expires = 16;
+  // Teks per bahasa, urut kode bahasa; bahasa Indonesia selalu ada. Teks
+  // bahasa Inggris bisa menyusul di revisi berikutnya bila sempat gagal diambil.
+  repeated CapText texts = 17;
+  // URL infografis atau halaman peringatan di situs sumber.
+  string web = 18;
+  string contact = 19;
+  repeated CapArea areas = 20;
+  // URL dokumen CAP bahasa Indonesia di situs sumber.
+  string source_url = 21;
+}

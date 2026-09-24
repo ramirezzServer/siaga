@@ -19,11 +19,12 @@ message HazardUpdated {
 // Alasan kejadian tidak aktif lagi.
 enum ExpiryReason {
   EXPIRY_REASON_UNSPECIFIED = 0;
-  // Masa aktif habis (gempa: 6 jam sejak kejadian).
+  // Masa aktif habis (gempa: 6 jam sejak kejadian; cuaca: waktu expires CAP).
   EXPIRY_REASON_ELAPSED = 1;
   // Ternyata kejadian yang sama dengan kejadian lain; lihat merged_into_hazard_id.
   EXPIRY_REASON_MERGED = 2;
-  // Semua sumber menarik laporannya (misal USGS menandai "deleted").
+  // Sumber menarik laporannya: USGS menandai "deleted", atau BMKG
+  // menerbitkan CAP Cancel.
   EXPIRY_REASON_RETRACTED = 3;
 }
 
