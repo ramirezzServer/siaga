@@ -82,13 +82,26 @@ regions-import: regions-fetch ## Import batas wilayah ke ref.region
 seed: migrate regions-import ## Migrasi + import wilayah
 
 ##@ Pipa data
-.PHONY: ingest ingest-record
+.PHONY: ingest ingest-record geo calibrate-dedup
 ingest: ## Jalankan ingest (butuh `make up`); status di http://127.0.0.1:8081/status
 	cd services/ingest && INGEST_ARCHIVE_DIR="$(INGEST_ARCHIVE_DIR)" go run ./cmd/ingest
 
 ingest-record: ## Rekam payload semua sumber sekali ke arsip, tanpa NATS
 	cd services/ingest && INGEST_ARCHIVE_DIR="$(INGEST_ARCHIVE_DIR)" go run ./cmd/ingest -once -publish=false
 	@echo "Arsip: $(INGEST_ARCHIVE_DIR)"
+
+geo: ## Jalankan geo-processor (butuh `make up seed`); status di http://127.0.0.1:8082/status
+	@echo "geo-processor ($(GEO_DATABASE_URL_SAFE))"
+	@cd services/geo-processor && DATABASE_URL="$(GEO_DATABASE_URL)" go run ./cmd/geo-processor
+
+CALIBRATION_DIR ?= $(CURDIR)/.cache/calibration
+calibrate-dedup: ## Ukur ambang deduplikasi gempa dengan katalog BMKG + USGS historis
+	scripts/fetch-calibration-data.sh
+	cd services/geo-processor && go run ./cmd/calibrate-dedup \
+	  -bmkg $(CALIBRATION_DIR)/bmkg/katalog_gempa/katalog_gempa.csv \
+	  -usgs $(CALIBRATION_DIR)/usgs/rawdata/query_2008_2015.csv,$(CALIBRATION_DIR)/usgs/rawdata/query_2016_2023.csv \
+	  -out ../../docs/calibration/dedup-gempa.md
+	pnpm exec prettier --write --log-level warn docs/calibration/dedup-gempa.md
 
 ##@ Kualitas
 .PHONY: gen lint lint-go test test-go test-integration fuzz check
@@ -110,9 +123,9 @@ test: test-go ## Semua unit test
 test-go:
 	@for m in $(GO_MODULES); do (cd $$m && go test -race -count=1 -cover ./...); done
 
-test-integration: ## Test integrasi (butuh `make up migrate`)
+test-integration: ## Test integrasi (butuh `make up migrate`; paket dijalankan berurutan karena berbagi database)
 	@echo "test integrasi geo-processor ($(GEO_DATABASE_URL_SAFE))"
-	@cd services/geo-processor && SIAGA_TEST_DATABASE_URL="$(GEO_DATABASE_URL)" go test -race -count=1 -tags integration ./...
+	@cd services/geo-processor && SIAGA_TEST_DATABASE_URL="$(GEO_DATABASE_URL)" go test -race -count=1 -p 1 -tags integration ./...
 
 fuzz: ## Fuzzing singkat semua target fuzz (30 detik per target)
 	@cd services/geo-processor && for t in FuzzParseCode FuzzParseLatLngPath; do go test ./internal/domain/region -run=^$$ -fuzz=$$t -fuzztime=30s; done
@@ -120,6 +133,8 @@ fuzz: ## Fuzzing singkat semua target fuzz (30 detik per target)
 	@cd services/ingest && go test ./internal/domain/ratelimit -run=^$$ -fuzz=FuzzWindowBound -fuzztime=30s
 	@cd services/ingest && go test ./internal/domain/schedule -run=^$$ -fuzz=FuzzNextBounds -fuzztime=30s
 	@cd services/ingest && for p in bmkg usgs; do go test ./internal/adapters/$$p -run=^$$ -fuzz=FuzzParse -fuzztime=30s; done
+	@cd services/geo-processor && for t in FuzzClusteringOrderIndependent FuzzClusteringInvariantsUnderCrowding FuzzApplyOrderIndependent FuzzLevelMonotone FuzzRuleMatchSymmetric; do go test ./internal/domain/quake -run=^$$ -fuzz=^$$t$$ -fuzztime=30s; done
+	@cd services/geo-processor && go test ./internal/app/quakes -run=^$$ -fuzz=FuzzServiceOrderIndependent -fuzztime=30s
 
 check: lint test ## Semua pemeriksaan sebelum push
 

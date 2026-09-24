@@ -20,6 +20,11 @@ linters:
           arguments: [disableStutteringCheck]
   exclusions:
     presets: [std-error-handling]
+    rules:
+      # Property test sengaja memakai RNG berbenih agar kasus gagal bisa diulang persis.
+      - path: _test\.go
+        linters: [gosec]
+        text: G404
 formatters:
   enable:
     - gofumpt

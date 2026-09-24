@@ -85,6 +85,10 @@ jobs:
           go test ./internal/domain/region -run='^$' -fuzz=FuzzParseCode -fuzztime=20s
           go test ./internal/domain/region -run='^$' -fuzz=FuzzParseLatLngPath -fuzztime=20s
           go test ./internal/adapters/cahyadsn -run='^$' -fuzz=FuzzParseDump -fuzztime=20s
+          for t in FuzzClusteringOrderIndependent FuzzClusteringInvariantsUnderCrowding FuzzApplyOrderIndependent FuzzLevelMonotone FuzzRuleMatchSymmetric; do
+            go test ./internal/domain/quake -run='^$' -fuzz="^$t\$" -fuzztime=20s
+          done
+          go test ./internal/app/quakes -run='^$' -fuzz=FuzzServiceOrderIndependent -fuzztime=20s
           cd ../ingest
           go test ./internal/domain/ratelimit -run='^$' -fuzz=FuzzWindowBound -fuzztime=20s
           go test ./internal/domain/schedule -run='^$' -fuzz=FuzzNextBounds -fuzztime=20s
@@ -169,7 +173,8 @@ jobs:
         working-directory: services/geo-processor
         env:
           SIAGA_TEST_DATABASE_URL: postgres://siaga_geo:ci-password@localhost:5432/siaga?sslmode=disable
-        run: go test -race -count=1 -tags integration ./...
+        # -p 1: paket berbagi database uji, jadi tidak boleh jalan bersamaan.
+        run: go test -race -count=1 -p 1 -tags integration ./...
       - name: Import Jawa Barat dari data asli
         env:
           DATABASE_URL: postgres://siaga_geo:ci-password@localhost:5432/siaga?sslmode=disable
