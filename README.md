@@ -2,7 +2,7 @@
 
 Platform ketahanan wilayah Jawa Barat: peringatan dini bencana (gempa, cuaca ekstrem, banjir, titik api) dan pemantauan serta prediksi kualitas udara (NAPAS) dalam satu peta real-time. Proyek portofolio independen, bukan layanan resmi BMKG, BNPB, atau BPBD. Selaras dengan SDGs 3, 11, dan 13.
 
-> Status: **Fase 1 (pipa data), irisan 1b**. Belum ada aplikasi yang bisa dibuka di browser. Yang sudah jalan: ingest menarik data gempa BMKG dan USGS ke NATS JetStream, lalu geo-processor menggabungkan laporan kedua sumber menjadi satu kejadian (deduplikasi terkalibrasi), memperkirakan kelurahan/desa terdampak, dan menerbitkan `hazard.quake.*`.
+> Status: **Fase 1 (pipa data), irisan 1c**. Belum ada aplikasi yang bisa dibuka di browser. Yang sudah jalan: ingest menarik data gempa BMKG dan USGS, peringatan dini cuaca BMKG (CAP), dan prakiraan cuaca BMKG per kelurahan/desa Jawa Barat ke NATS JetStream. geo-processor menggabungkan laporan gempa kedua sumber menjadi satu kejadian (deduplikasi terkalibrasi), menyusun rantai pesan CAP menjadi satu kejadian cuaca, memperkirakan kelurahan/desa terdampak, dan menerbitkan `hazard.quake.*` serta `hazard.weather.*`.
 
 ## Dokumen
 
@@ -21,8 +21,9 @@ make doctor           # cek prasyarat
 make deps             # unduh dependensi, kunci versi
 make up               # PostgreSQL + NATS + Valkey + Mailpit (profil lite)
 make seed             # migrasi + import 6.612 wilayah Jawa Barat
-make ingest           # tarik data gempa BMKG + USGS ke NATS (status: :8081/status)
-make geo              # deduplikasi + wilayah terdampak → hazard.quake.* (status: :8082/status)
+make adm4-list        # (opsional) bangun ulang daftar kode desa untuk sapuan prakiraan
+make ingest           # tarik gempa, peringatan cuaca, prakiraan BMKG + USGS ke NATS (status: :8081/status)
+make geo              # gempa + cuaca → hazard.quake.*, hazard.weather.* (status: :8082/status)
 make check            # lint + test
 make calibrate-dedup  # ukur ambang deduplikasi dengan katalog historis BMKG + USGS
 ```
@@ -44,7 +45,7 @@ docs/               ADR, kalibrasi, panduan setup, handoff
 
 ## Sumber data dan atribusi
 
-Batas wilayah: [cahyadsn/wilayah_boundaries](https://github.com/cahyadsn/wilayah_boundaries) (MIT), mengacu Kepmendagri 2025. Data gempa: BMKG (wajib dicantumkan) dan USGS (domain publik). Kalibrasi deduplikasi memakai katalog RepoGempa BMKG yang dikompilasi [kekavigi/repo-gempa](https://github.com/kekavigi/repo-gempa) (kompilasi CC BY 4.0) dan keluaran FDSN USGS yang disimpan di [horankev/quake_data](https://github.com/horankev/quake_data); keduanya hanya diunduh saat kalibrasi, tidak disimpan di repo ini. Sumber lain (Open-Meteo, OpenAQ, NASA FIRMS, OpenStreetMap) ditambahkan sepanjang fase 1 dengan atribusi di setiap tampilan.
+Batas wilayah: [cahyadsn/wilayah_boundaries](https://github.com/cahyadsn/wilayah_boundaries) (MIT), mengacu Kepmendagri 2025. Data gempa, peringatan dini cuaca, dan prakiraan cuaca: BMKG (wajib dicantumkan); gempa pembanding: USGS (domain publik). Kalibrasi deduplikasi memakai katalog RepoGempa BMKG yang dikompilasi [kekavigi/repo-gempa](https://github.com/kekavigi/repo-gempa) (kompilasi CC BY 4.0) dan keluaran FDSN USGS yang disimpan di [horankev/quake_data](https://github.com/horankev/quake_data); keduanya hanya diunduh saat kalibrasi, tidak disimpan di repo ini. Sumber lain (Open-Meteo, OpenAQ, NASA FIRMS, OpenStreetMap) ditambahkan sepanjang fase 1 dengan atribusi di setiap tampilan.
 
 ## Lisensi
 

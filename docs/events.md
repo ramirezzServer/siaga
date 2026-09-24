@@ -22,9 +22,12 @@ Pemilik adalah satu-satunya layanan yang membuat dan memperbarui konfigurasi str
 
 ## Consumer
 
-| Consumer (durable)    | Stream | Filter        | Layanan       | Ack                         |
-| --------------------- | ------ | ------------- | ------------- | --------------------------- |
-| `geo-processor-quake` | `RAW`  | `raw.quake.>` | geo-processor | eksplisit, `AckWait` 30 dtk |
+| Consumer (durable)      | Stream | Filter          | Layanan       | Ack                         |
+| ----------------------- | ------ | --------------- | ------------- | --------------------------- |
+| `geo-processor-quake`   | `RAW`  | `raw.quake.>`   | geo-processor | eksplisit, `AckWait` 30 dtk |
+| `geo-processor-weather` | `RAW`  | `raw.weather.>` | geo-processor | eksplisit, `AckWait` 30 dtk |
+
+Belum ada konsumen `raw.forecast.>`; hypertable `ts.weather_forecast` dan consumer-nya dibuat di fase 1d. Stream `RAW` menyimpan 7 hari, jadi consumer baru membaca dari awal tanpa kehilangan data (ADR 0009).
 
 Batas percobaan diatur aplikasi, bukan server (`MaxDeliver = -1`): galat sementara dicoba ulang dengan jeda 1, 5, 15, 30 detik; pesan yang rusak, melanggar invarian, atau gagal 5 kali disalin ke `dlq.<layanan>` lalu dihentikan (`Term`). Lihat ADR 0007.
 
@@ -34,12 +37,14 @@ Batas percobaan diatur aplikasi, bukan server (`MaxDeliver = -1`): galat sementa
 | ------------------------ | ------------------------------- | ------------- | -------- |
 | `raw.quake.bmkg`         | `siaga.raw.v1.QuakeReport`      | ingest        | `RAW`    |
 | `raw.quake.usgs`         | `siaga.raw.v1.QuakeReport`      | ingest        | `RAW`    |
+| `raw.weather.bmkg`       | `siaga.raw.v1.WeatherWarning`   | ingest        | `RAW`    |
+| `raw.forecast.bmkg`      | `siaga.raw.v1.RegionForecast`   | ingest        | `RAW`    |
 | `hazard.<jenis>.created` | `siaga.hazard.v1.HazardCreated` | geo-processor | `HAZARD` |
 | `hazard.<jenis>.updated` | `siaga.hazard.v1.HazardUpdated` | geo-processor | `HAZARD` |
 | `hazard.<jenis>.expired` | `siaga.hazard.v1.HazardExpired` | geo-processor | `HAZARD` |
 | `dlq.<layanan>`          | payload asli, apa adanya        | konsumen      | `DLQ`    |
 
-`<jenis>`: `quake`, `weather`, `flood`, `fire`, `aq`. Subjek `raw.<jenis>.<sumber>` untuk cuaca, banjir, udara, dan titik api ditambahkan di fase 1c–1d; `aq.*`, `report.*`, `notify.*` di fase 3–4.
+`<jenis>`: `quake`, `weather`, `flood`, `fire`, `aq`. Subjek `raw.<jenis>.<sumber>` untuk banjir, udara, dan titik api ditambahkan di fase 1d; `aq.*`, `report.*`, `notify.*` di fase 3–4.
 
 ## Event raw
 
@@ -48,16 +53,19 @@ Event `raw.*` adalah satu record dari satu feed sumber, sudah divalidasi dan wak
 - **ID pesan** = 128 bit pertama SHA-256 dari (nama konektor, ID record di sumber, isi record tanpa `meta`). Isi yang sama menghasilkan ID yang sama sehingga ditolak JetStream selama jendela duplikat; revisi dari sumber (misal magnitudo diperbarui) menghasilkan ID baru dan ikut terbit.
 - **Tidak berurutan dan bisa berulang.** Ingest menerbitkan ulang record yang sama setelah restart (JetStream menolaknya bila masih dalam 24 jam). Konsumen wajib idempotent terhadap `source_event_id` + isi.
 - **ID kejadian BMKG** adalah waktu kejadian UTC `YYYYMMDDhhmmss`, karena BMKG tidak menerbitkan ID. Nilainya sama di `autogempa`, `gempaterkini`, dan `gempadirasakan`, jadi geo-processor bisa menggabungkan ketiganya.
+- **Peringatan cuaca** (`raw.weather.bmkg`): satu event per pesan CAP BMKG (Alert, Update, Cancel) dengan teks bahasa Indonesia wajib dan bahasa Inggris bila tersedia; ID record = identifier CAP. Hanya provinsi di `INGEST_CAP_PROVINCES` (default `32`) yang diambil; pesan latihan, uji, draft, `Ack`, dan `Error` tidak diteruskan. Terjemahan yang datang belakangan terbit ulang sebagai revisi (ADR 0009).
+- **Prakiraan cuaca** (`raw.forecast.bmkg`): satu event per kelurahan/desa (kode adm4) berisi 20 langkah per 3 jam; ID record = kode adm4. Hanya prakiraan yang isinya berubah yang terbit.
 - **USGS** hanya diteruskan untuk gempa di kotak Indonesia (lintang −12..7, bujur 94..142). Flag `tsunami` USGS tidak dipakai karena bukan peringatan.
 
 ## Event hazard
 
 Event `hazard.*` adalah keadaan kejadian ternormalisasi, diterbitkan geo-processor lewat outbox transaksional (ADR 0007).
 
-- **ID kejadian** adalah UUIDv8 dari SHA-256 (sumber, ID sumber) laporan pertama yang membentuk kejadian. ID tidak berubah walau sumber utama berganti (misal USGS datang lebih dulu, lalu BMKG menjadi sumber utama).
+- **ID kejadian gempa** adalah UUIDv8 dari SHA-256 (sumber, ID sumber) laporan pertama yang membentuk kejadian. ID tidak berubah walau sumber utama berganti (misal USGS datang lebih dulu, lalu BMKG menjadi sumber utama).
+- **ID kejadian cuaca** adalah UUIDv8 dari SHA-256 (penerbit, identifier) pendiri rantai CAP: pesan dengan waktu kirim paling awal di antara pesan dan semua `references`-nya. Satu rantai Alert → Update → Cancel adalah satu kejadian, apa pun urutan kedatangannya (ADR 0010). Area kejadian ada di `area_geojson` (MultiPolygon hasil gabungan poligon BMKG), detailnya di `weather`.
 - **ID pesan** = `<id kejadian>:r<revisi>`. `Hazard.revision` dan `HazardExpired.revision` naik satu setiap kali isi berubah; konsumen mengabaikan revisi yang lebih kecil dari yang sudah dimiliki. Pesan raw yang diproses ulang tidak menghasilkan event baru.
-- **Transisi**: `created` saat kejadian baru, `updated` saat isi atau tingkat berubah (termasuk koreksi sesudah kedaluwarsa), `expired` saat masa aktif habis (`ELAPSED`, gempa 6 jam), digabung ke kejadian lain (`MERGED`, dengan `merged_into_hazard_id`), atau semua sumber menarik laporannya (`RETRACTED`).
-- **Wilayah terdampak** di `impacted_regions` dibatasi 100 kelurahan/desa terdekat; jumlah lengkapnya di `impacted_region_count` dan daftar lengkapnya di tabel `hazard.impact_region`.
+- **Transisi**: `created` saat kejadian baru, `updated` saat isi atau tingkat berubah (termasuk koreksi sesudah kedaluwarsa), `expired` saat masa aktif habis (`ELAPSED`, gempa 6 jam, cuaca sesuai `expires` CAP), digabung ke kejadian lain (`MERGED`, dengan `merged_into_hazard_id`), atau sumber menarik laporannya (`RETRACTED`, termasuk CAP Cancel). Kejadian yang sudah berakhir bisa aktif lagi lewat `updated` (misal pembaruan CAP yang berlaku lagi); konsumen selalu menerima `created` lebih dulu.
+- **Wilayah terdampak** di `impacted_regions` dibatasi 100 kelurahan/desa (gempa: terdekat; cuaca: bagian luas tercakup terbesar, minimal `WEATHER_MIN_COVERAGE`); jumlah lengkapnya di `impacted_region_count` dan daftar lengkapnya di tabel `hazard.impact_region`.
 - **Tingkat** (`level`) adalah tingkat tertinggi di wilayah pantauan. Tingkat per lokasi pengguna dihitung alert-engine (fase 3).
 
 ## Pesan DLQ
