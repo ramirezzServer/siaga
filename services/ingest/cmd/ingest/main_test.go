@@ -181,3 +181,70 @@ func TestOpenMeteoQuota(t *testing.T) {
 		t.Fatalf("tanpa provinsi: %d konektor, %v", len(specs), err)
 	}
 }
+
+// Konektor ber-key hanya jalan bila key diisi; diminta eksplisit tanpa key
+// adalah galat konfigurasi.
+func TestPlanKeyedSources(t *testing.T) {
+	lim, err := budgets()
+	if err != nil {
+		t.Fatal(err)
+	}
+	d := deps{clock: sysclock.Clock{}, log: slog.New(slog.DiscardHandler), limiters: lim, pub: &nopub.Publisher{}}
+	keys := map[string]string{"OPENAQ_API_KEY": "KUNCIUJIKUNCIUJIKUNC", "FIRMS_MAP_KEY": "KUNCIUJIKUNCIUJIKUNCIUJIKUNCIUJI"}
+	s, err := config(lookup(keys))
+	if err != nil {
+		t.Fatal(err)
+	}
+	jobs, _, err := plan(s, d)
+	if err != nil {
+		t.Fatal(err)
+	}
+	byName := map[string]time.Duration{}
+	for _, j := range jobs {
+		byName[j.Poller.Name()] = j.Interval
+	}
+	if len(jobs) != 13 || byName["openaq-stasiun"] != 15*time.Minute || byName["firms-viirs-snpp-nrt"] != 30*time.Minute ||
+		byName["firms-modis-nrt"] != 30*time.Minute {
+		t.Fatalf("%d job: %v", len(jobs), byName)
+	}
+	if s.firmsBox.String() != "106.3,-7.9,108.9,-5.7" || s.openAQBox != s.firmsBox {
+		t.Fatalf("kotak bawaan %v %v", s.firmsBox, s.openAQBox)
+	}
+
+	only := func(env map[string]string) []string {
+		s, err := config(lookup(env))
+		if err != nil {
+			t.Fatal(err)
+		}
+		jobs, _, err := plan(s, d)
+		if err != nil {
+			return nil
+		}
+		var names []string
+		for _, j := range jobs {
+			names = append(names, j.Poller.Name())
+		}
+		return names
+	}
+	if got := only(map[string]string{"INGEST_CONNECTORS": "openaq-stasiun", "OPENAQ_API_KEY": keys["OPENAQ_API_KEY"]}); !slices.Equal(got, []string{"openaq-stasiun"}) {
+		t.Fatalf("hanya openaq: %v", got)
+	}
+	if got := only(map[string]string{"INGEST_CONNECTORS": "firms-modis-nrt"}); got != nil {
+		t.Fatalf("FIRMS tanpa key harus gagal, dapat %v", got)
+	}
+	if got := only(map[string]string{"INGEST_CONNECTORS": "openaq-stasiun"}); got != nil {
+		t.Fatalf("OpenAQ tanpa key harus gagal, dapat %v", got)
+	}
+	for _, bad := range []map[string]string{
+		{"INGEST_FIRMS_BBOX": "1,2,3"},
+		{"INGEST_OPENAQ_BBOX": "108,-6,107,-7"},
+	} {
+		if _, err := config(lookup(bad)); err == nil {
+			t.Errorf("config(%v) seharusnya gagal", bad)
+		}
+	}
+	s, _ = config(lookup(map[string]string{"FIRMS_MAP_KEY": "pendek"}))
+	if _, _, err := plan(s, d); err == nil {
+		t.Error("MAP_KEY berformat salah harus ditolak")
+	}
+}

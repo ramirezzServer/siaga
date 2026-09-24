@@ -5,6 +5,7 @@ package ports
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -17,6 +18,25 @@ type Request struct {
 	// Validator dari respons sebelumnya untuk conditional request (304).
 	ETag         string
 	LastModified string
+	// Header tambahan, misal key API sumber (X-API-Key).
+	Header map[string]string
+	// Secrets adalah potongan URL atau header yang rahasia (misal MAP_KEY
+	// FIRMS di path). Fetcher dan use case tidak boleh menuliskannya ke
+	// galat atau log; pakai Redacted untuk menampilkan URL.
+	Secrets []string
+}
+
+// Redacted mengembalikan URL dengan setiap rahasia diganti "***".
+func (r Request) Redacted() string { return Redact(r.URL, r.Secrets) }
+
+// Redact mengganti setiap rahasia yang tidak kosong di s dengan "***".
+func Redact(s string, secrets []string) string {
+	for _, secret := range secrets {
+		if secret != "" {
+			s = strings.ReplaceAll(s, secret, "***")
+		}
+	}
+	return s
 }
 
 // Response adalah respons sumber yang sudah dibaca utuh.

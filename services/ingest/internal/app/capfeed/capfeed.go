@@ -123,7 +123,7 @@ func (p *Poller) Poll(ctx context.Context) (poll.Result, error) {
 	req.ETag, req.LastModified = p.etag, p.lastModified
 	resp, err := p.fetch.Fetch(ctx, req)
 	if err != nil {
-		return res, fmt.Errorf("%s: mengambil %s: %w", p.src.Name(), req.URL, err)
+		return res, fmt.Errorf("%s: mengambil %s: %w", p.src.Name(), req.Redacted(), err)
 	}
 	fetchedAt := p.clock.Now().UTC()
 	if resp.NotModified {
@@ -325,7 +325,7 @@ func (p *Poller) document(ctx context.Context, st *itemState, lang string) (*doc
 		err = errors.New("sumber menjawab 304 untuk request tanpa validator")
 	}
 	if err != nil {
-		return nil, fmt.Errorf("%w %s: %w", errFetch, req.URL, err)
+		return nil, fmt.Errorf("%w %s: %w", errFetch, req.Redacted(), err)
 	}
 	d := &doc{fetchedAt: p.clock.Now().UTC(), sum: emit.Sum(resp.Body)}
 	if p.archive != nil {

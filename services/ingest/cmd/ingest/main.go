@@ -9,7 +9,10 @@
 // (bmkg-prakiraan, raw.forecast.bmkg), dan Open-Meteo: cuaca grid 0,25°
 // (openmeteo-cuaca, raw.forecast.openmeteo), kualitas udara CAMS
 // (openmeteo-udara, raw.aq.openmeteo), debit sungai GloFAS
-// (openmeteo-sungai, raw.flood.openmeteo).
+// (openmeteo-sungai, raw.flood.openmeteo); stasiun kualitas udara OpenAQ
+// (openaq-stasiun, raw.aq.openaq) dan titik panas NASA FIRMS
+// (firms-*, raw.fire.firms). Dua yang terakhir butuh key gratis
+// (OPENAQ_API_KEY, FIRMS_MAP_KEY); tanpa key, konektornya tidak dijalankan.
 //
 // Konfigurasi lewat environment variable; lihat config() di bawah.
 package main
@@ -38,11 +41,13 @@ import (
 	"github.com/ramirezzServer/siaga/libs/go/platform/logx"
 	"github.com/ramirezzServer/siaga/libs/go/platform/natsx"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/bmkg"
+	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/firms"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/fsarchive"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/httpfetch"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/httpstatus"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/jspub"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/nopub"
+	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/openaq"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/openmeteo"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/regionlist"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/sitelist"
@@ -51,7 +56,9 @@ import (
 	"github.com/ramirezzServer/siaga/services/ingest/internal/app/capfeed"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/app/poll"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/app/runner"
+	"github.com/ramirezzServer/siaga/services/ingest/internal/app/stations"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/app/sweep"
+	"github.com/ramirezzServer/siaga/services/ingest/internal/domain/area"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/domain/forecast"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/domain/series"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/ports"
@@ -89,6 +96,14 @@ type settings struct {
 	openMeteoAirURL     string
 	openMeteoFloodURL   string
 	openMeteoProvinces  []string
+
+	// Key gratis; kosong berarti konektornya tidak dijalankan.
+	openAQKey     string
+	openAQBaseURL string
+	openAQBox     area.Box
+	firmsKey      string
+	firmsBaseURL  string
+	firmsBox      area.Box
 }
 
 func config(lookup envx.Lookup) (settings, error) {
@@ -111,6 +126,10 @@ func config(lookup envx.Lookup) (settings, error) {
 		openMeteoAirURL:     env.Default("OPENMETEO_AIR_URL", openmeteo.DefaultAirURL),
 		openMeteoFloodURL:   env.Default("OPENMETEO_FLOOD_URL", openmeteo.DefaultFloodURL),
 		openMeteoProvinces:  list(env.Default("INGEST_OPENMETEO_PROVINCES", "32")),
+		openAQKey:           strings.TrimSpace(env.Default("OPENAQ_API_KEY", "")),
+		openAQBaseURL:       env.Default("OPENAQ_BASE_URL", openaq.DefaultBaseURL),
+		firmsKey:            strings.TrimSpace(env.Default("FIRMS_MAP_KEY", "")),
+		firmsBaseURL:        env.Default("FIRMS_BASE_URL", firms.DefaultBaseURL),
 	}
 	var errs []error
 	level, err := logx.ParseLevel(env.Default("LOG_LEVEL", "info"))
@@ -121,6 +140,12 @@ func config(lookup envx.Lookup) (settings, error) {
 	}
 	if s.forecastLimit, err = strconv.Atoi(env.Default("INGEST_FORECAST_LIMIT", "0")); err != nil || s.forecastLimit < 0 {
 		errs = append(errs, fmt.Errorf("INGEST_FORECAST_LIMIT harus bilangan >= 0: %w", err))
+	}
+	if s.openAQBox, err = area.ParseBox(env.Default("INGEST_OPENAQ_BBOX", area.JawaBarat.String())); err != nil {
+		errs = append(errs, fmt.Errorf("INGEST_OPENAQ_BBOX: %w", err))
+	}
+	if s.firmsBox, err = area.ParseBox(env.Default("INGEST_FIRMS_BBOX", area.JawaBarat.String())); err != nil {
+		errs = append(errs, fmt.Errorf("INGEST_FIRMS_BBOX: %w", err))
 	}
 	errs = append(errs, env.Err())
 	return s, errors.Join(errs...)
@@ -154,6 +179,10 @@ func budgets() (map[string]*runner.Limiter, error) {
 		{"bmkg-prakiraan", 50, 1},
 		// Per request HTTP; kuota Open-Meteo dihitung per titik (ADR 0011).
 		{"openmeteo", 10, 3},
+		// OpenAQ: 60/menit dan 2.000/jam per key; FIRMS: 5.000 transaksi per
+		// 10 menit per MAP_KEY (ADR 0013). Jauh di bawah keduanya.
+		{"openaq", 30, 3},
+		{"firms", 10, 4},
 	} {
 		l, err := runner.NewLimiter(b.name, b.perMinute, b.burst)
 		if err != nil {
@@ -234,6 +263,59 @@ func openMeteoConnectors(s settings, now func() time.Time) ([]connectorSpec, err
 // Interval polling RSS peringatan dini (dokumen arsitektur: 2 menit).
 const capInterval = 2 * time.Minute
 
+// Interval OpenAQ dan FIRMS (dokumen arsitektur): stasiun udara tiap 15 menit,
+// titik panas tiap 30 menit.
+const (
+	openAQInterval = 15 * time.Minute
+	firmsInterval  = 30 * time.Minute
+)
+
+// keyedSources membuat konektor yang butuh key. Konektor tanpa key tidak
+// dijalankan, kecuali diminta eksplisit lewat INGEST_CONNECTORS (galat).
+func keyedSources(cfg settings, d deps, explicit func(string) bool) ([]runner.Job, error) {
+	var jobs []runner.Job
+	var missing []string
+	switch {
+	case cfg.firmsKey != "":
+		conns, err := firms.NewConnectors(cfg.firmsBaseURL, cfg.firmsKey, cfg.firmsBox)
+		if err != nil {
+			return nil, err
+		}
+		for _, c := range conns {
+			jobs = append(jobs, runner.Job{
+				Poller:   poll.New(c, d.fetch, d.archive, d.pub, d.clock),
+				Interval: firmsInterval,
+				Limiters: []*runner.Limiter{d.limiters["firms"]},
+			})
+		}
+	case explicit("firms"):
+		missing = append(missing, "FIRMS_MAP_KEY")
+	default:
+		d.log.Warn("FIRMS_MAP_KEY kosong; konektor titik panas FIRMS tidak dijalankan")
+	}
+	switch {
+	case cfg.openAQKey != "":
+		src, err := openaq.New(cfg.openAQBaseURL, cfg.openAQKey, cfg.openAQBox)
+		if err != nil {
+			return nil, err
+		}
+		p, err := stations.New(src, d.fetch, d.archive, d.pub, d.clock,
+			runner.NewGate(d.clock, d.limiters["openaq"]), stations.DefaultOptions())
+		if err != nil {
+			return nil, err
+		}
+		jobs = append(jobs, runner.Job{Poller: p, Interval: openAQInterval, Limiters: []*runner.Limiter{d.limiters["openaq"]}})
+	case explicit("openaq"):
+		missing = append(missing, "OPENAQ_API_KEY")
+	default:
+		d.log.Warn("OPENAQ_API_KEY kosong; konektor stasiun OpenAQ tidak dijalankan")
+	}
+	if len(missing) > 0 {
+		return nil, fmt.Errorf("INGEST_CONNECTORS meminta konektor yang butuh key, tetapi %s kosong", strings.Join(missing, " dan "))
+	}
+	return jobs, nil
+}
+
 // deps adalah adapter yang dipakai bersama semua konektor.
 type deps struct {
 	fetch    ports.Fetcher
@@ -262,6 +344,19 @@ func plan(cfg settings, d deps) ([]runner.Job, []*sweep.Sweeper, error) {
 			Limiters: []*runner.Limiter{d.limiters[spec.budget]},
 		})
 	}
+	explicit := func(prefix string) bool {
+		return slices.ContainsFunc(cfg.connectors, func(c string) bool { return strings.HasPrefix(c, prefix) })
+	}
+	keyed, err := keyedSources(cfg, d, explicit)
+	if err != nil {
+		return nil, nil, err
+	}
+	for _, j := range keyed {
+		if enabled(j.Poller.Name()) {
+			jobs = append(jobs, j)
+		}
+	}
+
 	capSrc := bmkg.NewCAPFeed(cfg.capBaseURL)
 	if enabled(capSrc.Name()) {
 		jobs = append(jobs, runner.Job{

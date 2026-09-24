@@ -15,8 +15,10 @@ import (
 	"github.com/ramirezzServer/siaga/services/ingest/internal/ports"
 )
 
-// ModelEvent adalah deret satu titik keluaran model grid sebagai ports.Event
-// (raw.forecast.openmeteo, raw.aq.openmeteo, raw.flood.openmeteo).
+// ModelEvent adalah satu pesan Protobuf raw sebagai ports.Event: deret satu
+// titik keluaran model grid (raw.forecast.openmeteo, raw.aq.openmeteo,
+// raw.flood.openmeteo), pengukuran stasiun (raw.aq.openaq), atau deteksi
+// titik panas (raw.fire.firms).
 type ModelEvent struct {
 	subject string
 	key     string
@@ -134,11 +136,7 @@ func NewDischargeEvent(s series.Series) (ports.Event, error) {
 }
 
 func newModelEvent(kind streams.Kind, key string, msg proto.Message, setMeta func(proto.Message, *rawv1.FetchMeta)) (ports.Event, error) {
-	subject, err := streams.RawSubject(kind, streams.SourceOpenMeteo)
-	if err != nil {
-		return nil, err
-	}
-	return &ModelEvent{subject: subject, key: key, msg: msg, setMeta: setMeta}, nil
+	return newEvent(kind, streams.SourceOpenMeteo, key, msg, setMeta)
 }
 
 // columns mengembalikan pengambil nilai per nama variabel. Deret harus

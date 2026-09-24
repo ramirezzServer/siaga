@@ -73,7 +73,7 @@ func (p *Poller) Poll(ctx context.Context) (Result, error) {
 
 	resp, err := p.fetch.Fetch(ctx, req)
 	if err != nil {
-		return res, fmt.Errorf("%s: mengambil %s: %w", p.conn.Name(), req.URL, err)
+		return res, fmt.Errorf("%s: mengambil %s: %w", p.conn.Name(), req.Redacted(), err)
 	}
 	fetchedAt := p.clock.Now().UTC()
 	if resp.NotModified {

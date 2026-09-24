@@ -3,6 +3,7 @@ package httpfetch
 import (
 	"context"
 	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -104,5 +105,42 @@ func TestParseRetryAfter(t *testing.T) {
 		if got := parseRetryAfter(in, now); got != want {
 			t.Errorf("parseRetryAfter(%q) = %v, ingin %v", in, got, want)
 		}
+	}
+}
+
+// Key di header ikut terkirim, dan key di path tidak pernah muncul di galat
+// (koneksi gagal, status bukan 200 yang memantulkan URL, atau batas waktu).
+func TestFetchSecrets(t *testing.T) {
+	const secret = "KUNCIRAHASIA123"
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("X-API-Key") != secret {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Set("Content-Type", "text/plain")
+		_, _ = io.WriteString(w, "path salah: "+r.URL.Path) //nolint:gosec // server uji, bukan HTML
+	}))
+	defer srv.Close()
+	f := New(5 * time.Second)
+	ctx := context.Background()
+
+	_, err := f.Fetch(ctx, ports.Request{URL: srv.URL + "/api/" + secret + "/x", Header: map[string]string{"X-API-Key": secret}, Secrets: []string{secret}})
+	var se *StatusError
+	if !errors.As(err, &se) || se.Status != http.StatusBadRequest || strings.Contains(err.Error(), secret) || !strings.Contains(se.Body, "/api/***/x") {
+		t.Fatalf("%v", err)
+	}
+	_, err = f.Fetch(ctx, ports.Request{URL: "http://127.0.0.1:1/api/" + secret, Secrets: []string{secret}})
+	if err == nil || strings.Contains(err.Error(), secret) || !strings.Contains(err.Error(), "/api/***") {
+		t.Fatalf("%v", err)
+	}
+	cctx, cancel := context.WithCancel(ctx)
+	cancel()
+	_, err = f.Fetch(cctx, ports.Request{URL: srv.URL + "/" + secret, Secrets: []string{secret}})
+	if !errors.Is(err, context.Canceled) || strings.Contains(err.Error(), secret) {
+		t.Fatalf("%v", err)
+	}
+	if got := ports.Redact("a/K/b/K", []string{"", "K"}); got != "a/***/b/***" {
+		t.Fatal(got)
 	}
 }

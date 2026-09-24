@@ -9,6 +9,7 @@ import (
 
 	hazardv1 "github.com/ramirezzServer/siaga/libs/go/contracts/gen/siaga/hazard/v1"
 	rawv1 "github.com/ramirezzServer/siaga/libs/go/contracts/gen/siaga/raw/v1"
+	"github.com/ramirezzServer/siaga/services/ingest/internal/domain/fire"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/domain/series"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/ports"
 )
@@ -99,5 +100,29 @@ func TestModelEventRejectsShapeMismatch(t *testing.T) {
 	}
 	if code(pf(2)) == nil || *code(pf(2)) != 2 || code(nil) != nil {
 		t.Fatal("code")
+	}
+}
+
+func TestFireEventRejectsUnknownConfidence(t *testing.T) {
+	d := fire.Detection{Product: fire.VIIRSSNPP, Confidence: 9}
+	if _, err := NewFireEvent(d); err == nil {
+		t.Fatal("kelas keyakinan tak dikenal diterima")
+	}
+	pct := 150
+	d = fire.Detection{Product: fire.MODISProduct, Confidence: fire.High, ConfidencePct: &pct}
+	ev, err := NewFireEvent(d)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := ev.(*ModelEvent).Message().(*rawv1.FireDetection).GetConfidencePct(); got != 100 {
+		t.Fatalf("persentase %d", got)
+	}
+	for c, want := range map[fire.Confidence]rawv1.FireConfidence{
+		fire.Low: rawv1.FireConfidence_FIRE_CONFIDENCE_LOW, fire.Nominal: rawv1.FireConfidence_FIRE_CONFIDENCE_NOMINAL,
+		fire.High: rawv1.FireConfidence_FIRE_CONFIDENCE_HIGH,
+	} {
+		if fireConfidence(c) != want {
+			t.Errorf("%v", c)
+		}
 	}
 }

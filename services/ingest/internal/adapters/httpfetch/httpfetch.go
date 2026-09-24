@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -78,10 +79,13 @@ func (f *Fetcher) Fetch(ctx context.Context, r ports.Request) (ports.Response, e
 	if r.LastModified != "" {
 		req.Header.Set("If-Modified-Since", r.LastModified)
 	}
+	for k, v := range r.Header {
+		req.Header.Set(k, v)
+	}
 
 	resp, err := f.client.Do(req)
 	if err != nil {
-		return ports.Response{}, err
+		return ports.Response{}, redact(err, r.Secrets)
 	}
 	defer func() { _ = resp.Body.Close() }()
 
@@ -96,7 +100,7 @@ func (f *Fetcher) Fetch(ctx context.Context, r ports.Request) (ports.Response, e
 		}
 	case resp.StatusCode != http.StatusOK:
 		snippet, _ := io.ReadAll(io.LimitReader(resp.Body, 256))
-		return ports.Response{}, &StatusError{Status: resp.StatusCode, Body: strings.TrimSpace(string(snippet))}
+		return ports.Response{}, &StatusError{Status: resp.StatusCode, Body: ports.Redact(strings.TrimSpace(string(snippet)), r.Secrets)}
 	}
 
 	limit := r.MaxBytes
@@ -116,6 +120,27 @@ func (f *Fetcher) Fetch(ctx context.Context, r ports.Request) (ports.Response, e
 		LastModified: resp.Header.Get("Last-Modified"),
 	}, nil
 }
+
+// redact menyamarkan rahasia di galat net/http, yang menyertakan URL lengkap
+// (misal `Get "https://…/KEY/…": dial tcp …`). Galat lain dikembalikan apa
+// adanya karena tidak memuat URL.
+func redact(err error, secrets []string) error {
+	var ue *url.Error
+	if len(secrets) == 0 || !errors.As(err, &ue) {
+		return err
+	}
+	return &url.Error{Op: ue.Op, URL: ports.Redact(ue.URL, secrets), Err: redactedError{ue.Err, secrets}}
+}
+
+// redactedError menyamarkan rahasia di pesan penyebab, tetapi tetap bisa
+// dibuka dengan errors.Is/As (misal context.DeadlineExceeded).
+type redactedError struct {
+	err     error
+	secrets []string
+}
+
+func (c redactedError) Error() string { return ports.Redact(c.err.Error(), c.secrets) }
+func (c redactedError) Unwrap() error { return c.err }
 
 // parseRetryAfter membaca Retry-After dalam detik atau tanggal HTTP.
 // Nilai yang tidak bisa dibaca atau negatif dianggap nol.
