@@ -1,0 +1,110 @@
+syntax = "proto3";
+
+package siaga.raw.v1;
+
+import "google/protobuf/timestamp.proto";
+import "siaga/common/v1/geo.proto";
+import "siaga/hazard/v1/hazard.proto";
+import "siaga/raw/v1/fetch.proto";
+
+// Titik keluaran model grid yang dipantau SIAGA: simpul grid 0,25° atau
+// titik pantau sungai. Nilai model berasal dari sel model terdekat.
+message ModelSite {
+  // ID titik yang stabil di SIAGA: "grid:<lintang>:<bujur>" dengan dua
+  // desimal (misal "grid:-6.75:107.50") atau "river:<slug>" (misal
+  // "river:citarum-dayeuhkolot").
+  string id = 1;
+  // Nama titik pantau sungai, misal "Dayeuhkolot". Kosong untuk grid.
+  string name = 2;
+  // Nama sungai, misal "Citarum". Kosong untuk grid.
+  string river = 3;
+  // Titik yang diminta SIAGA.
+  siaga.common.v1.Point requested = 4;
+  // Pusat sel model yang dijawab sumber.
+  siaga.common.v1.Point cell = 5;
+  // Elevasi sel model menurut sumber, bila ada.
+  optional double elevation_m = 6;
+}
+
+// Prakiraan cuaca per jam di satu simpul grid dari model global.
+// Subjek NATS: raw.forecast.openmeteo.
+message GridWeatherForecast {
+  FetchMeta meta = 1;
+  siaga.hazard.v1.Source source = 2;
+  ModelSite site = 3;
+  // Model sumber, misal "best_match" (gabungan model terbaik Open-Meteo).
+  string model = 4;
+  // Langkah per jam, urut waktu tanpa duplikat. Langkah yang semua nilainya
+  // kosong tidak dikirim.
+  repeated GridWeatherStep steps = 5;
+}
+
+// Satu jam prakiraan cuaca. Field kosong berarti model tidak memberi nilai.
+message GridWeatherStep {
+  google.protobuf.Timestamp valid_time = 1;
+  optional double temperature_c = 2;
+  optional double relative_humidity_pct = 3;
+  // Akumulasi hujan satu jam sebelum valid_time.
+  optional double precipitation_mm = 4;
+  // Kode cuaca WMO 4677 (0 cerah … 99 badai petir dengan hujan es).
+  optional int32 weather_code = 5;
+  optional double cloud_cover_pct = 6;
+  optional double wind_speed_kmh = 7;
+  // Arah asal angin dalam derajat (0 = utara).
+  optional double wind_from_deg = 8;
+  optional double wind_gust_kmh = 9;
+  optional double surface_pressure_hpa = 10;
+  optional double boundary_layer_height_m = 11;
+}
+
+// Prakiraan kualitas udara per jam di satu simpul grid dari model
+// atmosfer global (CAMS). Subjek NATS: raw.aq.openmeteo.
+message AirQualityForecast {
+  FetchMeta meta = 1;
+  siaga.hazard.v1.Source source = 2;
+  ModelSite site = 3;
+  // Model sumber, misal "cams_global".
+  string model = 4;
+  // Langkah per jam, urut waktu tanpa duplikat.
+  repeated AirQualityStep steps = 5;
+}
+
+// Satu jam prakiraan kualitas udara. Konsentrasi dalam µg/m³ di permukaan.
+message AirQualityStep {
+  google.protobuf.Timestamp valid_time = 1;
+  optional double pm2_5_ugm3 = 2;
+  optional double pm10_ugm3 = 3;
+  optional double carbon_monoxide_ugm3 = 4;
+  optional double nitrogen_dioxide_ugm3 = 5;
+  optional double sulphur_dioxide_ugm3 = 6;
+  optional double ozone_ugm3 = 7;
+  // Ketebalan optik aerosol pada 550 nm, tanpa satuan.
+  optional double aerosol_optical_depth = 8;
+  optional double dust_ugm3 = 9;
+}
+
+// Prakiraan debit harian di satu titik pantau sungai dari model hidrologi
+// global (GloFAS). Subjek NATS: raw.flood.openmeteo.
+message RiverDischargeForecast {
+  FetchMeta meta = 1;
+  siaga.hazard.v1.Source source = 2;
+  ModelSite site = 3;
+  // Model sumber, misal "glofas".
+  string model = 4;
+  // Langkah harian, urut tanggal tanpa duplikat. Hari yang sudah lewat
+  // berisi reanalisis/analisis terbaru, hari mendatang berisi prakiraan.
+  repeated DischargeStep steps = 5;
+}
+
+// Debit satu hari (m³/s). valid_date adalah tanggal UTC pukul 00.00.
+// Statistik ensemble kosong untuk hari yang sudah lewat.
+message DischargeStep {
+  google.protobuf.Timestamp valid_date = 1;
+  optional double discharge_m3s = 2;
+  optional double ensemble_mean_m3s = 3;
+  optional double ensemble_median_m3s = 4;
+  optional double ensemble_max_m3s = 5;
+  optional double ensemble_min_m3s = 6;
+  optional double ensemble_p25_m3s = 7;
+  optional double ensemble_p75_m3s = 8;
+}

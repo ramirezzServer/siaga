@@ -6,12 +6,14 @@ import {
   AlertLevel,
   CapMsgType,
   CapSeverity,
+  GridWeatherForecastSchema,
   HazardCreatedSchema,
   HazardKind,
   HazardSchema,
   QuakeFeed,
   QuakeReportSchema,
   RegionForecastSchema,
+  RiverDischargeForecastSchema,
   Source,
   subjects,
   TsunamiPotential,
@@ -118,5 +120,57 @@ describe("kontrak event raw", () => {
     const decoded = fromBinary(RegionForecastSchema, toBinary(RegionForecastSchema, forecast));
     expect(decoded.steps[0]?.visibilityM).toBeUndefined();
     expect(decoded.steps[1]?.visibilityM).toBe(0);
+  });
+
+  it("keluaran model grid membedakan nilai kosong dan nol", () => {
+    const grid = create(GridWeatherForecastSchema, {
+      source: Source.OPEN_METEO,
+      site: {
+        id: "grid:-7.00:107.50",
+        requested: { latitude: -7, longitude: 107.5 },
+        cell: { latitude: -6.994727, longitude: 107.468346 },
+      },
+      model: "best_match",
+      steps: [
+        {
+          validTime: timestampFromDate(new Date("2026-09-24T00:00:00Z")),
+          precipitationMm: 0,
+          weatherCode: 3,
+        },
+        { validTime: timestampFromDate(new Date("2026-09-24T01:00:00Z")), temperatureC: 23.9 },
+      ],
+    });
+    const decoded = fromBinary(
+      GridWeatherForecastSchema,
+      toBinary(GridWeatherForecastSchema, grid),
+    );
+    expect(decoded.steps[0]?.precipitationMm).toBe(0);
+    expect(decoded.steps[1]?.precipitationMm).toBeUndefined();
+    expect(decoded.site?.elevationM).toBeUndefined();
+    expect(subjects.raw("forecast", "openmeteo")).toBe("raw.forecast.openmeteo");
+  });
+
+  it("debit sungai membawa titik pantau dan statistik ensemble", () => {
+    const flood = create(RiverDischargeForecastSchema, {
+      source: Source.OPEN_METEO,
+      site: { id: "river:citarum-dayeuhkolot", name: "Dayeuhkolot", river: "Citarum" },
+      model: "glofas_v4",
+      steps: [
+        {
+          validDate: timestampFromDate(new Date("2026-09-24T00:00:00Z")),
+          dischargeM3s: 3.37,
+          ensembleMaxM3s: 17.79,
+        },
+      ],
+    });
+    const decoded = fromBinary(
+      RiverDischargeForecastSchema,
+      toBinary(RiverDischargeForecastSchema, flood),
+    );
+    expect(decoded).toEqual(flood);
+    expect(toJson(RiverDischargeForecastSchema, decoded)).toMatchObject({
+      site: { river: "Citarum" },
+    });
+    expect(subjects.raw("flood", "openmeteo")).toBe("raw.flood.openmeteo");
   });
 });

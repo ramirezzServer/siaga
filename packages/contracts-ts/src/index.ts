@@ -6,4 +6,5 @@ export * from "./gen/siaga/raw/v1/fetch_pb.js";
 export * from "./gen/siaga/raw/v1/quake_pb.js";
 export * from "./gen/siaga/raw/v1/weather_pb.js";
 export * from "./gen/siaga/raw/v1/forecast_pb.js";
+export * from "./gen/siaga/raw/v1/model_pb.js";
 export { subjects, type RawKind, type RawSource } from "./subjects.js";
