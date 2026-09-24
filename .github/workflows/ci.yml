@@ -94,6 +94,7 @@ jobs:
           fz ./internal/app/quakes FuzzServiceOrderIndependent
           fz ./internal/domain/weather FuzzDeriveOrderIndependent
           fz ./internal/app/warnings FuzzServiceOrderIndependent
+          fz ./internal/domain/series FuzzWeatherValidate
           cd ../ingest
           fz ./internal/domain/ratelimit FuzzWindowBound
           fz ./internal/domain/ratelimit FuzzPriorityHeadroom
@@ -104,6 +105,7 @@ jobs:
           fz ./internal/adapters/bmkg FuzzParseCAPDocuments
           fz ./internal/adapters/bmkg FuzzParseForecastDocument
           fz ./internal/adapters/usgs FuzzParse
+          fz ./internal/adapters/openmeteo FuzzParse
 
   node:
     name: TypeScript + kontrak

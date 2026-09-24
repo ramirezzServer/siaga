@@ -58,7 +58,7 @@ psql: ## Buka psql sebagai superuser
 	$(COMPOSE) exec postgres psql -U $(POSTGRES_USER) -d $(POSTGRES_DB)
 
 ##@ Database
-.PHONY: migrate migrate-down migrate-status regions-fetch regions-import seed adm4-list
+.PHONY: migrate migrate-down migrate-status regions-fetch regions-import seed adm4-list grid-list
 # goose dijalankan dengan GOWORK=off: driver bawaannya memicu ambiguous import genproto di workspace mode.
 migrate: ## Jalankan migrasi semua layanan
 	@echo "goose up ($(GEO_DATABASE_URL_SAFE))"
@@ -86,8 +86,13 @@ adm4-list: regions-fetch ## Bangun ulang daftar kode desa untuk sapuan prakiraan
 	  -source ../../.cache/wilayah_boundaries/db -province $(PROVINCE) \
 	  -adm4-out ../ingest/internal/adapters/regionlist/data/adm4_$(PROVINCE).txt
 
+grid-list: regions-fetch ## Bangun ulang simpul grid 0,25° Open-Meteo ingest (PROVINCE=32)
+	@cd services/geo-processor && go run ./cmd/import-regions -dry-run \
+	  -source ../../.cache/wilayah_boundaries/db -province $(PROVINCE) \
+	  -grid-out ../ingest/internal/adapters/sitelist/data/grid025_$(PROVINCE).txt
+
 ##@ Pipa data
-.PHONY: ingest ingest-record geo calibrate-dedup
+.PHONY: ingest ingest-record geo calibrate-dedup river-snap
 ingest: ## Jalankan ingest (butuh `make up`); status di http://127.0.0.1:8081/status
 	cd services/ingest && INGEST_ARCHIVE_DIR="$(INGEST_ARCHIVE_DIR)" go run ./cmd/ingest
 
@@ -98,6 +103,11 @@ ingest-record: ## Rekam payload semua sumber sekali ke arsip, tanpa NATS
 geo: ## Jalankan geo-processor (butuh `make up seed`); status di http://127.0.0.1:8082/status
 	@echo "geo-processor ($(GEO_DATABASE_URL_SAFE))"
 	@cd services/geo-processor && DATABASE_URL="$(GEO_DATABASE_URL)" go run ./cmd/geo-processor
+
+river-snap: ## Pilih sel GloFAS untuk titik pantau sungai (±2 menit, ±800 lokasi Open-Meteo)
+	go run ./services/ingest/cmd/river-snap -src docs/calibration/titik-sungai-32.csv \
+	  -out services/ingest/internal/adapters/sitelist/data/rivers_32.csv -report docs/calibration/titik-sungai.md
+	pnpm exec prettier --write --log-level warn docs/calibration/titik-sungai.md
 
 CALIBRATION_DIR ?= $(CURDIR)/.cache/calibration
 calibrate-dedup: ## Ukur ambang deduplikasi gempa dengan katalog BMKG + USGS historis
@@ -133,9 +143,9 @@ test-integration: ## Test integrasi (butuh `make up migrate`; paket dijalankan b
 	@cd services/geo-processor && SIAGA_TEST_DATABASE_URL="$(GEO_DATABASE_URL)" go test -race -count=1 -p 1 -tags integration ./...
 
 fuzz: ## Fuzzing singkat semua target fuzz (30 detik per target)
-	@cd services/geo-processor && for t in ./internal/domain/region:FuzzParseCode ./internal/domain/region:FuzzParseLatLngPath ./internal/adapters/cahyadsn:FuzzParseDump ./internal/domain/quake:FuzzClusteringOrderIndependent ./internal/domain/quake:FuzzClusteringInvariantsUnderCrowding ./internal/domain/quake:FuzzApplyOrderIndependent ./internal/domain/quake:FuzzLevelMonotone ./internal/domain/quake:FuzzRuleMatchSymmetric ./internal/app/quakes:FuzzServiceOrderIndependent ./internal/domain/weather:FuzzDeriveOrderIndependent ./internal/app/warnings:FuzzServiceOrderIndependent; do \
+	@cd services/geo-processor && for t in ./internal/domain/region:FuzzParseCode ./internal/domain/region:FuzzParseLatLngPath ./internal/adapters/cahyadsn:FuzzParseDump ./internal/domain/quake:FuzzClusteringOrderIndependent ./internal/domain/quake:FuzzClusteringInvariantsUnderCrowding ./internal/domain/quake:FuzzApplyOrderIndependent ./internal/domain/quake:FuzzLevelMonotone ./internal/domain/quake:FuzzRuleMatchSymmetric ./internal/app/quakes:FuzzServiceOrderIndependent ./internal/domain/weather:FuzzDeriveOrderIndependent ./internal/app/warnings:FuzzServiceOrderIndependent ./internal/domain/series:FuzzWeatherValidate; do \
 	  go test $${t%%:*} -run='^$$' -fuzz="^$${t##*:}\$$" -fuzztime=30s || exit 1; done
-	@cd services/ingest && for t in ./internal/domain/ratelimit:FuzzWindowBound ./internal/domain/ratelimit:FuzzPriorityHeadroom ./internal/domain/schedule:FuzzNextBounds ./internal/domain/forecast:FuzzOrder ./internal/domain/warning:FuzzParseReferences ./internal/adapters/bmkg:FuzzParse ./internal/adapters/bmkg:FuzzParseCAPDocuments ./internal/adapters/bmkg:FuzzParseForecastDocument ./internal/adapters/usgs:FuzzParse; do \
+	@cd services/ingest && for t in ./internal/domain/ratelimit:FuzzWindowBound ./internal/domain/ratelimit:FuzzPriorityHeadroom ./internal/domain/schedule:FuzzNextBounds ./internal/domain/forecast:FuzzOrder ./internal/domain/warning:FuzzParseReferences ./internal/adapters/bmkg:FuzzParse ./internal/adapters/bmkg:FuzzParseCAPDocuments ./internal/adapters/bmkg:FuzzParseForecastDocument ./internal/adapters/usgs:FuzzParse ./internal/adapters/openmeteo:FuzzParse; do \
 	  go test $${t%%:*} -run='^$$' -fuzz="^$${t##*:}\$$" -fuzztime=30s || exit 1; done
 
 check: lint test ## Semua pemeriksaan sebelum push
