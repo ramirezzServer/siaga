@@ -58,7 +58,7 @@ psql: ## Buka psql sebagai superuser
 	$(COMPOSE) exec postgres psql -U $(POSTGRES_USER) -d $(POSTGRES_DB)
 
 ##@ Database
-.PHONY: migrate migrate-down migrate-status regions-fetch regions-import seed
+.PHONY: migrate migrate-down migrate-status regions-fetch regions-import seed adm4-list
 # goose dijalankan dengan GOWORK=off: driver bawaannya memicu ambiguous import genproto di workspace mode.
 migrate: ## Jalankan migrasi semua layanan
 	@echo "goose up ($(GEO_DATABASE_URL_SAFE))"
@@ -80,6 +80,11 @@ regions-import: regions-fetch ## Import batas wilayah ke ref.region
 	  -source ../../.cache/wilayah_boundaries/db -province $(PROVINCE)
 
 seed: migrate regions-import ## Migrasi + import wilayah
+
+adm4-list: regions-fetch ## Bangun ulang daftar kode desa untuk sapuan prakiraan ingest (PROVINCE=32)
+	@cd services/geo-processor && go run ./cmd/import-regions -dry-run \
+	  -source ../../.cache/wilayah_boundaries/db -province $(PROVINCE) \
+	  -adm4-out ../ingest/internal/adapters/regionlist/data/adm4_$(PROVINCE).txt
 
 ##@ Pipa data
 .PHONY: ingest ingest-record geo calibrate-dedup
@@ -128,13 +133,10 @@ test-integration: ## Test integrasi (butuh `make up migrate`; paket dijalankan b
 	@cd services/geo-processor && SIAGA_TEST_DATABASE_URL="$(GEO_DATABASE_URL)" go test -race -count=1 -p 1 -tags integration ./...
 
 fuzz: ## Fuzzing singkat semua target fuzz (30 detik per target)
-	@cd services/geo-processor && for t in FuzzParseCode FuzzParseLatLngPath; do go test ./internal/domain/region -run=^$$ -fuzz=$$t -fuzztime=30s; done
-	@cd services/geo-processor && go test ./internal/adapters/cahyadsn -run=^$$ -fuzz=FuzzParseDump -fuzztime=30s
-	@cd services/ingest && go test ./internal/domain/ratelimit -run=^$$ -fuzz=FuzzWindowBound -fuzztime=30s
-	@cd services/ingest && go test ./internal/domain/schedule -run=^$$ -fuzz=FuzzNextBounds -fuzztime=30s
-	@cd services/ingest && for p in bmkg usgs; do go test ./internal/adapters/$$p -run=^$$ -fuzz=FuzzParse -fuzztime=30s; done
-	@cd services/geo-processor && for t in FuzzClusteringOrderIndependent FuzzClusteringInvariantsUnderCrowding FuzzApplyOrderIndependent FuzzLevelMonotone FuzzRuleMatchSymmetric; do go test ./internal/domain/quake -run=^$$ -fuzz=^$$t$$ -fuzztime=30s; done
-	@cd services/geo-processor && go test ./internal/app/quakes -run=^$$ -fuzz=FuzzServiceOrderIndependent -fuzztime=30s
+	@cd services/geo-processor && for t in ./internal/domain/region:FuzzParseCode ./internal/domain/region:FuzzParseLatLngPath ./internal/adapters/cahyadsn:FuzzParseDump ./internal/domain/quake:FuzzClusteringOrderIndependent ./internal/domain/quake:FuzzClusteringInvariantsUnderCrowding ./internal/domain/quake:FuzzApplyOrderIndependent ./internal/domain/quake:FuzzLevelMonotone ./internal/domain/quake:FuzzRuleMatchSymmetric ./internal/app/quakes:FuzzServiceOrderIndependent ./internal/domain/weather:FuzzDeriveOrderIndependent ./internal/app/warnings:FuzzServiceOrderIndependent; do \
+	  go test $${t%%:*} -run='^$$' -fuzz="^$${t##*:}\$$" -fuzztime=30s || exit 1; done
+	@cd services/ingest && for t in ./internal/domain/ratelimit:FuzzWindowBound ./internal/domain/ratelimit:FuzzPriorityHeadroom ./internal/domain/schedule:FuzzNextBounds ./internal/domain/forecast:FuzzOrder ./internal/domain/warning:FuzzParseReferences ./internal/adapters/bmkg:FuzzParse ./internal/adapters/bmkg:FuzzParseCAPDocuments ./internal/adapters/bmkg:FuzzParseForecastDocument ./internal/adapters/usgs:FuzzParse; do \
+	  go test $${t%%:*} -run='^$$' -fuzz="^$${t##*:}\$$" -fuzztime=30s || exit 1; done
 
 check: lint test ## Semua pemeriksaan sebelum push
 

@@ -81,19 +81,29 @@ jobs:
           done
       - name: Fuzz singkat
         run: |
+          fz() { go test "$1" -run='^$' -fuzz="^$2\$" -fuzztime=20s; }
           cd services/geo-processor
-          go test ./internal/domain/region -run='^$' -fuzz=FuzzParseCode -fuzztime=20s
-          go test ./internal/domain/region -run='^$' -fuzz=FuzzParseLatLngPath -fuzztime=20s
-          go test ./internal/adapters/cahyadsn -run='^$' -fuzz=FuzzParseDump -fuzztime=20s
-          for t in FuzzClusteringOrderIndependent FuzzClusteringInvariantsUnderCrowding FuzzApplyOrderIndependent FuzzLevelMonotone FuzzRuleMatchSymmetric; do
-            go test ./internal/domain/quake -run='^$' -fuzz="^$t\$" -fuzztime=20s
-          done
-          go test ./internal/app/quakes -run='^$' -fuzz=FuzzServiceOrderIndependent -fuzztime=20s
+          fz ./internal/domain/region FuzzParseCode
+          fz ./internal/domain/region FuzzParseLatLngPath
+          fz ./internal/adapters/cahyadsn FuzzParseDump
+          fz ./internal/domain/quake FuzzClusteringOrderIndependent
+          fz ./internal/domain/quake FuzzClusteringInvariantsUnderCrowding
+          fz ./internal/domain/quake FuzzApplyOrderIndependent
+          fz ./internal/domain/quake FuzzLevelMonotone
+          fz ./internal/domain/quake FuzzRuleMatchSymmetric
+          fz ./internal/app/quakes FuzzServiceOrderIndependent
+          fz ./internal/domain/weather FuzzDeriveOrderIndependent
+          fz ./internal/app/warnings FuzzServiceOrderIndependent
           cd ../ingest
-          go test ./internal/domain/ratelimit -run='^$' -fuzz=FuzzWindowBound -fuzztime=20s
-          go test ./internal/domain/schedule -run='^$' -fuzz=FuzzNextBounds -fuzztime=20s
-          go test ./internal/adapters/bmkg -run='^$' -fuzz=FuzzParse -fuzztime=20s
-          go test ./internal/adapters/usgs -run='^$' -fuzz=FuzzParse -fuzztime=20s
+          fz ./internal/domain/ratelimit FuzzWindowBound
+          fz ./internal/domain/ratelimit FuzzPriorityHeadroom
+          fz ./internal/domain/schedule FuzzNextBounds
+          fz ./internal/domain/forecast FuzzOrder
+          fz ./internal/domain/warning FuzzParseReferences
+          fz ./internal/adapters/bmkg FuzzParse
+          fz ./internal/adapters/bmkg FuzzParseCAPDocuments
+          fz ./internal/adapters/bmkg FuzzParseForecastDocument
+          fz ./internal/adapters/usgs FuzzParse
 
   node:
     name: TypeScript + kontrak
