@@ -14,7 +14,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file siaga/hazard/v1/hazard.proto.
  */
 export const file_siaga_hazard_v1_hazard: GenFile = /*@__PURE__*/
-  fileDesc("ChxzaWFnYS9oYXphcmQvdjEvaGF6YXJkLnByb3RvEg9zaWFnYS5oYXphcmQudjEi6QQKBkhhemFyZBIKCgJpZBgBIAEoCRIpCgRraW5kGAIgASgOMhsuc2lhZ2EuaGF6YXJkLnYxLkhhemFyZEtpbmQSKgoFbGV2ZWwYAyABKA4yGy5zaWFnYS5oYXphcmQudjEuQWxlcnRMZXZlbBIvCg5wcmltYXJ5X3NvdXJjZRgEIAEoDjIXLnNpYWdhLmhhemFyZC52MS5Tb3VyY2USFwoPc291cmNlX2V2ZW50X2lkGAUgASgJEi8KC29jY3VycmVkX2F0GAYgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIvCgtkZXRlY3RlZF9hdBgHIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASLgoKZXhwaXJlc19hdBgIIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASKAoIbG9jYXRpb24YCSABKAsyFi5zaWFnYS5jb21tb24udjEuUG9pbnQSFAoMYXJlYV9nZW9qc29uGAogASgJEjQKEGltcGFjdGVkX3JlZ2lvbnMYCyADKAsyGi5zaWFnYS5jb21tb24udjEuUmVnaW9uUmVmEg0KBXRpdGxlGAwgASgJEg8KB3N1bW1hcnkYDSABKAkSDQoFZHJpbGwYDiABKAgSNwoKZWFydGhxdWFrZRgUIAEoCzIhLnNpYWdhLmhhemFyZC52MS5FYXJ0aHF1YWtlRGV0YWlsSAASOAoHd2VhdGhlchgVIAEoCzIlLnNpYWdhLmhhemFyZC52MS5XZWF0aGVyV2FybmluZ0RldGFpbEgAQggKBmRldGFpbCLAAQoQRWFydGhxdWFrZURldGFpbBIRCgltYWduaXR1ZGUYASABKAESEAoIZGVwdGhfa20YAiABKAESGAoQZmVsdF9kZXNjcmlwdGlvbhgDIAEoCRIZChF0c3VuYW1pX3BvdGVudGlhbBgEIAEoCBIUCgxzaGFrZW1hcF91cmwYBSABKAkSPAoVY29ycm9ib3JhdGluZ19yZXBvcnRzGAYgAygLMh0uc2lhZ2EuaGF6YXJkLnYxLlNvdXJjZVJlcG9ydCK+AQoMU291cmNlUmVwb3J0EicKBnNvdXJjZRgBIAEoDjIXLnNpYWdhLmhhemFyZC52MS5Tb3VyY2USFwoPc291cmNlX2V2ZW50X2lkGAIgASgJEhEKCW1hZ25pdHVkZRgDIAEoARIoCghsb2NhdGlvbhgEIAEoCzIWLnNpYWdhLmNvbW1vbi52MS5Qb2ludBIvCgtvY2N1cnJlZF9hdBgFIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAiewoUV2VhdGhlcldhcm5pbmdEZXRhaWwSFAoMY2FwX3NldmVyaXR5GAEgASgJEhEKCWNhcF9ldmVudBgCIAEoCRIQCghoZWFkbGluZRgDIAEoCRITCgtkZXNjcmlwdGlvbhgEIAEoCRITCgtpbnN0cnVjdGlvbhgFIAEoCSqsAQoKSGF6YXJkS2luZBIbChdIQVpBUkRfS0lORF9VTlNQRUNJRklFRBAAEhoKFkhBWkFSRF9LSU5EX0VBUlRIUVVBS0UQARIXChNIQVpBUkRfS0lORF9XRUFUSEVSEAISFQoRSEFaQVJEX0tJTkRfRkxPT0QQAxIYChRIQVpBUkRfS0lORF9XSUxERklSRRAEEhsKF0hBWkFSRF9LSU5EX0FJUl9RVUFMSVRZEAUqhwEKCkFsZXJ0TGV2ZWwSGwoXQUxFUlRfTEVWRUxfVU5TUEVDSUZJRUQQABIUChBBTEVSVF9MRVZFTF9JTkZPEAESFwoTQUxFUlRfTEVWRUxfV0FTUEFEQRACEhUKEUFMRVJUX0xFVkVMX1NJQUdBEAMSFgoSQUxFUlRfTEVWRUxfQkFIQVlBEAQqlQEKBlNvdXJjZRIWChJTT1VSQ0VfVU5TUEVDSUZJRUQQABIPCgtTT1VSQ0VfQk1LRxABEg8KC1NPVVJDRV9VU0dTEAISFQoRU09VUkNFX09QRU5fTUVURU8QAxIVChFTT1VSQ0VfTkFTQV9GSVJNUxAEEhEKDVNPVVJDRV9PUEVOQVEQBRIQCgxTT1VSQ0VfRFJJTEwQBkLQAQoTY29tLnNpYWdhLmhhemFyZC52MUILSGF6YXJkUHJvdG9QAVpOZ2l0aHViLmNvbS9yYW1pcmV6elNlcnZlci9zaWFnYS9saWJzL2dvL2NvbnRyYWN0cy9nZW4vc2lhZ2EvaGF6YXJkL3YxO2hhemFyZHYxogIDU0hYqgIPU2lhZ2EuSGF6YXJkLlYxygIPU2lhZ2FcSGF6YXJkXFYx4gIbU2lhZ2FcSGF6YXJkXFYxXEdQQk1ldGFkYXRh6gIRU2lhZ2E6OkhhemFyZDo6VjFiBnByb3RvMw", [file_google_protobuf_timestamp, file_siaga_common_v1_geo]);
+  fileDesc("ChxzaWFnYS9oYXphcmQvdjEvaGF6YXJkLnByb3RvEg9zaWFnYS5oYXphcmQudjEimgUKBkhhemFyZBIKCgJpZBgBIAEoCRIpCgRraW5kGAIgASgOMhsuc2lhZ2EuaGF6YXJkLnYxLkhhemFyZEtpbmQSKgoFbGV2ZWwYAyABKA4yGy5zaWFnYS5oYXphcmQudjEuQWxlcnRMZXZlbBIvCg5wcmltYXJ5X3NvdXJjZRgEIAEoDjIXLnNpYWdhLmhhemFyZC52MS5Tb3VyY2USFwoPc291cmNlX2V2ZW50X2lkGAUgASgJEi8KC29jY3VycmVkX2F0GAYgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIvCgtkZXRlY3RlZF9hdBgHIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASLgoKZXhwaXJlc19hdBgIIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASKAoIbG9jYXRpb24YCSABKAsyFi5zaWFnYS5jb21tb24udjEuUG9pbnQSFAoMYXJlYV9nZW9qc29uGAogASgJEjQKEGltcGFjdGVkX3JlZ2lvbnMYCyADKAsyGi5zaWFnYS5jb21tb24udjEuUmVnaW9uUmVmEg0KBXRpdGxlGAwgASgJEg8KB3N1bW1hcnkYDSABKAkSDQoFZHJpbGwYDiABKAgSEAoIcmV2aXNpb24YDyABKA0SHQoVaW1wYWN0ZWRfcmVnaW9uX2NvdW50GBAgASgNEjcKCmVhcnRocXVha2UYFCABKAsyIS5zaWFnYS5oYXphcmQudjEuRWFydGhxdWFrZURldGFpbEgAEjgKB3dlYXRoZXIYFSABKAsyJS5zaWFnYS5oYXphcmQudjEuV2VhdGhlcldhcm5pbmdEZXRhaWxIAEIICgZkZXRhaWwi8AEKEEVhcnRocXVha2VEZXRhaWwSEQoJbWFnbml0dWRlGAEgASgBEhAKCGRlcHRoX2ttGAIgASgBEhgKEGZlbHRfZGVzY3JpcHRpb24YAyABKAkSGQoRdHN1bmFtaV9wb3RlbnRpYWwYBCABKAgSFAoMc2hha2VtYXBfdXJsGAUgASgJEjwKFWNvcnJvYm9yYXRpbmdfcmVwb3J0cxgGIAMoCzIdLnNpYWdhLmhhemFyZC52MS5Tb3VyY2VSZXBvcnQSFgoOZmVsdF9yYWRpdXNfa20YByABKAESFgoObWFnbml0dWRlX3R5cGUYCCABKAki5AEKDFNvdXJjZVJlcG9ydBInCgZzb3VyY2UYASABKA4yFy5zaWFnYS5oYXphcmQudjEuU291cmNlEhcKD3NvdXJjZV9ldmVudF9pZBgCIAEoCRIRCgltYWduaXR1ZGUYAyABKAESKAoIbG9jYXRpb24YBCABKAsyFi5zaWFnYS5jb21tb24udjEuUG9pbnQSLwoLb2NjdXJyZWRfYXQYBSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEhAKCGRlcHRoX2ttGAYgASgBEhIKCnNvdXJjZV91cmwYByABKAkiewoUV2VhdGhlcldhcm5pbmdEZXRhaWwSFAoMY2FwX3NldmVyaXR5GAEgASgJEhEKCWNhcF9ldmVudBgCIAEoCRIQCghoZWFkbGluZRgDIAEoCRITCgtkZXNjcmlwdGlvbhgEIAEoCRITCgtpbnN0cnVjdGlvbhgFIAEoCSqsAQoKSGF6YXJkS2luZBIbChdIQVpBUkRfS0lORF9VTlNQRUNJRklFRBAAEhoKFkhBWkFSRF9LSU5EX0VBUlRIUVVBS0UQARIXChNIQVpBUkRfS0lORF9XRUFUSEVSEAISFQoRSEFaQVJEX0tJTkRfRkxPT0QQAxIYChRIQVpBUkRfS0lORF9XSUxERklSRRAEEhsKF0hBWkFSRF9LSU5EX0FJUl9RVUFMSVRZEAUqhwEKCkFsZXJ0TGV2ZWwSGwoXQUxFUlRfTEVWRUxfVU5TUEVDSUZJRUQQABIUChBBTEVSVF9MRVZFTF9JTkZPEAESFwoTQUxFUlRfTEVWRUxfV0FTUEFEQRACEhUKEUFMRVJUX0xFVkVMX1NJQUdBEAMSFgoSQUxFUlRfTEVWRUxfQkFIQVlBEAQqlQEKBlNvdXJjZRIWChJTT1VSQ0VfVU5TUEVDSUZJRUQQABIPCgtTT1VSQ0VfQk1LRxABEg8KC1NPVVJDRV9VU0dTEAISFQoRU09VUkNFX09QRU5fTUVURU8QAxIVChFTT1VSQ0VfTkFTQV9GSVJNUxAEEhEKDVNPVVJDRV9PUEVOQVEQBRIQCgxTT1VSQ0VfRFJJTEwQBkLQAQoTY29tLnNpYWdhLmhhemFyZC52MUILSGF6YXJkUHJvdG9QAVpOZ2l0aHViLmNvbS9yYW1pcmV6elNlcnZlci9zaWFnYS9saWJzL2dvL2NvbnRyYWN0cy9nZW4vc2lhZ2EvaGF6YXJkL3YxO2hhemFyZHYxogIDU0hYqgIPU2lhZ2EuSGF6YXJkLlYxygIPU2lhZ2FcSGF6YXJkXFYx4gIbU2lhZ2FcSGF6YXJkXFYxXEdQQk1ldGFkYXRh6gIRU2lhZ2E6OkhhemFyZDo6VjFiBnByb3RvMw", [file_google_protobuf_timestamp, file_siaga_common_v1_geo]);
 
 /**
  * Kejadian bahaya yang sudah dinormalisasi dan dideduplikasi oleh geo-processor.
@@ -91,6 +91,8 @@ export type Hazard = Message<"siaga.hazard.v1.Hazard"> & {
 
   /**
    * Kelurahan/desa dalam area terdampak, terdekat lebih dulu. Bersifat estimasi.
+   * Dibatasi 100 wilayah terdekat supaya pesan tetap kecil; jumlah lengkapnya
+   * di impacted_region_count dan daftar lengkapnya di hazard.impact_region.
    *
    * @generated from field: repeated siaga.common.v1.RegionRef impacted_regions = 11;
    */
@@ -114,6 +116,21 @@ export type Hazard = Message<"siaga.hazard.v1.Hazard"> & {
    * @generated from field: bool drill = 14;
    */
   drill: boolean;
+
+  /**
+   * Naik satu setiap kali isi kejadian berubah; konsumen mengabaikan revisi
+   * yang lebih lama dari yang sudah dimiliki.
+   *
+   * @generated from field: uint32 revision = 15;
+   */
+  revision: number;
+
+  /**
+   * Jumlah seluruh wilayah terdampak, termasuk yang tidak muat di impacted_regions.
+   *
+   * @generated from field: uint32 impacted_region_count = 16;
+   */
+  impactedRegionCount: number;
 
   /**
    * @generated from oneof siaga.hazard.v1.Hazard.detail
@@ -179,6 +196,21 @@ export type EarthquakeDetail = Message<"siaga.hazard.v1.EarthquakeDetail"> & {
    * @generated from field: repeated siaga.hazard.v1.SourceReport corroborating_reports = 6;
    */
   corroboratingReports: SourceReport[];
+
+  /**
+   * Estimasi radius dirasakan di permukaan (km), dari PRD bagian Aturan bisnis.
+   * Nol bila gempa terlalu dalam untuk dirasakan menurut rumus itu.
+   *
+   * @generated from field: double felt_radius_km = 7;
+   */
+  feltRadiusKm: number;
+
+  /**
+   * Jenis magnitudo menurut sumber utama (USGS: "mb", "mww", ...). Kosong untuk BMKG.
+   *
+   * @generated from field: string magnitude_type = 8;
+   */
+  magnitudeType: string;
 };
 
 /**
@@ -218,6 +250,18 @@ export type SourceReport = Message<"siaga.hazard.v1.SourceReport"> & {
    * @generated from field: google.protobuf.Timestamp occurred_at = 5;
    */
   occurredAt?: Timestamp | undefined;
+
+  /**
+   * @generated from field: double depth_km = 6;
+   */
+  depthKm: number;
+
+  /**
+   * URL halaman kejadian di situs sumber.
+   *
+   * @generated from field: string source_url = 7;
+   */
+  sourceUrl: string;
 };
 
 /**

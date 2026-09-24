@@ -2,8 +2,8 @@
 // @generated from file siaga/hazard/v1/events.proto (package siaga.hazard.v1, syntax proto3)
 /* eslint-disable */
 
-import type { GenFile, GenMessage } from "@bufbuild/protobuf/codegenv2";
-import { fileDesc, messageDesc } from "@bufbuild/protobuf/codegenv2";
+import type { GenEnum, GenFile, GenMessage } from "@bufbuild/protobuf/codegenv2";
+import { enumDesc, fileDesc, messageDesc } from "@bufbuild/protobuf/codegenv2";
 import type { Timestamp } from "@bufbuild/protobuf/wkt";
 import { file_google_protobuf_timestamp } from "@bufbuild/protobuf/wkt";
 import type { AlertLevel, Hazard, HazardKind } from "./hazard_pb.js";
@@ -14,7 +14,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file siaga/hazard/v1/events.proto.
  */
 export const file_siaga_hazard_v1_events: GenFile = /*@__PURE__*/
-  fileDesc("ChxzaWFnYS9oYXphcmQvdjEvZXZlbnRzLnByb3RvEg9zaWFnYS5oYXphcmQudjEiOAoNSGF6YXJkQ3JlYXRlZBInCgZoYXphcmQYASABKAsyFy5zaWFnYS5oYXphcmQudjEuSGF6YXJkIm0KDUhhemFyZFVwZGF0ZWQSJwoGaGF6YXJkGAEgASgLMhcuc2lhZ2EuaGF6YXJkLnYxLkhhemFyZBIzCg5wcmV2aW91c19sZXZlbBgCIAEoDjIbLnNpYWdhLmhhemFyZC52MS5BbGVydExldmVsIn0KDUhhemFyZEV4cGlyZWQSEQoJaGF6YXJkX2lkGAEgASgJEikKBGtpbmQYAiABKA4yGy5zaWFnYS5oYXphcmQudjEuSGF6YXJkS2luZBIuCgpleHBpcmVkX2F0GAMgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcELQAQoTY29tLnNpYWdhLmhhemFyZC52MUILRXZlbnRzUHJvdG9QAVpOZ2l0aHViLmNvbS9yYW1pcmV6elNlcnZlci9zaWFnYS9saWJzL2dvL2NvbnRyYWN0cy9nZW4vc2lhZ2EvaGF6YXJkL3YxO2hhemFyZHYxogIDU0hYqgIPU2lhZ2EuSGF6YXJkLlYxygIPU2lhZ2FcSGF6YXJkXFYx4gIbU2lhZ2FcSGF6YXJkXFYxXEdQQk1ldGFkYXRh6gIRU2lhZ2E6OkhhemFyZDo6VjFiBnByb3RvMw", [file_google_protobuf_timestamp, file_siaga_hazard_v1_hazard]);
+  fileDesc("ChxzaWFnYS9oYXphcmQvdjEvZXZlbnRzLnByb3RvEg9zaWFnYS5oYXphcmQudjEiOAoNSGF6YXJkQ3JlYXRlZBInCgZoYXphcmQYASABKAsyFy5zaWFnYS5oYXphcmQudjEuSGF6YXJkIm0KDUhhemFyZFVwZGF0ZWQSJwoGaGF6YXJkGAEgASgLMhcuc2lhZ2EuaGF6YXJkLnYxLkhhemFyZBIzCg5wcmV2aW91c19sZXZlbBgCIAEoDjIbLnNpYWdhLmhhemFyZC52MS5BbGVydExldmVsIt0BCg1IYXphcmRFeHBpcmVkEhEKCWhhemFyZF9pZBgBIAEoCRIpCgRraW5kGAIgASgOMhsuc2lhZ2EuaGF6YXJkLnYxLkhhemFyZEtpbmQSLgoKZXhwaXJlZF9hdBgDIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASLQoGcmVhc29uGAQgASgOMh0uc2lhZ2EuaGF6YXJkLnYxLkV4cGlyeVJlYXNvbhIdChVtZXJnZWRfaW50b19oYXphcmRfaWQYBSABKAkSEAoIcmV2aXNpb24YBiABKA0qfwoMRXhwaXJ5UmVhc29uEh0KGUVYUElSWV9SRUFTT05fVU5TUEVDSUZJRUQQABIZChVFWFBJUllfUkVBU09OX0VMQVBTRUQQARIYChRFWFBJUllfUkVBU09OX01FUkdFRBACEhsKF0VYUElSWV9SRUFTT05fUkVUUkFDVEVEEANC0AEKE2NvbS5zaWFnYS5oYXphcmQudjFCC0V2ZW50c1Byb3RvUAFaTmdpdGh1Yi5jb20vcmFtaXJlenpTZXJ2ZXIvc2lhZ2EvbGlicy9nby9jb250cmFjdHMvZ2VuL3NpYWdhL2hhemFyZC92MTtoYXphcmR2MaICA1NIWKoCD1NpYWdhLkhhemFyZC5WMcoCD1NpYWdhXEhhemFyZFxWMeICG1NpYWdhXEhhemFyZFxWMVxHUEJNZXRhZGF0YeoCEVNpYWdhOjpIYXphcmQ6OlYxYgZwcm90bzM", [file_google_protobuf_timestamp, file_siaga_hazard_v1_hazard]);
 
 /**
  * Diterbitkan ke subjek NATS `hazard.<jenis>.created` saat kejadian baru disimpan.
@@ -79,6 +79,25 @@ export type HazardExpired = Message<"siaga.hazard.v1.HazardExpired"> & {
    * @generated from field: google.protobuf.Timestamp expired_at = 3;
    */
   expiredAt?: Timestamp | undefined;
+
+  /**
+   * @generated from field: siaga.hazard.v1.ExpiryReason reason = 4;
+   */
+  reason: ExpiryReason;
+
+  /**
+   * Kejadian yang menggantikan, bila reason = EXPIRY_REASON_MERGED.
+   *
+   * @generated from field: string merged_into_hazard_id = 5;
+   */
+  mergedIntoHazardId: string;
+
+  /**
+   * Revisi terakhir kejadian, sama dengan Hazard.revision.
+   *
+   * @generated from field: uint32 revision = 6;
+   */
+  revision: number;
 };
 
 /**
@@ -87,4 +106,43 @@ export type HazardExpired = Message<"siaga.hazard.v1.HazardExpired"> & {
  */
 export const HazardExpiredSchema: GenMessage<HazardExpired> = /*@__PURE__*/
   messageDesc(file_siaga_hazard_v1_events, 2);
+
+/**
+ * Alasan kejadian tidak aktif lagi.
+ *
+ * @generated from enum siaga.hazard.v1.ExpiryReason
+ */
+export enum ExpiryReason {
+  /**
+   * @generated from enum value: EXPIRY_REASON_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * Masa aktif habis (gempa: 6 jam sejak kejadian).
+   *
+   * @generated from enum value: EXPIRY_REASON_ELAPSED = 1;
+   */
+  ELAPSED = 1,
+
+  /**
+   * Ternyata kejadian yang sama dengan kejadian lain; lihat merged_into_hazard_id.
+   *
+   * @generated from enum value: EXPIRY_REASON_MERGED = 2;
+   */
+  MERGED = 2,
+
+  /**
+   * Semua sumber menarik laporannya (misal USGS menandai "deleted").
+   *
+   * @generated from enum value: EXPIRY_REASON_RETRACTED = 3;
+   */
+  RETRACTED = 3,
+}
+
+/**
+ * Describes the enum siaga.hazard.v1.ExpiryReason.
+ */
+export const ExpiryReasonSchema: GenEnum<ExpiryReason> = /*@__PURE__*/
+  enumDesc(file_siaga_hazard_v1_events, 0);
 

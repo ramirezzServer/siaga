@@ -16,9 +16,25 @@ message HazardUpdated {
   AlertLevel previous_level = 2;
 }
 
+// Alasan kejadian tidak aktif lagi.
+enum ExpiryReason {
+  EXPIRY_REASON_UNSPECIFIED = 0;
+  // Masa aktif habis (gempa: 6 jam sejak kejadian).
+  EXPIRY_REASON_ELAPSED = 1;
+  // Ternyata kejadian yang sama dengan kejadian lain; lihat merged_into_hazard_id.
+  EXPIRY_REASON_MERGED = 2;
+  // Semua sumber menarik laporannya (misal USGS menandai "deleted").
+  EXPIRY_REASON_RETRACTED = 3;
+}
+
 // Diterbitkan ke `hazard.<jenis>.expired` saat kejadian tidak aktif lagi.
 message HazardExpired {
   string hazard_id = 1;
   HazardKind kind = 2;
   google.protobuf.Timestamp expired_at = 3;
+  ExpiryReason reason = 4;
+  // Kejadian yang menggantikan, bila reason = EXPIRY_REASON_MERGED.
+  string merged_into_hazard_id = 5;
+  // Revisi terakhir kejadian, sama dengan Hazard.revision.
+  uint32 revision = 6;
 }

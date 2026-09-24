@@ -48,3 +48,24 @@ func TestEnsureStreamRejectsNonOwner(t *testing.T) {
 		t.Fatalf("err = %v, ingin ErrNotOwner", err)
 	}
 }
+
+func TestEnsureStreamAllowsSharedStream(t *testing.T) {
+	url := natstest.RunServer(t)
+	log := slog.New(slog.NewTextHandler(io.Discard, nil))
+	nc, err := natsx.Connect(url, "test", log)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(nc.Close)
+	js, err := jetstream.New(nc)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	for _, svc := range []string{"geo-processor", "alert-engine"} {
+		if _, err := natsx.EnsureStream(ctx, js, streams.DLQ, svc); err != nil {
+			t.Fatalf("%s: %v", svc, err)
+		}
+	}
+}

@@ -65,9 +65,10 @@ func StreamConfig(s streams.Spec) jetstream.StreamConfig {
 var ErrNotOwner = errors.New("natsx: layanan bukan pemilik stream")
 
 // EnsureStream membuat stream milik owner, atau memperbarui konfigurasinya bila
-// sudah ada. Idempotent, aman dipanggil setiap layanan start.
+// sudah ada. Idempotent, aman dipanggil setiap layanan start. Stream bersama
+// (streams.OwnerShared) boleh dipastikan oleh layanan mana pun.
 func EnsureStream(ctx context.Context, js jetstream.JetStream, s streams.Spec, owner string) (jetstream.Stream, error) {
-	if s.Owner != owner {
+	if s.Owner != owner && s.Owner != streams.OwnerShared {
 		return nil, fmt.Errorf("%w: %s dimiliki %s, bukan %s", ErrNotOwner, s.Name, s.Owner, owner)
 	}
 	st, err := js.CreateOrUpdateStream(ctx, StreamConfig(s))

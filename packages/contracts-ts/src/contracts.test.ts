@@ -40,6 +40,8 @@ describe("kontrak event bahaya", () => {
     expect(subjects.hazard(HazardKind.AIR_QUALITY, "expired")).toBe("hazard.aq.expired");
     expect(() => subjects.hazard(HazardKind.UNSPECIFIED, "created")).toThrow();
     expect(subjects.raw("quake", "bmkg")).toBe("raw.quake.bmkg");
+    expect(subjects.dlq("geo-processor")).toBe("dlq.geo-processor");
+    expect(() => subjects.dlq("geo.processor")).toThrow();
   });
 });
 

@@ -22,9 +22,15 @@ type Spec struct {
 	// MaxBytes membatasi ukuran stream supaya disk lokal tidak penuh.
 	MaxBytes int64
 	// Owner adalah satu-satunya layanan yang membuat dan memperbarui stream ini,
-	// sama seperti satu role pemilik per schema database.
+	// sama seperti satu role pemilik per schema database. OwnerShared berarti
+	// setiap layanan boleh memastikan stream ada (misal DLQ yang ditulis semua konsumen).
 	Owner string
 }
+
+// OwnerShared menandai stream milik bersama: konfigurasinya hanya berasal dari
+// definisi di paket ini, jadi layanan mana pun menghasilkan konfigurasi yang sama.
+const OwnerShared = "*"
+
 
 const day = 24 * time.Hour
 
@@ -48,6 +54,20 @@ var Hazard = Spec{
 	DuplicateWindow: day,
 	MaxBytes:        1 << 30,
 	Owner:           "geo-processor",
+}
+
+// DLQ menampung pesan yang gagal diproses konsumen setelah batas percobaan
+// (subjek dlq.<layanan>). Isinya payload asli; asal dan alasannya di header
+// (lihat docs/events.md). Nats-Msg-Id = stream:sequence asal, jadi pesan yang
+// sama tidak masuk dua kali walau konsumen gagal di tengah jalan.
+var DLQ = Spec{
+	Name:            "DLQ",
+	Description:     "Pesan yang gagal diproses setelah batas percobaan",
+	Subjects:        []string{"dlq.>"},
+	MaxAge:          30 * day,
+	DuplicateWindow: day,
+	MaxBytes:        256 << 20,
+	Owner:           OwnerShared,
 }
 
 // Kind adalah potongan subjek untuk jenis data.
@@ -105,4 +125,12 @@ func HazardSubject(k Kind, t Transition) (string, error) {
 		return "", fmt.Errorf("streams: jenis tidak valid %q", k)
 	}
 	return "hazard." + string(k) + "." + string(t), nil
+}
+
+// DLQSubject membentuk subjek dlq.<layanan>.
+func DLQSubject(service string) (string, error) {
+	if !token.MatchString(service) {
+		return "", fmt.Errorf("streams: nama layanan tidak valid %q", service)
+	}
+	return "dlq." + service, nil
 }

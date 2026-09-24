@@ -22,6 +22,62 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// Alasan kejadian tidak aktif lagi.
+type ExpiryReason int32
+
+const (
+	ExpiryReason_EXPIRY_REASON_UNSPECIFIED ExpiryReason = 0
+	// Masa aktif habis (gempa: 6 jam sejak kejadian).
+	ExpiryReason_EXPIRY_REASON_ELAPSED ExpiryReason = 1
+	// Ternyata kejadian yang sama dengan kejadian lain; lihat merged_into_hazard_id.
+	ExpiryReason_EXPIRY_REASON_MERGED ExpiryReason = 2
+	// Semua sumber menarik laporannya (misal USGS menandai "deleted").
+	ExpiryReason_EXPIRY_REASON_RETRACTED ExpiryReason = 3
+)
+
+// Enum value maps for ExpiryReason.
+var (
+	ExpiryReason_name = map[int32]string{
+		0: "EXPIRY_REASON_UNSPECIFIED",
+		1: "EXPIRY_REASON_ELAPSED",
+		2: "EXPIRY_REASON_MERGED",
+		3: "EXPIRY_REASON_RETRACTED",
+	}
+	ExpiryReason_value = map[string]int32{
+		"EXPIRY_REASON_UNSPECIFIED": 0,
+		"EXPIRY_REASON_ELAPSED":     1,
+		"EXPIRY_REASON_MERGED":      2,
+		"EXPIRY_REASON_RETRACTED":   3,
+	}
+)
+
+func (x ExpiryReason) Enum() *ExpiryReason {
+	p := new(ExpiryReason)
+	*p = x
+	return p
+}
+
+func (x ExpiryReason) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ExpiryReason) Descriptor() protoreflect.EnumDescriptor {
+	return file_siaga_hazard_v1_events_proto_enumTypes[0].Descriptor()
+}
+
+func (ExpiryReason) Type() protoreflect.EnumType {
+	return &file_siaga_hazard_v1_events_proto_enumTypes[0]
+}
+
+func (x ExpiryReason) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use ExpiryReason.Descriptor instead.
+func (ExpiryReason) EnumDescriptor() ([]byte, []int) {
+	return file_siaga_hazard_v1_events_proto_rawDescGZIP(), []int{0}
+}
+
 // Diterbitkan ke subjek NATS `hazard.<jenis>.created` saat kejadian baru disimpan.
 type HazardCreated struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -122,10 +178,15 @@ func (x *HazardUpdated) GetPreviousLevel() AlertLevel {
 
 // Diterbitkan ke `hazard.<jenis>.expired` saat kejadian tidak aktif lagi.
 type HazardExpired struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	HazardId      string                 `protobuf:"bytes,1,opt,name=hazard_id,json=hazardId,proto3" json:"hazard_id,omitempty"`
-	Kind          HazardKind             `protobuf:"varint,2,opt,name=kind,proto3,enum=siaga.hazard.v1.HazardKind" json:"kind,omitempty"`
-	ExpiredAt     *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=expired_at,json=expiredAt,proto3" json:"expired_at,omitempty"`
+	state     protoimpl.MessageState `protogen:"open.v1"`
+	HazardId  string                 `protobuf:"bytes,1,opt,name=hazard_id,json=hazardId,proto3" json:"hazard_id,omitempty"`
+	Kind      HazardKind             `protobuf:"varint,2,opt,name=kind,proto3,enum=siaga.hazard.v1.HazardKind" json:"kind,omitempty"`
+	ExpiredAt *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=expired_at,json=expiredAt,proto3" json:"expired_at,omitempty"`
+	Reason    ExpiryReason           `protobuf:"varint,4,opt,name=reason,proto3,enum=siaga.hazard.v1.ExpiryReason" json:"reason,omitempty"`
+	// Kejadian yang menggantikan, bila reason = EXPIRY_REASON_MERGED.
+	MergedIntoHazardId string `protobuf:"bytes,5,opt,name=merged_into_hazard_id,json=mergedIntoHazardId,proto3" json:"merged_into_hazard_id,omitempty"`
+	// Revisi terakhir kejadian, sama dengan Hazard.revision.
+	Revision      uint32 `protobuf:"varint,6,opt,name=revision,proto3" json:"revision,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -181,6 +242,27 @@ func (x *HazardExpired) GetExpiredAt() *timestamppb.Timestamp {
 	return nil
 }
 
+func (x *HazardExpired) GetReason() ExpiryReason {
+	if x != nil {
+		return x.Reason
+	}
+	return ExpiryReason_EXPIRY_REASON_UNSPECIFIED
+}
+
+func (x *HazardExpired) GetMergedIntoHazardId() string {
+	if x != nil {
+		return x.MergedIntoHazardId
+	}
+	return ""
+}
+
+func (x *HazardExpired) GetRevision() uint32 {
+	if x != nil {
+		return x.Revision
+	}
+	return 0
+}
+
 var File_siaga_hazard_v1_events_proto protoreflect.FileDescriptor
 
 const file_siaga_hazard_v1_events_proto_rawDesc = "" +
@@ -190,12 +272,20 @@ const file_siaga_hazard_v1_events_proto_rawDesc = "" +
 	"\x06hazard\x18\x01 \x01(\v2\x17.siaga.hazard.v1.HazardR\x06hazard\"\x84\x01\n" +
 	"\rHazardUpdated\x12/\n" +
 	"\x06hazard\x18\x01 \x01(\v2\x17.siaga.hazard.v1.HazardR\x06hazard\x12B\n" +
-	"\x0eprevious_level\x18\x02 \x01(\x0e2\x1b.siaga.hazard.v1.AlertLevelR\rpreviousLevel\"\x98\x01\n" +
+	"\x0eprevious_level\x18\x02 \x01(\x0e2\x1b.siaga.hazard.v1.AlertLevelR\rpreviousLevel\"\x9e\x02\n" +
 	"\rHazardExpired\x12\x1b\n" +
 	"\thazard_id\x18\x01 \x01(\tR\bhazardId\x12/\n" +
 	"\x04kind\x18\x02 \x01(\x0e2\x1b.siaga.hazard.v1.HazardKindR\x04kind\x129\n" +
 	"\n" +
-	"expired_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\texpiredAtB\xd0\x01\n" +
+	"expired_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\texpiredAt\x125\n" +
+	"\x06reason\x18\x04 \x01(\x0e2\x1d.siaga.hazard.v1.ExpiryReasonR\x06reason\x121\n" +
+	"\x15merged_into_hazard_id\x18\x05 \x01(\tR\x12mergedIntoHazardId\x12\x1a\n" +
+	"\brevision\x18\x06 \x01(\rR\brevision*\x7f\n" +
+	"\fExpiryReason\x12\x1d\n" +
+	"\x19EXPIRY_REASON_UNSPECIFIED\x10\x00\x12\x19\n" +
+	"\x15EXPIRY_REASON_ELAPSED\x10\x01\x12\x18\n" +
+	"\x14EXPIRY_REASON_MERGED\x10\x02\x12\x1b\n" +
+	"\x17EXPIRY_REASON_RETRACTED\x10\x03B\xd0\x01\n" +
 	"\x13com.siaga.hazard.v1B\vEventsProtoP\x01ZNgithub.com/ramirezzServer/siaga/libs/go/contracts/gen/siaga/hazard/v1;hazardv1\xa2\x02\x03SHX\xaa\x02\x0fSiaga.Hazard.V1\xca\x02\x0fSiaga\\Hazard\\V1\xe2\x02\x1bSiaga\\Hazard\\V1\\GPBMetadata\xea\x02\x11Siaga::Hazard::V1b\x06proto3"
 
 var (
@@ -210,27 +300,30 @@ func file_siaga_hazard_v1_events_proto_rawDescGZIP() []byte {
 	return file_siaga_hazard_v1_events_proto_rawDescData
 }
 
+var file_siaga_hazard_v1_events_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_siaga_hazard_v1_events_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_siaga_hazard_v1_events_proto_goTypes = []any{
-	(*HazardCreated)(nil),         // 0: siaga.hazard.v1.HazardCreated
-	(*HazardUpdated)(nil),         // 1: siaga.hazard.v1.HazardUpdated
-	(*HazardExpired)(nil),         // 2: siaga.hazard.v1.HazardExpired
-	(*Hazard)(nil),                // 3: siaga.hazard.v1.Hazard
-	(AlertLevel)(0),               // 4: siaga.hazard.v1.AlertLevel
-	(HazardKind)(0),               // 5: siaga.hazard.v1.HazardKind
-	(*timestamppb.Timestamp)(nil), // 6: google.protobuf.Timestamp
+	(ExpiryReason)(0),             // 0: siaga.hazard.v1.ExpiryReason
+	(*HazardCreated)(nil),         // 1: siaga.hazard.v1.HazardCreated
+	(*HazardUpdated)(nil),         // 2: siaga.hazard.v1.HazardUpdated
+	(*HazardExpired)(nil),         // 3: siaga.hazard.v1.HazardExpired
+	(*Hazard)(nil),                // 4: siaga.hazard.v1.Hazard
+	(AlertLevel)(0),               // 5: siaga.hazard.v1.AlertLevel
+	(HazardKind)(0),               // 6: siaga.hazard.v1.HazardKind
+	(*timestamppb.Timestamp)(nil), // 7: google.protobuf.Timestamp
 }
 var file_siaga_hazard_v1_events_proto_depIdxs = []int32{
-	3, // 0: siaga.hazard.v1.HazardCreated.hazard:type_name -> siaga.hazard.v1.Hazard
-	3, // 1: siaga.hazard.v1.HazardUpdated.hazard:type_name -> siaga.hazard.v1.Hazard
-	4, // 2: siaga.hazard.v1.HazardUpdated.previous_level:type_name -> siaga.hazard.v1.AlertLevel
-	5, // 3: siaga.hazard.v1.HazardExpired.kind:type_name -> siaga.hazard.v1.HazardKind
-	6, // 4: siaga.hazard.v1.HazardExpired.expired_at:type_name -> google.protobuf.Timestamp
-	5, // [5:5] is the sub-list for method output_type
-	5, // [5:5] is the sub-list for method input_type
-	5, // [5:5] is the sub-list for extension type_name
-	5, // [5:5] is the sub-list for extension extendee
-	0, // [0:5] is the sub-list for field type_name
+	4, // 0: siaga.hazard.v1.HazardCreated.hazard:type_name -> siaga.hazard.v1.Hazard
+	4, // 1: siaga.hazard.v1.HazardUpdated.hazard:type_name -> siaga.hazard.v1.Hazard
+	5, // 2: siaga.hazard.v1.HazardUpdated.previous_level:type_name -> siaga.hazard.v1.AlertLevel
+	6, // 3: siaga.hazard.v1.HazardExpired.kind:type_name -> siaga.hazard.v1.HazardKind
+	7, // 4: siaga.hazard.v1.HazardExpired.expired_at:type_name -> google.protobuf.Timestamp
+	0, // 5: siaga.hazard.v1.HazardExpired.reason:type_name -> siaga.hazard.v1.ExpiryReason
+	6, // [6:6] is the sub-list for method output_type
+	6, // [6:6] is the sub-list for method input_type
+	6, // [6:6] is the sub-list for extension type_name
+	6, // [6:6] is the sub-list for extension extendee
+	0, // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_siaga_hazard_v1_events_proto_init() }
@@ -244,13 +337,14 @@ func file_siaga_hazard_v1_events_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_siaga_hazard_v1_events_proto_rawDesc), len(file_siaga_hazard_v1_events_proto_rawDesc)),
-			NumEnums:      0,
+			NumEnums:      1,
 			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
 		GoTypes:           file_siaga_hazard_v1_events_proto_goTypes,
 		DependencyIndexes: file_siaga_hazard_v1_events_proto_depIdxs,
+		EnumInfos:         file_siaga_hazard_v1_events_proto_enumTypes,
 		MessageInfos:      file_siaga_hazard_v1_events_proto_msgTypes,
 	}.Build()
 	File_siaga_hazard_v1_events_proto = out.File

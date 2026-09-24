@@ -59,12 +59,19 @@ message Hazard {
   // Area terdampak sebagai GeoJSON geometry, bila ada.
   string area_geojson = 10;
   // Kelurahan/desa dalam area terdampak, terdekat lebih dulu. Bersifat estimasi.
+  // Dibatasi 100 wilayah terdekat supaya pesan tetap kecil; jumlah lengkapnya
+  // di impacted_region_count dan daftar lengkapnya di hazard.impact_region.
   repeated siaga.common.v1.RegionRef impacted_regions = 11;
   // Teks judul dan ringkasan dalam bahasa Indonesia.
   string title = 12;
   string summary = 13;
   // true untuk kejadian mode latihan.
   bool drill = 14;
+  // Naik satu setiap kali isi kejadian berubah; konsumen mengabaikan revisi
+  // yang lebih lama dari yang sudah dimiliki.
+  uint32 revision = 15;
+  // Jumlah seluruh wilayah terdampak, termasuk yang tidak muat di impacted_regions.
+  uint32 impacted_region_count = 16;
 
   oneof detail {
     EarthquakeDetail earthquake = 20;
@@ -82,6 +89,11 @@ message EarthquakeDetail {
   string shakemap_url = 5;
   // Sumber lain yang melaporkan kejadian yang sama (misal USGS).
   repeated SourceReport corroborating_reports = 6;
+  // Estimasi radius dirasakan di permukaan (km), dari PRD bagian Aturan bisnis.
+  // Nol bila gempa terlalu dalam untuk dirasakan menurut rumus itu.
+  double felt_radius_km = 7;
+  // Jenis magnitudo menurut sumber utama (USGS: "mb", "mww", ...). Kosong untuk BMKG.
+  string magnitude_type = 8;
 }
 
 // Laporan sumber sekunder untuk kejadian yang sama.
@@ -91,6 +103,9 @@ message SourceReport {
   double magnitude = 3;
   siaga.common.v1.Point location = 4;
   google.protobuf.Timestamp occurred_at = 5;
+  double depth_km = 6;
+  // URL halaman kejadian di situs sumber.
+  string source_url = 7;
 }
 
 // Detail peringatan dini cuaca (CAP BMKG).

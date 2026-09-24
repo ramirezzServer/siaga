@@ -225,12 +225,19 @@ type Hazard struct {
 	// Area terdampak sebagai GeoJSON geometry, bila ada.
 	AreaGeojson string `protobuf:"bytes,10,opt,name=area_geojson,json=areaGeojson,proto3" json:"area_geojson,omitempty"`
 	// Kelurahan/desa dalam area terdampak, terdekat lebih dulu. Bersifat estimasi.
+	// Dibatasi 100 wilayah terdekat supaya pesan tetap kecil; jumlah lengkapnya
+	// di impacted_region_count dan daftar lengkapnya di hazard.impact_region.
 	ImpactedRegions []*v1.RegionRef `protobuf:"bytes,11,rep,name=impacted_regions,json=impactedRegions,proto3" json:"impacted_regions,omitempty"`
 	// Teks judul dan ringkasan dalam bahasa Indonesia.
 	Title   string `protobuf:"bytes,12,opt,name=title,proto3" json:"title,omitempty"`
 	Summary string `protobuf:"bytes,13,opt,name=summary,proto3" json:"summary,omitempty"`
 	// true untuk kejadian mode latihan.
 	Drill bool `protobuf:"varint,14,opt,name=drill,proto3" json:"drill,omitempty"`
+	// Naik satu setiap kali isi kejadian berubah; konsumen mengabaikan revisi
+	// yang lebih lama dari yang sudah dimiliki.
+	Revision uint32 `protobuf:"varint,15,opt,name=revision,proto3" json:"revision,omitempty"`
+	// Jumlah seluruh wilayah terdampak, termasuk yang tidak muat di impacted_regions.
+	ImpactedRegionCount uint32 `protobuf:"varint,16,opt,name=impacted_region_count,json=impactedRegionCount,proto3" json:"impacted_region_count,omitempty"`
 	// Types that are valid to be assigned to Detail:
 	//
 	//	*Hazard_Earthquake
@@ -368,6 +375,20 @@ func (x *Hazard) GetDrill() bool {
 	return false
 }
 
+func (x *Hazard) GetRevision() uint32 {
+	if x != nil {
+		return x.Revision
+	}
+	return 0
+}
+
+func (x *Hazard) GetImpactedRegionCount() uint32 {
+	if x != nil {
+		return x.ImpactedRegionCount
+	}
+	return 0
+}
+
 func (x *Hazard) GetDetail() isHazard_Detail {
 	if x != nil {
 		return x.Detail
@@ -420,8 +441,13 @@ type EarthquakeDetail struct {
 	ShakemapUrl      string `protobuf:"bytes,5,opt,name=shakemap_url,json=shakemapUrl,proto3" json:"shakemap_url,omitempty"`
 	// Sumber lain yang melaporkan kejadian yang sama (misal USGS).
 	CorroboratingReports []*SourceReport `protobuf:"bytes,6,rep,name=corroborating_reports,json=corroboratingReports,proto3" json:"corroborating_reports,omitempty"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
+	// Estimasi radius dirasakan di permukaan (km), dari PRD bagian Aturan bisnis.
+	// Nol bila gempa terlalu dalam untuk dirasakan menurut rumus itu.
+	FeltRadiusKm float64 `protobuf:"fixed64,7,opt,name=felt_radius_km,json=feltRadiusKm,proto3" json:"felt_radius_km,omitempty"`
+	// Jenis magnitudo menurut sumber utama (USGS: "mb", "mww", ...). Kosong untuk BMKG.
+	MagnitudeType string `protobuf:"bytes,8,opt,name=magnitude_type,json=magnitudeType,proto3" json:"magnitude_type,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *EarthquakeDetail) Reset() {
@@ -496,6 +522,20 @@ func (x *EarthquakeDetail) GetCorroboratingReports() []*SourceReport {
 	return nil
 }
 
+func (x *EarthquakeDetail) GetFeltRadiusKm() float64 {
+	if x != nil {
+		return x.FeltRadiusKm
+	}
+	return 0
+}
+
+func (x *EarthquakeDetail) GetMagnitudeType() string {
+	if x != nil {
+		return x.MagnitudeType
+	}
+	return ""
+}
+
 // Laporan sumber sekunder untuk kejadian yang sama.
 type SourceReport struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -504,6 +544,9 @@ type SourceReport struct {
 	Magnitude     float64                `protobuf:"fixed64,3,opt,name=magnitude,proto3" json:"magnitude,omitempty"`
 	Location      *v1.Point              `protobuf:"bytes,4,opt,name=location,proto3" json:"location,omitempty"`
 	OccurredAt    *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=occurred_at,json=occurredAt,proto3" json:"occurred_at,omitempty"`
+	DepthKm       float64                `protobuf:"fixed64,6,opt,name=depth_km,json=depthKm,proto3" json:"depth_km,omitempty"`
+	// URL halaman kejadian di situs sumber.
+	SourceUrl     string `protobuf:"bytes,7,opt,name=source_url,json=sourceUrl,proto3" json:"source_url,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -571,6 +614,20 @@ func (x *SourceReport) GetOccurredAt() *timestamppb.Timestamp {
 		return x.OccurredAt
 	}
 	return nil
+}
+
+func (x *SourceReport) GetDepthKm() float64 {
+	if x != nil {
+		return x.DepthKm
+	}
+	return 0
+}
+
+func (x *SourceReport) GetSourceUrl() string {
+	if x != nil {
+		return x.SourceUrl
+	}
+	return ""
 }
 
 // Detail peringatan dini cuaca (CAP BMKG).
@@ -656,7 +713,7 @@ var File_siaga_hazard_v1_hazard_proto protoreflect.FileDescriptor
 
 const file_siaga_hazard_v1_hazard_proto_rawDesc = "" +
 	"\n" +
-	"\x1csiaga/hazard/v1/hazard.proto\x12\x0fsiaga.hazard.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x19siaga/common/v1/geo.proto\"\x8f\x06\n" +
+	"\x1csiaga/hazard/v1/hazard.proto\x12\x0fsiaga.hazard.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x19siaga/common/v1/geo.proto\"\xdf\x06\n" +
 	"\x06Hazard\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12/\n" +
 	"\x04kind\x18\x02 \x01(\x0e2\x1b.siaga.hazard.v1.HazardKindR\x04kind\x121\n" +
@@ -675,26 +732,33 @@ const file_siaga_hazard_v1_hazard_proto_rawDesc = "" +
 	"\x10impacted_regions\x18\v \x03(\v2\x1a.siaga.common.v1.RegionRefR\x0fimpactedRegions\x12\x14\n" +
 	"\x05title\x18\f \x01(\tR\x05title\x12\x18\n" +
 	"\asummary\x18\r \x01(\tR\asummary\x12\x14\n" +
-	"\x05drill\x18\x0e \x01(\bR\x05drill\x12C\n" +
+	"\x05drill\x18\x0e \x01(\bR\x05drill\x12\x1a\n" +
+	"\brevision\x18\x0f \x01(\rR\brevision\x122\n" +
+	"\x15impacted_region_count\x18\x10 \x01(\rR\x13impactedRegionCount\x12C\n" +
 	"\n" +
 	"earthquake\x18\x14 \x01(\v2!.siaga.hazard.v1.EarthquakeDetailH\x00R\n" +
 	"earthquake\x12A\n" +
 	"\aweather\x18\x15 \x01(\v2%.siaga.hazard.v1.WeatherWarningDetailH\x00R\aweatherB\b\n" +
-	"\x06detail\"\x9a\x02\n" +
+	"\x06detail\"\xe7\x02\n" +
 	"\x10EarthquakeDetail\x12\x1c\n" +
 	"\tmagnitude\x18\x01 \x01(\x01R\tmagnitude\x12\x19\n" +
 	"\bdepth_km\x18\x02 \x01(\x01R\adepthKm\x12)\n" +
 	"\x10felt_description\x18\x03 \x01(\tR\x0ffeltDescription\x12+\n" +
 	"\x11tsunami_potential\x18\x04 \x01(\bR\x10tsunamiPotential\x12!\n" +
 	"\fshakemap_url\x18\x05 \x01(\tR\vshakemapUrl\x12R\n" +
-	"\x15corroborating_reports\x18\x06 \x03(\v2\x1d.siaga.hazard.v1.SourceReportR\x14corroboratingReports\"\xf6\x01\n" +
+	"\x15corroborating_reports\x18\x06 \x03(\v2\x1d.siaga.hazard.v1.SourceReportR\x14corroboratingReports\x12$\n" +
+	"\x0efelt_radius_km\x18\a \x01(\x01R\ffeltRadiusKm\x12%\n" +
+	"\x0emagnitude_type\x18\b \x01(\tR\rmagnitudeType\"\xb0\x02\n" +
 	"\fSourceReport\x12/\n" +
 	"\x06source\x18\x01 \x01(\x0e2\x17.siaga.hazard.v1.SourceR\x06source\x12&\n" +
 	"\x0fsource_event_id\x18\x02 \x01(\tR\rsourceEventId\x12\x1c\n" +
 	"\tmagnitude\x18\x03 \x01(\x01R\tmagnitude\x122\n" +
 	"\blocation\x18\x04 \x01(\v2\x16.siaga.common.v1.PointR\blocation\x12;\n" +
 	"\voccurred_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
-	"occurredAt\"\xb6\x01\n" +
+	"occurredAt\x12\x19\n" +
+	"\bdepth_km\x18\x06 \x01(\x01R\adepthKm\x12\x1d\n" +
+	"\n" +
+	"source_url\x18\a \x01(\tR\tsourceUrl\"\xb6\x01\n" +
 	"\x14WeatherWarningDetail\x12!\n" +
 	"\fcap_severity\x18\x01 \x01(\tR\vcapSeverity\x12\x1b\n" +
 	"\tcap_event\x18\x02 \x01(\tR\bcapEvent\x12\x1a\n" +

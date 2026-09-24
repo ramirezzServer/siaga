@@ -33,11 +33,23 @@ func TestHazardSubject(t *testing.T) {
 	}
 }
 
+func TestDLQSubject(t *testing.T) {
+	got, err := DLQSubject("geo-processor")
+	if err != nil || got != "dlq.geo-processor" {
+		t.Fatalf("DLQSubject = %q, %v", got, err)
+	}
+	for _, bad := range []string{"", "Geo", "geo.processor", "geo processor", ">"} {
+		if _, err := DLQSubject(bad); err == nil {
+			t.Errorf("DLQSubject(%q) seharusnya gagal", bad)
+		}
+	}
+}
+
 // Invarian yang juga ditegakkan server JetStream; dicek di sini supaya
 // kesalahan ketahuan saat test, bukan saat layanan start.
 func TestSpecsValid(t *testing.T) {
 	names := map[string]bool{}
-	for _, s := range []Spec{Raw, Hazard} {
+	for _, s := range []Spec{Raw, Hazard, DLQ} {
 		if names[s.Name] {
 			t.Errorf("nama stream ganda %s", s.Name)
 		}

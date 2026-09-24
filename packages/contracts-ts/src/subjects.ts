@@ -21,6 +21,14 @@ export const subjects = {
     return `raw.${kind}.${source}`;
   },
 
+  /** Antrean pesan gagal milik satu layanan, misal `dlq.geo-processor`. */
+  dlq(service: string): string {
+    if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(service)) {
+      throw new Error(`nama layanan tidak valid: ${service}`);
+    }
+    return `dlq.${service}`;
+  },
+
   hazard(kind: HazardKind, transition: Transition): string {
     if (kind === HazardKind.UNSPECIFIED) {
       throw new Error("HazardKind.UNSPECIFIED tidak punya subjek");
