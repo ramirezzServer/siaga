@@ -6,6 +6,9 @@ import {
   AlertLevel,
   CapMsgType,
   CapSeverity,
+  AirQualityObservationSchema,
+  FireConfidence,
+  FireDetectionSchema,
   GridWeatherForecastSchema,
   HazardCreatedSchema,
   HazardKind,
@@ -172,5 +175,50 @@ describe("kontrak event raw", () => {
       site: { river: "Citarum" },
     });
     expect(subjects.raw("flood", "openmeteo")).toBe("raw.flood.openmeteo");
+  });
+  it("pengukuran udara stasiun membawa satuan sumber per sensor", () => {
+    const obs = create(AirQualityObservationSchema, {
+      source: Source.OPENAQ,
+      station: {
+        id: "openaq:2178",
+        name: "Stasiun Uji",
+        location: { latitude: -6.9, longitude: 107.6 },
+        provider: "AirGradient",
+      },
+      readings: [
+        {
+          sensorId: 3916n,
+          parameter: "pm25",
+          units: "µg/m³",
+          value: 41.5,
+          observedAt: timestampFromDate(new Date("2026-09-24T05:00:00Z")),
+        },
+      ],
+    });
+    const decoded = fromBinary(
+      AirQualityObservationSchema,
+      toBinary(AirQualityObservationSchema, obs),
+    );
+    expect(decoded.station?.isMonitor).toBe(false);
+    expect(decoded.readings[0]?.sensorId).toBe(3916n);
+    expect(decoded.readings[0]?.units).toBe("µg/m³");
+    expect(subjects.raw("aq", "openaq")).toBe("raw.aq.openaq");
+  });
+
+  it("titik panas VIIRS tanpa persentase keyakinan", () => {
+    const fire = create(FireDetectionSchema, {
+      source: Source.NASA_FIRMS,
+      id: "VIIRS_SNPP_NRT:20260924T0536:-6.91234:107.61234",
+      product: "VIIRS_SNPP_NRT",
+      instrument: "VIIRS",
+      confidence: FireConfidence.NOMINAL,
+      brightnessK: 330.2,
+      frpMw: 0,
+    });
+    const decoded = fromBinary(FireDetectionSchema, toBinary(FireDetectionSchema, fire));
+    expect(decoded.confidencePct).toBeUndefined();
+    expect(decoded.frpMw).toBe(0);
+    expect(decoded.backgroundBrightnessK).toBeUndefined();
+    expect(subjects.raw("fire", "firms")).toBe("raw.fire.firms");
   });
 });

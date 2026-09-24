@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+package siaga.raw.v1;
+
+import "google/protobuf/timestamp.proto";
+import "siaga/common/v1/geo.proto";
+import "siaga/hazard/v1/hazard.proto";
+import "siaga/raw/v1/fetch.proto";
+
+// Stasiun pengukur kualitas udara di permukaan.
+message AirQualityStation {
+  // ID stabil di SIAGA: "openaq:<ID lokasi OpenAQ>", misal "openaq:2178".
+  string id = 1;
+  string name = 2;
+  // Nama daerah menurut sumber, misal "Bandung". Boleh kosong.
+  string locality = 3;
+  siaga.common.v1.Point location = 4;
+  // Penyedia data di sumber, misal "AirGradient" atau "AirNow".
+  string provider = 5;
+  // Pemilik alat menurut sumber. Boleh kosong.
+  string owner = 6;
+  // true untuk alat referensi (monitor resmi), false untuk sensor berbiaya rendah.
+  bool is_monitor = 7;
+  // Zona waktu IANA stasiun, misal "Asia/Jakarta". Boleh kosong.
+  string timezone = 8;
+}
+
+// Nilai terbaru semua sensor di satu stasiun, dari sumber pengukuran
+// (bukan model). Subjek NATS: raw.aq.openaq.
+message AirQualityObservation {
+  FetchMeta meta = 1;
+  siaga.hazard.v1.Source source = 2;
+  AirQualityStation station = 3;
+  // Satu nilai per sensor, urut ID sensor tanpa duplikat. Hanya parameter
+  // yang dipakai SIAGA dan nilai yang belum basi.
+  repeated SensorReading readings = 4;
+}
+
+// Nilai terakhir satu sensor.
+message SensorReading {
+  // ID sensor di sumber; satu stasiun bisa punya beberapa sensor untuk
+  // parameter yang sama.
+  int64 sensor_id = 1;
+  // Parameter: "pm25", "pm10", "no2", "o3", "so2", atau "co".
+  string parameter = 2;
+  // Satuan sesuai sumber: "µg/m³", "ppm", atau "ppb". Tidak dikonversi.
+  string units = 3;
+  double value = 4;
+  // Waktu pengukuran menurut sumber (UTC).
+  google.protobuf.Timestamp observed_at = 5;
+}

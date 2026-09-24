@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+package siaga.raw.v1;
+
+import "google/protobuf/timestamp.proto";
+import "siaga/common/v1/geo.proto";
+import "siaga/hazard/v1/hazard.proto";
+import "siaga/raw/v1/fetch.proto";
+
+// Keyakinan deteksi titik panas. VIIRS memberi kelas langsung; persentase
+// MODIS dipetakan: < 30 rendah, 30–79 nominal, >= 80 tinggi (panduan FIRMS).
+enum FireConfidence {
+  FIRE_CONFIDENCE_UNSPECIFIED = 0;
+  FIRE_CONFIDENCE_LOW = 1;
+  FIRE_CONFIDENCE_NOMINAL = 2;
+  FIRE_CONFIDENCE_HIGH = 3;
+}
+
+// Satu deteksi titik panas satelit near real-time.
+// Subjek NATS: raw.fire.firms.
+message FireDetection {
+  FetchMeta meta = 1;
+  siaga.hazard.v1.Source source = 2;
+  // ID stabil di SIAGA: "<produk>:<waktu UTC yyyymmddThhmm>:<lintang>:<bujur>"
+  // dengan lima desimal, misal "VIIRS_SNPP_NRT:20260924T0536:-6.91234:107.61234".
+  string id = 3;
+  // Produk FIRMS, misal "VIIRS_SNPP_NRT", "VIIRS_NOAA20_NRT", "MODIS_NRT".
+  string product = 4;
+  // Kode satelit menurut sumber, misal "N", "N20", "N21", "T", "A".
+  string satellite = 5;
+  // "VIIRS" atau "MODIS".
+  string instrument = 6;
+  // Pusat piksel deteksi.
+  siaga.common.v1.Point location = 7;
+  // Waktu lintasan satelit (UTC, presisi menit).
+  google.protobuf.Timestamp detected_at = 8;
+  FireConfidence confidence = 9;
+  // Persentase keyakinan asli MODIS (0–100). Kosong untuk VIIRS.
+  optional int32 confidence_pct = 10;
+  // Suhu kecerahan kanal api (VIIRS I-4, MODIS 21/22) dalam kelvin.
+  double brightness_k = 11;
+  // Suhu kecerahan kanal latar (VIIRS I-5, MODIS 31) dalam kelvin.
+  optional double background_brightness_k = 12;
+  // Fire radiative power dalam megawatt.
+  optional double frp_mw = 13;
+  // Ukuran piksel arah pindai dan arah lintasan (km).
+  double scan_km = 14;
+  double track_km = 15;
+  // true untuk deteksi siang hari.
+  bool daytime = 16;
+  // Versi algoritma sumber, misal "2.0NRT".
+  string version = 17;
+}
