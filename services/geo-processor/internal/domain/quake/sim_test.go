@@ -69,7 +69,7 @@ func (s *sim) apply(r Report) {
 		}
 		clusters = append(clusters, c)
 	}
-	slices.SortFunc(clusters, func(a, b Cluster) int { return a.ID.compare(b.ID) })
+	slices.SortFunc(clusters, func(a, b Cluster) int { return a.ID.Compare(b.ID) })
 	taken := func(id EventID) bool { return s.retired[id] }
 	out, err := Settle(self, s.home[self.Key], clusters, s.rules, taken)
 	if err != nil {

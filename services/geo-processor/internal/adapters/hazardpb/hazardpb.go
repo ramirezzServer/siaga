@@ -1,5 +1,5 @@
-// Package hazardpb menerjemahkan keadaan domain gempa ke kontrak Protobuf
-// siaga.hazard.v1 dan membentuk pesan outbox hazard.quake.*.
+// Package hazardpb menerjemahkan keadaan domain (gempa, cuaca) ke kontrak
+// Protobuf siaga.hazard.v1 dan membentuk pesan outbox hazard.<jenis>.*.
 package hazardpb
 
 import (
@@ -13,6 +13,7 @@ import (
 	commonv1 "github.com/ramirezzServer/siaga/libs/go/contracts/gen/siaga/common/v1"
 	hazardv1 "github.com/ramirezzServer/siaga/libs/go/contracts/gen/siaga/hazard/v1"
 	"github.com/ramirezzServer/siaga/libs/go/contracts/streams"
+	"github.com/ramirezzServer/siaga/services/geo-processor/internal/domain/hazard"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/domain/quake"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/ports"
 )
@@ -30,18 +31,18 @@ var _ ports.HazardEncoder = Encoder{}
 
 // MsgID membentuk Nats-Msg-Id: satu ID per revisi kejadian, jadi pesan yang
 // diterbitkan ulang dari outbox setelah crash ditolak JetStream.
-func MsgID(id quake.EventID, revision int) string {
+func MsgID(id hazard.EventID, revision int) string {
 	return fmt.Sprintf("%s:r%d", id, revision)
 }
 
 // Created membentuk hazard.quake.created.
 func (Encoder) Created(a quake.Assessment, revision int) (ports.OutboxMessage, error) {
-	return encode(streams.Created, a.ID, revision, &hazardv1.HazardCreated{Hazard: Hazard(a, revision)})
+	return encode(streams.KindQuake, streams.Created, a.ID, revision, &hazardv1.HazardCreated{Hazard: Hazard(a, revision)})
 }
 
 // Updated membentuk hazard.quake.updated.
 func (Encoder) Updated(a quake.Assessment, revision int, previous quake.Level) (ports.OutboxMessage, error) {
-	return encode(streams.Updated, a.ID, revision, &hazardv1.HazardUpdated{
+	return encode(streams.KindQuake, streams.Updated, a.ID, revision, &hazardv1.HazardUpdated{
 		Hazard:        Hazard(a, revision),
 		PreviousLevel: Level(previous),
 	})
@@ -49,9 +50,13 @@ func (Encoder) Updated(a quake.Assessment, revision int, previous quake.Level) (
 
 // Expired membentuk hazard.quake.expired.
 func (Encoder) Expired(id quake.EventID, at time.Time, reason ports.ExpiryReason, mergedInto quake.EventID, revision int) (ports.OutboxMessage, error) {
+	return expired(streams.KindQuake, hazardv1.HazardKind_HAZARD_KIND_EARTHQUAKE, id, at, reason, mergedInto, revision)
+}
+
+func expired(kind streams.Kind, hk hazardv1.HazardKind, id hazard.EventID, at time.Time, reason ports.ExpiryReason, mergedInto hazard.EventID, revision int) (ports.OutboxMessage, error) {
 	msg := &hazardv1.HazardExpired{
 		HazardId:  id.String(),
-		Kind:      hazardv1.HazardKind_HAZARD_KIND_EARTHQUAKE,
+		Kind:      hk,
 		ExpiredAt: timestamppb.New(at),
 		Reason:    expiryReason(reason),
 		Revision:  u32(revision),
@@ -59,11 +64,11 @@ func (Encoder) Expired(id quake.EventID, at time.Time, reason ports.ExpiryReason
 	if !mergedInto.IsZero() {
 		msg.MergedIntoHazardId = mergedInto.String()
 	}
-	return encode(streams.Expired, id, revision, msg)
+	return encode(kind, streams.Expired, id, revision, msg)
 }
 
-func encode(t streams.Transition, id quake.EventID, revision int, m proto.Message) (ports.OutboxMessage, error) {
-	subject, err := streams.HazardSubject(streams.KindQuake, t)
+func encode(kind streams.Kind, t streams.Transition, id hazard.EventID, revision int, m proto.Message) (ports.OutboxMessage, error) {
+	subject, err := streams.HazardSubject(kind, t)
 	if err != nil {
 		return ports.OutboxMessage{}, err
 	}
@@ -123,15 +128,15 @@ func Hazard(a quake.Assessment, revision int) *hazardv1.Hazard {
 }
 
 // Level memetakan tingkat domain ke enum kontrak.
-func Level(l quake.Level) hazardv1.AlertLevel {
+func Level(l hazard.Level) hazardv1.AlertLevel {
 	switch l {
-	case quake.LevelInfo:
+	case hazard.LevelInfo:
 		return hazardv1.AlertLevel_ALERT_LEVEL_INFO
-	case quake.LevelWaspada:
+	case hazard.LevelWaspada:
 		return hazardv1.AlertLevel_ALERT_LEVEL_WASPADA
-	case quake.LevelSiaga:
+	case hazard.LevelSiaga:
 		return hazardv1.AlertLevel_ALERT_LEVEL_SIAGA
-	case quake.LevelBahaya:
+	case hazard.LevelBahaya:
 		return hazardv1.AlertLevel_ALERT_LEVEL_BAHAYA
 	default:
 		return hazardv1.AlertLevel_ALERT_LEVEL_UNSPECIFIED

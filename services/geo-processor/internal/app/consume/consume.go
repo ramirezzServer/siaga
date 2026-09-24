@@ -8,9 +8,6 @@ import (
 	"errors"
 	"sync"
 	"time"
-
-	"github.com/ramirezzServer/siaga/services/geo-processor/internal/app/quakes"
-	"github.com/ramirezzServer/siaga/services/geo-processor/internal/domain/quake"
 )
 
 // Action adalah tindakan atas satu pesan.
@@ -63,20 +60,30 @@ func DefaultOptions() Options {
 	return Options{MaxDeliveries: 5, Backoff: []time.Duration{time.Second, 5 * time.Second, 15 * time.Second, 30 * time.Second}}
 }
 
-// Decoder mengubah payload menjadi laporan domain.
-type Decoder func([]byte) (quake.Report, error)
+// Outcome adalah dampak satu pesan yang berhasil diproses, untuk statistik.
+type Outcome struct {
+	// Changed false berarti pesan ulangan yang tidak mengubah apa pun.
+	Changed bool
+	Created int
+	Updated int
+	Ended   int
+}
 
-// Processor memproses laporan domain.
-type Processor func(context.Context, quake.Report) (quakes.Result, error)
+// Decoder mengubah payload menjadi nilai domain R.
+type Decoder[R any] func([]byte) (R, error)
 
-// Handler memproses pesan raw.quake.*.
-type Handler struct {
-	decode  Decoder
-	process Processor
-	opts    Options
-	now     func() time.Time
-	stats   Stats
-	mu      sync.Mutex
+// Processor memproses nilai domain.
+type Processor[R any] func(context.Context, R) (Outcome, error)
+
+// Handler memproses pesan satu consumer (misal raw.quake.* atau raw.weather.*).
+type Handler[R any] struct {
+	decode    Decoder[R]
+	process   Processor[R]
+	permanent []error
+	opts      Options
+	now       func() time.Time
+	stats     Stats
+	mu        sync.Mutex
 }
 
 // Stats adalah statistik consumer untuk endpoint /status.
@@ -94,17 +101,27 @@ type Stats struct {
 	LastErrorAt  time.Time `json:"last_error_at,omitzero"`
 }
 
-// New membuat Handler.
-func New(decode Decoder, process Processor, opts Options, now func() time.Time) (*Handler, error) {
+// New membuat Handler. permanent adalah galat domain yang tidak akan berhasil
+// bila diulang (misal quake.ErrInvalid); pesan dengan galat itu langsung ke DLQ.
+func New[R any](decode Decoder[R], process Processor[R], permanent []error, opts Options, now func() time.Time) (*Handler[R], error) {
 	if opts.MaxDeliveries < 1 || len(opts.Backoff) == 0 {
 		return nil, errors.New("consume: MaxDeliveries >= 1 dan Backoff wajib diisi")
 	}
-	return &Handler{decode: decode, process: process, opts: opts, now: now}, nil
+	return &Handler[R]{decode: decode, process: process, permanent: permanent, opts: opts, now: now}, nil
+}
+
+func (h *Handler[R]) isPermanent(err error) bool {
+	for _, p := range h.permanent {
+		if errors.Is(err, p) {
+			return true
+		}
+	}
+	return false
 }
 
 // Handle memproses satu pesan. delivered adalah nomor pengiriman pesan ini
 // (1 untuk pengiriman pertama).
-func (h *Handler) Handle(ctx context.Context, data []byte, delivered int) Decision {
+func (h *Handler[R]) Handle(ctx context.Context, data []byte, delivered int) Decision {
 	h.count(func(s *Stats) { s.Received++ })
 	r, err := h.decode(data)
 	if err != nil {
@@ -125,7 +142,7 @@ func (h *Handler) Handle(ctx context.Context, data []byte, delivered int) Decisi
 			s.LastSuccess = h.now()
 		})
 		return Decision{Action: Ack}
-	case errors.Is(err, quake.ErrInvalid):
+	case h.isPermanent(err):
 		return h.fail(Decision{Action: DeadLetter, Err: err})
 	case errors.Is(err, context.Canceled) && ctx.Err() != nil:
 		// Layanan sedang berhenti: kirim ulang secepatnya ke instance lain.
@@ -137,12 +154,12 @@ func (h *Handler) Handle(ctx context.Context, data []byte, delivered int) Decisi
 	}
 }
 
-func (h *Handler) backoff(delivered int) time.Duration {
+func (h *Handler[R]) backoff(delivered int) time.Duration {
 	i := min(max(delivered-1, 0), len(h.opts.Backoff)-1)
 	return h.opts.Backoff[i]
 }
 
-func (h *Handler) fail(d Decision) Decision {
+func (h *Handler[R]) fail(d Decision) Decision {
 	h.count(func(s *Stats) {
 		switch d.Action {
 		case DeadLetter:
@@ -157,14 +174,14 @@ func (h *Handler) fail(d Decision) Decision {
 	return d
 }
 
-func (h *Handler) count(fn func(*Stats)) {
+func (h *Handler[R]) count(fn func(*Stats)) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	fn(&h.stats)
 }
 
 // Snapshot mengembalikan salinan statistik.
-func (h *Handler) Snapshot() Stats {
+func (h *Handler[R]) Snapshot() Stats {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	return h.stats

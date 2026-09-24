@@ -53,6 +53,9 @@ type Report struct {
 	// Stale berisi kode yang ada di database tapi tidak ada di sumber (misal akibat
 	// pemekaran wilayah). Tidak dihapus otomatis; perlu keputusan manusia.
 	Stale []string
+	// Villages adalah kode kelurahan/desa (adm4) yang diterima, urut kode.
+	// Dipakai untuk daftar sapuan prakiraan ingest (make adm4-list).
+	Villages []string
 }
 
 // SkippedTotal menjumlahkan semua baris yang dilewati.
@@ -123,6 +126,9 @@ func Run(ctx context.Context, src ports.RegionSource, store ports.RegionStore, o
 	rep.Accepted = len(accepted)
 	for _, r := range accepted {
 		rep.PerKind[r.Kind()]++
+		if r.Code.Level() == region.LevelDesaKelurahan {
+			rep.Villages = append(rep.Villages, r.Code.String())
+		}
 	}
 
 	if n := rep.SkippedTotal(); n > opt.MaxSkipped {

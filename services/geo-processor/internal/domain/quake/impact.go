@@ -7,34 +7,20 @@ import (
 	"math"
 	"slices"
 	"time"
+
+	"github.com/ramirezzServer/siaga/services/geo-processor/internal/domain/hazard"
 )
 
-// Level adalah tingkat peringatan, sama urutan dan nilainya dengan
-// siaga.hazard.v1.AlertLevel dan constraint database.
-type Level int
+// Level adalah tingkat peringatan (lihat hazard.Level).
+type Level = hazard.Level
 
 // Tingkat peringatan dari PRD, urut dari paling ringan.
 const (
-	LevelInfo    Level = 1
-	LevelWaspada Level = 2
-	LevelSiaga   Level = 3
-	LevelBahaya  Level = 4
+	LevelInfo    = hazard.LevelInfo
+	LevelWaspada = hazard.LevelWaspada
+	LevelSiaga   = hazard.LevelSiaga
+	LevelBahaya  = hazard.LevelBahaya
 )
-
-func (l Level) String() string {
-	switch l {
-	case LevelInfo:
-		return "info"
-	case LevelWaspada:
-		return "waspada"
-	case LevelSiaga:
-		return "siaga"
-	case LevelBahaya:
-		return "bahaya"
-	default:
-		return fmt.Sprintf("Level(%d)", int(l))
-	}
-}
 
 // Policy adalah aturan bisnis gempa dari PRD (bagian Aturan bisnis). Semua
 // angka adalah nilai awal yang dikalibrasi sebelum R2, jadi disimpan sebagai

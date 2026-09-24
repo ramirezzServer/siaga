@@ -2,72 +2,32 @@ package quake
 
 import (
 	"cmp"
-	"crypto/sha256"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"math"
 	"slices"
-	"strconv"
+
+	"github.com/ramirezzServer/siaga/services/geo-processor/internal/domain/hazard"
 )
 
-// EventID adalah ID kejadian bahaya: UUID versi 8 (RFC 9562) dari hash
-// SHA-256 atas sumber dan ID asli laporan pertama yang membentuk kejadian.
-// Memproses ulang data yang sama dengan urutan yang sama menghasilkan ID yang sama.
-type EventID [16]byte
+// EventID adalah ID kejadian bahaya (UUIDv8 deterministik, lihat hazard.EventID).
+type EventID = hazard.EventID
 
-// NewEventID membentuk ID kejadian yang didirikan founder. generation > 0
+// NewEventID membentuk ID kejadian gempa yang didirikan founder. generation > 0
 // dipakai bila ID generasi sebelumnya sudah terpakai (misal kejadian lama yang
 // sudah digabung ke kejadian lain, lalu laporan pendirinya berpisah lagi).
 func NewEventID(founder IdentityKey, generation int) EventID {
-	h := sha256.New()
-	h.Write([]byte("siaga/hazard/quake\x00"))
-	h.Write([]byte(founder.Source))
-	h.Write([]byte{0})
-	h.Write([]byte(founder.EventID))
-	if generation > 0 {
-		h.Write([]byte{0})
-		h.Write([]byte(strconv.Itoa(generation)))
-	}
-	var id EventID
-	copy(id[:], h.Sum(nil))
-	id[6] = id[6]&0x0f | 0x80 // versi 8
-	id[8] = id[8]&0x3f | 0x80 // varian RFC 9562
-	return id
-}
-
-// IsZero melaporkan apakah ID kosong.
-func (id EventID) IsZero() bool { return id == EventID{} }
-
-// String memformat ID sebagai UUID huruf kecil.
-func (id EventID) String() string {
-	var b [36]byte
-	hex.Encode(b[0:8], id[0:4])
-	b[8] = '-'
-	hex.Encode(b[9:13], id[4:6])
-	b[13] = '-'
-	hex.Encode(b[14:18], id[6:8])
-	b[18] = '-'
-	hex.Encode(b[19:23], id[8:10])
-	b[23] = '-'
-	hex.Encode(b[24:36], id[10:16])
-	return string(b[:])
+	return hazard.NewEventID("siaga/hazard/quake", generation, string(founder.Source), founder.EventID)
 }
 
 // ParseEventID membaca UUID berformat 8-4-4-4-12.
 func ParseEventID(s string) (EventID, error) {
-	var id EventID
-	if len(s) != 36 || s[8] != '-' || s[13] != '-' || s[18] != '-' || s[23] != '-' {
-		return id, fmt.Errorf("%w: ID kejadian %q bukan UUID", ErrInvalid, s)
-	}
-	raw := s[0:8] + s[9:13] + s[14:18] + s[19:23] + s[24:36]
-	if _, err := hex.Decode(id[:], []byte(raw)); err != nil {
-		return EventID{}, fmt.Errorf("%w: ID kejadian %q bukan UUID: %w", ErrInvalid, s, err)
+	id, err := hazard.ParseEventID(s)
+	if err != nil {
+		return EventID{}, fmt.Errorf("%w: %w", ErrInvalid, err)
 	}
 	return id, nil
 }
-
-func (id EventID) compare(o EventID) int { return slices.Compare(id[:], o[:]) }
 
 // Cluster adalah satu kejadian beserta semua solusi yang tergabung di dalamnya,
 // termasuk solusi lama dari sumber yang sama yang sudah digantikan revisi.
@@ -224,7 +184,7 @@ func Place(self Solution, home EventID, clusters []Cluster, rules Rules, taken f
 				continue
 			}
 			ok, score := fits(self, without(c.Members, self.Key), rules)
-			if ok && (score < bestScore || (score == bestScore && c.ID.compare(p.Target) < 0)) {
+			if ok && (score < bestScore || (score == bestScore && c.ID.Compare(p.Target) < 0)) {
 				p.Target, bestScore = c.ID, score
 			}
 		}
@@ -312,7 +272,7 @@ func Settle(self Solution, home EventID, clusters []Cluster, rules Rules, taken 
 		for id, m := range work {
 			out = append(out, Cluster{ID: id, Members: m})
 		}
-		slices.SortFunc(out, func(a, b Cluster) int { return a.ID.compare(b.ID) })
+		slices.SortFunc(out, func(a, b Cluster) int { return a.ID.Compare(b.ID) })
 		return out
 	}
 	currentKeys := func(members []Solution) map[IdentityKey]bool {
@@ -373,7 +333,7 @@ func Settle(self Solution, home EventID, clusters []Cluster, rules Rules, taken 
 		}
 		out.Changes = append(out.Changes, Change{ID: id, Members: members, Created: created[id]})
 	}
-	slices.SortFunc(out.Changes, func(a, b Change) int { return a.ID.compare(b.ID) })
+	slices.SortFunc(out.Changes, func(a, b Change) int { return a.ID.Compare(b.ID) })
 	return out, nil
 }
 

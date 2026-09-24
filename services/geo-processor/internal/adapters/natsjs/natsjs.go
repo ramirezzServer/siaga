@@ -1,5 +1,6 @@
 // Package natsjs menghubungkan geo-processor dengan NATS JetStream:
-// durable pull consumer untuk raw.quake.*, DLQ, dan publisher hazard.*.
+// durable pull consumer untuk raw.quake.* dan raw.weather.*, DLQ, dan
+// publisher hazard.*.
 package natsjs
 
 import (
@@ -58,12 +59,31 @@ func (p *Publisher) Publish(ctx context.Context, subject, msgID string, data []b
 	return nil
 }
 
-// ConsumerConfig adalah konfigurasi durable consumer raw.quake.*.
-func ConsumerConfig(durable string) jetstream.ConsumerConfig {
+// ConsumerSpec adalah identitas satu durable consumer di stream RAW.
+type ConsumerSpec struct {
+	Durable     string
+	Description string
+	Filter      string
+}
+
+// Consumer geo-processor (docs/events.md, bagian Consumer).
+var (
+	QuakeConsumer = ConsumerSpec{
+		Durable: "geo-processor-quake", Filter: "raw.quake.>",
+		Description: "geo-processor: normalisasi dan deduplikasi gempa",
+	}
+	WeatherConsumer = ConsumerSpec{
+		Durable: "geo-processor-weather", Filter: "raw.weather.>",
+		Description: "geo-processor: peringatan dini cuaca CAP",
+	}
+)
+
+// ConsumerConfig adalah konfigurasi durable consumer.
+func ConsumerConfig(spec ConsumerSpec) jetstream.ConsumerConfig {
 	return jetstream.ConsumerConfig{
-		Durable:       durable,
-		Description:   "geo-processor: normalisasi dan deduplikasi gempa",
-		FilterSubject: "raw.quake.>",
+		Durable:       spec.Durable,
+		Description:   spec.Description,
+		FilterSubject: spec.Filter,
 		DeliverPolicy: jetstream.DeliverAllPolicy,
 		AckPolicy:     jetstream.AckExplicitPolicy,
 		AckWait:       30 * time.Second,
@@ -74,10 +94,15 @@ func ConsumerConfig(durable string) jetstream.ConsumerConfig {
 	}
 }
 
-// Consumer menarik pesan raw.quake.* dan menjalankan keputusan Handler.
+// Handler memutuskan nasib satu pesan (dipenuhi *consume.Handler).
+type Handler interface {
+	Handle(ctx context.Context, data []byte, delivered int) consume.Decision
+}
+
+// Consumer menarik pesan satu durable consumer dan menjalankan keputusan Handler.
 type Consumer struct {
 	cons    jetstream.Consumer
-	handler *consume.Handler
+	handler Handler
 	dlq     *Publisher
 	dlqSubj string
 	name    string
@@ -87,10 +112,10 @@ type Consumer struct {
 
 // NewConsumer menyiapkan durable consumer di stream RAW. Stream RAW milik
 // ingest; bila belum ada, galatnya dikembalikan supaya pemanggil mencoba lagi.
-func NewConsumer(ctx context.Context, js jetstream.JetStream, durable, service string, h *consume.Handler, log *slog.Logger, after func()) (*Consumer, error) {
-	cons, err := js.CreateOrUpdateConsumer(ctx, streams.Raw.Name, ConsumerConfig(durable))
+func NewConsumer(ctx context.Context, js jetstream.JetStream, spec ConsumerSpec, service string, h Handler, log *slog.Logger, after func()) (*Consumer, error) {
+	cons, err := js.CreateOrUpdateConsumer(ctx, streams.Raw.Name, ConsumerConfig(spec))
 	if err != nil {
-		return nil, fmt.Errorf("menyiapkan consumer %s: %w", durable, err)
+		return nil, fmt.Errorf("menyiapkan consumer %s: %w", spec.Durable, err)
 	}
 	dlqSubj, err := streams.DLQSubject(service)
 	if err != nil {
@@ -98,7 +123,7 @@ func NewConsumer(ctx context.Context, js jetstream.JetStream, durable, service s
 	}
 	return &Consumer{
 		cons: cons, handler: h, dlq: NewPublisher(js, streams.DLQ.Name), dlqSubj: dlqSubj,
-		name: durable, log: log, after: after,
+		name: spec.Durable, log: log, after: after,
 	}, nil
 }
 

@@ -12,6 +12,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/adapters/postgres/quakesql"
+	"github.com/ramirezzServer/siaga/services/geo-processor/internal/domain/hazard"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/domain/quake"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/ports"
 )
@@ -365,28 +366,31 @@ func (t *quakeTx) DueForExpiry(ctx context.Context, now time.Time, limit int) ([
 	if err != nil {
 		return nil, fmt.Errorf("mencari kejadian kedaluwarsa: %w", err)
 	}
-	out, err := pgx.CollectRows(rows, func(r pgx.CollectableRow) (ports.StoredEvent, error) {
-		var id pgtype.UUID
-		var rest struct {
-			status string
-			level  int16
-			rev    int32
-			digest []byte
-		}
-		if err := r.Scan(&id, &rest.status, &rest.level, &rest.rev, &rest.digest); err != nil {
-			return ports.StoredEvent{}, err
-		}
-		ev := ports.StoredEvent{
-			ID: quake.EventID(id.Bytes), Status: ports.EventStatus(rest.status),
-			Level: quake.Level(rest.level), Revision: int(rest.rev),
-		}
-		copy(ev.Digest[:], rest.digest)
-		return ev, nil
-	})
+	out, err := pgx.CollectRows(rows, scanDueEvent)
 	if err != nil {
 		return nil, fmt.Errorf("mencari kejadian kedaluwarsa: %w", err)
 	}
 	return out, nil
+}
+
+// scanDueEvent membaca baris eventsql.DueForExpiry.
+func scanDueEvent(r pgx.CollectableRow) (ports.StoredEvent, error) {
+	var id pgtype.UUID
+	var rest struct {
+		status string
+		level  int16
+		rev    int32
+		digest []byte
+	}
+	if err := r.Scan(&id, &rest.status, &rest.level, &rest.rev, &rest.digest); err != nil {
+		return ports.StoredEvent{}, err
+	}
+	ev := ports.StoredEvent{
+		ID: id.Bytes, Status: ports.EventStatus(rest.status),
+		Level: hazard.Level(rest.level), Revision: int(rest.rev),
+	}
+	copy(ev.Digest[:], rest.digest)
+	return ev, nil
 }
 
 func (t *quakeTx) Enqueue(ctx context.Context, msg ports.OutboxMessage) error {

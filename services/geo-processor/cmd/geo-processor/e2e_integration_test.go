@@ -7,6 +7,7 @@ import (
 	"io"
 	"log/slog"
 	"os"
+	"slices"
 	"testing"
 	"time"
 
@@ -22,6 +23,7 @@ import (
 	"github.com/ramirezzServer/siaga/libs/go/platform/natsx"
 	"github.com/ramirezzServer/siaga/libs/go/platform/natsx/natstest"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/domain/quake"
+	"github.com/ramirezzServer/siaga/services/geo-processor/internal/domain/weather"
 )
 
 // Uji ujung ke ujung: raw.quake.* masuk JetStream → geo-processor → PostgreSQL
@@ -53,6 +55,7 @@ func TestEndToEnd(t *testing.T) {
 		defer pg.Close()
 		for _, q := range []string{
 			`DELETE FROM hazard.outbox`,
+			`DELETE FROM hazard.cap_message WHERE sent < '2002-01-01'`,
 			`DELETE FROM hazard.event_source WHERE occurred_at < '2002-01-01'`,
 			`UPDATE hazard.event SET merged_into = NULL, status = 'expired' WHERE occurred_at < '2002-01-01' AND status = 'merged'`,
 			`DELETE FROM hazard.event WHERE occurred_at < '2002-01-01'`,
@@ -65,7 +68,7 @@ func TestEndToEnd(t *testing.T) {
 	cleanup()
 	seedRegions(ctx, t, dbURL)
 
-	cfg := settings{databaseURL: dbURL, natsURL: natsURL, logLevel: slog.LevelInfo, rules: quake.DefaultRules()}
+	cfg := settings{databaseURL: dbURL, natsURL: natsURL, logLevel: slog.LevelInfo, rules: quake.DefaultRules(), weather: weather.DefaultPolicy()}
 	svcCtx, stop := context.WithCancel(ctx)
 	done := make(chan error, 1)
 	go func() { done <- serve(svcCtx, cfg, quiet) }()
@@ -166,11 +169,108 @@ func TestEndToEnd(t *testing.T) {
 	t.Logf("%s: tingkat %s, %d kelurahan/desa terdampak (terdekat %s), radius dirasakan %.0f km",
 		h.GetTitle(), h.GetLevel(), h.GetImpactedRegionCount(), h.GetImpactedRegions()[0].GetName(), eq.GetFeltRadiusKm())
 
+	checkWeather(ctx, t, js)
+
 	stop()
 	if err := <-done; err != nil {
 		t.Fatalf("serve: %v", err)
 	}
 	cleanup()
+}
+
+// checkWeather menguji jalur raw.weather.* → hazard.weather.*: peringatan CAP
+// (waktu 2001, jadi sudah kedaluwarsa saat diproses) di atas desa uji harus
+// tercatat lengkap: created dengan wilayah terdampak, lalu expired ELAPSED.
+// Peringatan di luar wilayah pantauan tidak membentuk kejadian.
+func checkWeather(ctx context.Context, t *testing.T, js jetstream.JetStream) {
+	t.Helper()
+	sent := time.Date(2001, 11, 21, 7, 0, 0, 0, time.UTC)
+	ring := func(lat0, lon0, lat1, lon1 float64) *rawv1.Ring {
+		r := &rawv1.Ring{}
+		for _, p := range [][2]float64{{lat0, lon0}, {lat0, lon1}, {lat1, lon1}, {lat1, lon0}, {lat0, lon0}} {
+			r.Points = append(r.Points, &commonv1.Point{Latitude: p[0], Longitude: p[1]})
+		}
+		return r
+	}
+	warning := func(id string, area *rawv1.Ring) *rawv1.WeatherWarning {
+		return &rawv1.WeatherWarning{
+			Meta:   &rawv1.FetchMeta{Connector: "bmkg-cap", FetchedAt: timestamppb.New(sent.Add(2 * time.Minute))},
+			Source: hazardv1.Source_SOURCE_BMKG, Identifier: id, Sender: "cuaca.ekstrem@bmkg.go.id",
+			Sent: timestamppb.New(sent), Status: rawv1.CapStatus_CAP_STATUS_ACTUAL, MsgType: rawv1.CapMsgType_CAP_MSG_TYPE_ALERT,
+			Category: "Met", EventCode: "OET-194", Urgency: rawv1.CapUrgency_CAP_URGENCY_IMMEDIATE,
+			Severity: rawv1.CapSeverity_CAP_SEVERITY_SEVERE, Certainty: rawv1.CapCertainty_CAP_CERTAINTY_LIKELY,
+			Effective: timestamppb.New(sent), Expires: timestamppb.New(sent.Add(2 * time.Hour)),
+			Texts: []*rawv1.CapText{
+				{Language: "en", Event: "Thunderstorm", Headline: "Thunderstorm in test area"},
+				{Language: "id", Event: "Hujan Lebat dan Petir", Headline: "Hujan Lebat disertai Petir di wilayah uji", Description: "Uji ujung ke ujung."},
+			},
+			Areas:     []*rawv1.CapArea{{AreaDesc: "Provinsi Uji E2E", Polygons: []*rawv1.Ring{area}}},
+			SourceUrl: "https://www.bmkg.go.id/alerts/nowcast/id/CUJ20011121001_alert.xml",
+		}
+	}
+	for id, w := range map[string]*rawv1.WeatherWarning{
+		// Menutupi seluruh desa uji "Desa Episenter" dan sedikit sekitarnya.
+		"2.49.0.1.360.0.2001.11.21.07.98.001": warning("2.49.0.1.360.0.2001.11.21.07.98.001", ring(-6.87, 107.01, -6.83, 107.05)),
+		// Di luar kotak wilayah uji (Gorontalo).
+		"2.49.0.1.360.0.2001.11.21.07.75.001": warning("2.49.0.1.360.0.2001.11.21.07.75.001", ring(0.5, 122.9, 0.6, 123.0)),
+	} {
+		b, err := proto.Marshal(w)
+		if err != nil {
+			t.Fatal(err)
+		}
+		msg := nats.NewMsg("raw.weather.bmkg")
+		msg.Data = b
+		msg.Header.Set(jetstream.MsgIDHeader, "cap-"+id)
+		if _, err := js.PublishMsg(ctx, msg); err != nil {
+			t.Fatal(err)
+		}
+	}
+	var created, expired []*jetstream.RawStreamMsg
+	deadline := time.Now().Add(30 * time.Second)
+	for len(created) == 0 || len(expired) == 0 {
+		if time.Now().After(deadline) {
+			t.Fatalf("hazard.weather.* tidak lengkap dalam 30 detik: created %d, expired %d", len(created), len(expired))
+		}
+		time.Sleep(100 * time.Millisecond)
+		created, expired = nil, nil
+		hazard, err := js.Stream(ctx, streams.Hazard.Name)
+		if err != nil {
+			continue
+		}
+		info, _ := hazard.Info(ctx)
+		for seq := uint64(1); info != nil && seq <= info.State.LastSeq; seq++ {
+			m, err := hazard.GetMsg(ctx, seq)
+			switch {
+			case err != nil:
+			case m.Subject == "hazard.weather.created":
+				created = append(created, m)
+			case m.Subject == "hazard.weather.expired":
+				expired = append(expired, m)
+			}
+		}
+	}
+	// Beri waktu pesan Gorontalo diproses, lalu pastikan tetap satu kejadian.
+	time.Sleep(time.Second)
+	var c hazardv1.HazardCreated
+	if err := proto.Unmarshal(created[0].Data, &c); err != nil {
+		t.Fatal(err)
+	}
+	h := c.GetHazard()
+	w := h.GetWeather()
+	if len(created) != 1 || h.GetKind() != hazardv1.HazardKind_HAZARD_KIND_WEATHER || h.GetLevel() != hazardv1.AlertLevel_ALERT_LEVEL_SIAGA ||
+		!slices.ContainsFunc(h.GetImpactedRegions(), func(r *commonv1.RegionRef) bool { return r.GetCode() == "98.01.01.2001" }) ||
+		w.GetCapSeverity() != "Severe" ||
+		w.GetHeadlineEn() != "Thunderstorm in test area" || w.GetMessageCount() != 1 || w.GetAreaKm2() <= 0 {
+		t.Fatalf("created %d: %v", len(created), h)
+	}
+	var e hazardv1.HazardExpired
+	if err := proto.Unmarshal(expired[0].Data, &e); err != nil {
+		t.Fatal(err)
+	}
+	if e.GetHazardId() != h.GetId() || e.GetReason() != hazardv1.ExpiryReason_EXPIRY_REASON_ELAPSED || e.GetRevision() != 2 {
+		t.Fatalf("expired %v", &e)
+	}
+	t.Logf("%s: tingkat %s, %d kelurahan/desa terdampak, area %.0f km²", h.GetTitle(), h.GetLevel(), h.GetImpactedRegionCount(), w.GetAreaKm2())
 }
 
 func keys(m map[string][]*jetstream.RawStreamMsg) map[string]int {

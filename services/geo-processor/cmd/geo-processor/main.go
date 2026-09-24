@@ -1,7 +1,8 @@
-// Command geo-processor mengonsumsi event raw.quake.* dari NATS JetStream,
-// mengelompokkan laporan BMKG dan USGS menjadi kejadian gempa, menghitung
-// wilayah terdampak, menyimpannya di schema hazard, dan menerbitkan
-// hazard.quake.* lewat outbox transaksional.
+// Command geo-processor mengonsumsi event raw.quake.* dan raw.weather.* dari
+// NATS JetStream, mengelompokkan laporan BMKG dan USGS menjadi kejadian gempa,
+// menyusun pesan CAP BMKG menjadi kejadian cuaca, menghitung wilayah
+// terdampak, menyimpannya di schema hazard, dan menerbitkan hazard.* lewat
+// outbox transaksional.
 //
 // Konfigurasi lewat environment variable; lihat config() di bawah.
 package main
@@ -34,16 +35,16 @@ import (
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/adapters/natsjs"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/adapters/postgres"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/adapters/rawquake"
+	"github.com/ramirezzServer/siaga/services/geo-processor/internal/adapters/rawweather"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/app/consume"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/app/quakes"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/app/relay"
+	"github.com/ramirezzServer/siaga/services/geo-processor/internal/app/warnings"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/domain/quake"
+	"github.com/ramirezzServer/siaga/services/geo-processor/internal/domain/weather"
 )
 
-const (
-	service = "geo-processor"
-	durable = "geo-processor-quake"
-)
+const service = "geo-processor"
 
 func main() {
 	if err := run(); err != nil {
@@ -58,6 +59,7 @@ type settings struct {
 	httpAddr    string
 	logLevel    slog.Level
 	rules       quake.Rules
+	weather     weather.Policy
 }
 
 func config(lookup envx.Lookup) (settings, error) {
@@ -67,6 +69,7 @@ func config(lookup envx.Lookup) (settings, error) {
 		natsURL:     env.Default("NATS_URL", "nats://127.0.0.1:4222"),
 		httpAddr:    env.Default("GEO_HTTP_ADDR", "127.0.0.1:8082"),
 		rules:       quake.DefaultRules(),
+		weather:     weather.DefaultPolicy(),
 	}
 	var errs []error
 	level, err := logx.ParseLevel(env.Default("LOG_LEVEL", "info"))
@@ -79,6 +82,10 @@ func config(lookup envx.Lookup) (settings, error) {
 	if v := env.Default("QUAKE_DEDUP_REVISION", ""); v != "" {
 		s.rules.Revision, err = parseRule(v)
 		errs = append(errs, err)
+	}
+	if v := env.Default("WEATHER_MIN_COVERAGE", ""); v != "" {
+		s.weather.MinCoverage, err = strconv.ParseFloat(v, 64)
+		errs = append(errs, err, s.weather.Validate())
 	}
 	errs = append(errs, env.Err())
 	return s, errors.Join(errs...)
@@ -147,13 +154,35 @@ func serve(ctx context.Context, cfg settings, log *slog.Logger) error {
 	if err != nil {
 		return err
 	}
-	outbox := relay.New(store, natsjs.NewPublisher(js, streams.Hazard.Name), log, time.Now, 100)
-	handler, err := consume.New(rawquake.Decode, svc.Process, consume.DefaultOptions(), time.Now)
+	wsvc, err := warnings.New(postgres.NewWeatherStore(pool), hazardpb.WeatherEncoder{}, cfg.weather, time.Now)
 	if err != nil {
 		return err
 	}
+	// Outbox dipakai bersama semua jenis bahaya.
+	outbox := relay.New(store, natsjs.NewPublisher(js, streams.Hazard.Name), log, time.Now, 100)
+	quakeHandler, err := consume.New(rawquake.Decode, func(ctx context.Context, r quake.Report) (consume.Outcome, error) {
+		res, err := svc.Process(ctx, r)
+		return consume.Outcome(res), err
+	}, []error{quake.ErrInvalid}, consume.DefaultOptions(), time.Now)
+	if err != nil {
+		return err
+	}
+	weatherHandler, err := consume.New(rawweather.Decode, func(ctx context.Context, m weather.Message) (consume.Outcome, error) {
+		res, err := wsvc.Process(ctx, m)
+		if res.Ignored {
+			log.Info("peringatan di luar wilayah pantauan diabaikan", slog.String("cap", m.Identifier))
+		}
+		return consume.Outcome{Changed: res.Changed, Created: res.Created, Updated: res.Updated, Ended: res.Ended}, err
+	}, []error{weather.ErrInvalid}, consume.DefaultOptions(), time.Now)
+	if err != nil {
+		return err
+	}
+	consumers := []consumerJob{
+		{spec: natsjs.QuakeConsumer, handler: quakeHandler},
+		{spec: natsjs.WeatherConsumer, handler: weatherHandler},
+	}
 
-	var consumerReady atomic.Bool
+	var consumersReady atomic.Int32
 	checks := map[string]httpstatus.Check{
 		"postgres": func(ctx context.Context) error { return pool.Ping(ctx) },
 		"nats": func(context.Context) error {
@@ -163,14 +192,17 @@ func serve(ctx context.Context, cfg settings, log *slog.Logger) error {
 			return nil
 		},
 		"consumer": func(context.Context) error {
-			if !consumerReady.Load() {
+			if int(consumersReady.Load()) < len(consumers) {
 				return errors.New("menunggu stream RAW dari ingest")
 			}
 			return nil
 		},
 	}
 	status := func() any {
-		return map[string]any{"consumer": handler.Snapshot(), "outbox": outbox.Snapshot(), "rules": cfg.rules}
+		return map[string]any{
+			"consumer": quakeHandler.Snapshot(), "weather_consumer": weatherHandler.Snapshot(),
+			"outbox": outbox.Snapshot(), "rules": cfg.rules, "weather_policy": cfg.weather,
+		}
 	}
 	if cfg.httpAddr != "" {
 		srv := &http.Server{
@@ -193,43 +225,54 @@ func serve(ctx context.Context, cfg settings, log *slog.Logger) error {
 
 	var wg sync.WaitGroup
 	wg.Go(func() { outbox.Run(ctx, time.Second) })
-	wg.Go(func() {
-		svc.RunExpiry(ctx, 30*time.Second, 100, func(n int, err error) {
+	expired := func(kind string) func(n int, err error) {
+		return func(n int, err error) {
 			if err != nil {
-				log.Warn("gagal mengakhiri kejadian kedaluwarsa", slog.Any("error", err))
+				log.Warn("gagal mengakhiri kejadian kedaluwarsa", slog.String("kind", kind), slog.Any("error", err))
 				return
 			}
-			log.Info("kejadian kedaluwarsa diakhiri", slog.Int("count", n))
+			log.Info("kejadian kedaluwarsa diakhiri", slog.String("kind", kind), slog.Int("count", n))
 			outbox.Wake()
-		})
-	})
-	wg.Go(func() {
-		if err := consumeLoop(ctx, js, handler, outbox.Wake, log, func() { consumerReady.Store(true) }); err != nil {
-			log.Error("consumer berhenti", slog.Any("error", err))
-			stop()
 		}
-	})
-	log.Info("geo-processor berjalan", slog.String("consumer", durable),
-		slog.String("dedup_cross_source", fmt.Sprintf("%+v", cfg.rules.CrossSource)))
+	}
+	wg.Go(func() { svc.RunExpiry(ctx, 30*time.Second, 100, expired("quake")) })
+	wg.Go(func() { wsvc.RunExpiry(ctx, 30*time.Second, 100, expired("weather")) })
+	for _, c := range consumers {
+		wg.Go(func() {
+			if err := consumeLoop(ctx, js, c, outbox.Wake, log, func() { consumersReady.Add(1) }); err != nil {
+				log.Error("consumer berhenti", slog.String("consumer", c.spec.Durable), slog.Any("error", err))
+				stop()
+			}
+		})
+	}
+	log.Info("geo-processor berjalan", slog.Any("consumers", []string{natsjs.QuakeConsumer.Durable, natsjs.WeatherConsumer.Durable}),
+		slog.String("dedup_cross_source", fmt.Sprintf("%+v", cfg.rules.CrossSource)),
+		slog.Float64("weather_min_coverage", cfg.weather.MinCoverage))
 	<-ctx.Done()
 	wg.Wait()
 	log.Info("geo-processor berhenti")
 	return nil
 }
 
+// consumerJob adalah satu durable consumer beserta handler-nya.
+type consumerJob struct {
+	spec    natsjs.ConsumerSpec
+	handler natsjs.Handler
+}
+
 // consumeLoop menyiapkan consumer (menunggu stream RAW bila ingest belum
 // pernah jalan) lalu memproses pesan sampai ctx selesai.
-func consumeLoop(ctx context.Context, js jetstream.JetStream, h *consume.Handler, after func(), log *slog.Logger, ready func()) error {
+func consumeLoop(ctx context.Context, js jetstream.JetStream, c consumerJob, after func(), log *slog.Logger, ready func()) error {
 	for {
-		c, err := natsjs.NewConsumer(ctx, js, durable, service, h, log, after)
+		cons, err := natsjs.NewConsumer(ctx, js, c.spec, service, c.handler, log, after)
 		if err == nil {
 			ready()
-			return c.Run(ctx)
+			return cons.Run(ctx)
 		}
 		if !errors.Is(err, jetstream.ErrStreamNotFound) {
 			return err
 		}
-		log.Warn("stream RAW belum ada; jalankan ingest. Dicoba lagi dalam 5 detik")
+		log.Warn("stream RAW belum ada; jalankan ingest. Dicoba lagi dalam 5 detik", slog.String("consumer", c.spec.Durable))
 		select {
 		case <-ctx.Done():
 			return nil

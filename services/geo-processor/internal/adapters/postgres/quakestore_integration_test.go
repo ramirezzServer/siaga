@@ -37,6 +37,7 @@ func pool(t *testing.T) *pgxpool.Pool {
 	t.Cleanup(p.Close)
 	for _, q := range []string{
 		`DELETE FROM hazard.outbox`,
+		`DELETE FROM hazard.cap_message WHERE sent < '2002-01-01'`,
 		`DELETE FROM hazard.event_source WHERE occurred_at < '2002-01-01'`,
 		`UPDATE hazard.event SET merged_into = NULL, status = 'expired' WHERE occurred_at < '2002-01-01' AND status = 'merged'`,
 		`DELETE FROM hazard.event WHERE occurred_at < '2002-01-01'`,

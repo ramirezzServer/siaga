@@ -1,6 +1,7 @@
 // Command import-regions memuat batas wilayah satu provinsi ke ref.region.
 //
 //	import-regions -source .cache/wilayah_boundaries/db -province 32
+//	import-regions -dry-run -adm4-out adm4_32.txt   # daftar kelurahan/desa untuk sapuan prakiraan
 //
 // Koneksi database dibaca dari DATABASE_URL (role siaga_geo).
 package main
@@ -41,6 +42,7 @@ func run() error {
 		version    = flag.String("source-version", "", "versi data (default: isi file .source-version di atas folder sumber)")
 		maxSkipped = flag.Int("max-skipped", 0, "jumlah baris bermasalah yang ditoleransi")
 		dryRun     = flag.Bool("dry-run", false, "validasi saja tanpa menulis ke database")
+		adm4Out    = flag.String("adm4-out", "", "tulis daftar kode kelurahan/desa yang diterima ke file ini")
 	)
 	flag.Parse()
 
@@ -103,5 +105,28 @@ func run() error {
 	if errors.Is(err, context.Canceled) {
 		return errors.New("dibatalkan")
 	}
+	if err == nil && *adm4Out != "" {
+		if err := writeVillages(*adm4Out, src, *province, rep.Villages); err != nil {
+			return err
+		}
+		log.Info("daftar kelurahan/desa ditulis", slog.String("file", *adm4Out), slog.Int("codes", len(rep.Villages)))
+	}
 	return err
+}
+
+// writeVillages menulis daftar kode adm4 untuk sapuan prakiraan ingest,
+// diawali komentar asal data supaya perubahan terlihat jelas di diff.
+func writeVillages(path string, src *cahyadsn.DirSource, province string, codes []string) error {
+	var b strings.Builder
+	fmt.Fprintf(&b, "# Kode kelurahan/desa (adm4) provinsi %s untuk sapuan prakiraan cuaca BMKG.\n", province)
+	fmt.Fprintf(&b, "# Dibuat `make adm4-list` dari %s@%.12s; jangan diedit manual.\n", src.Name(), src.Version())
+	fmt.Fprintf(&b, "# %d kode\n", len(codes))
+	for _, c := range codes {
+		b.WriteString(c)
+		b.WriteByte('\n')
+	}
+	if err := os.WriteFile(path, []byte(b.String()), 0o600); err != nil {
+		return fmt.Errorf("menulis %s: %w", path, err)
+	}
+	return nil
 }

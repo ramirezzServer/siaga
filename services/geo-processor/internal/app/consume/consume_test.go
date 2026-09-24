@@ -6,17 +6,18 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ramirezzServer/siaga/services/geo-processor/internal/app/quakes"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/domain/quake"
+	"github.com/ramirezzServer/siaga/services/geo-processor/internal/domain/weather"
 )
 
 var now = time.Date(2026, 9, 24, 0, 0, 0, 0, time.UTC)
 
-func handler(t *testing.T, decodeErr, processErr error, res quakes.Result) *Handler {
+func handler(t *testing.T, decodeErr, processErr error, res Outcome) *Handler[quake.Report] {
 	t.Helper()
 	h, err := New(
 		func([]byte) (quake.Report, error) { return quake.Report{}, decodeErr },
-		func(context.Context, quake.Report) (quakes.Result, error) { return res, processErr },
+		func(context.Context, quake.Report) (Outcome, error) { return res, processErr },
+		[]error{quake.ErrInvalid, weather.ErrInvalid},
 		DefaultOptions(), func() time.Time { return now },
 	)
 	if err != nil {
@@ -39,13 +40,14 @@ func TestHandleDecisions(t *testing.T) {
 		{"berhasil", nil, nil, 1, Ack, 0},
 		{"payload rusak", quake.ErrInvalid, nil, 1, DeadLetter, 0},
 		{"invarian dilanggar", nil, quake.ErrInvalid, 1, DeadLetter, 0},
+		{"invarian cuaca dilanggar", nil, weather.ErrInvalid, 1, DeadLetter, 0},
 		{"sementara pertama", nil, transient, 1, Retry, time.Second},
 		{"sementara kedua", nil, transient, 2, Retry, 5 * time.Second},
 		{"sementara keempat", nil, transient, 4, Retry, 30 * time.Second},
 		{"sementara kelima", nil, transient, 5, DeadLetter, 0},
 	}
 	for _, c := range cases {
-		d := handler(t, c.decodeErr, c.processErr, quakes.Result{}).Handle(ctx, nil, c.delivered)
+		d := handler(t, c.decodeErr, c.processErr, Outcome{}).Handle(ctx, nil, c.delivered)
 		if d.Action != c.want || d.Delay != c.delay {
 			t.Errorf("%s: %v/%v, ingin %v/%v", c.name, d.Action, d.Delay, c.want, c.delay)
 		}
@@ -58,20 +60,20 @@ func TestHandleDecisions(t *testing.T) {
 func TestHandleRetriesQuicklyOnShutdown(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	d := handler(t, nil, context.Canceled, quakes.Result{}).Handle(ctx, nil, 5)
+	d := handler(t, nil, context.Canceled, Outcome{}).Handle(ctx, nil, 5)
 	if d.Action != Retry || d.Delay != 0 {
 		t.Fatalf("berhenti: %+v", d)
 	}
 }
 
 func TestStatsAndActionString(t *testing.T) {
-	h := handler(t, nil, nil, quakes.Result{Changed: true, Created: 1, Updated: 2, Ended: 1})
+	h := handler(t, nil, nil, Outcome{Changed: true, Created: 1, Updated: 2, Ended: 1})
 	h.Handle(context.Background(), nil, 1)
-	u := handler(t, nil, nil, quakes.Result{})
+	u := handler(t, nil, nil, Outcome{})
 	u.Handle(context.Background(), nil, 1)
-	f := handler(t, quake.ErrInvalid, nil, quakes.Result{})
+	f := handler(t, quake.ErrInvalid, nil, Outcome{})
 	f.Handle(context.Background(), nil, 1)
-	r := handler(t, nil, errors.New("x"), quakes.Result{})
+	r := handler(t, nil, errors.New("x"), Outcome{})
 	r.Handle(context.Background(), nil, 1)
 
 	if s := h.Snapshot(); s.Received != 1 || s.Applied != 1 || s.Created != 1 || s.Updated != 2 || s.Ended != 1 || !s.LastSuccess.Equal(now) {
@@ -91,7 +93,7 @@ func TestStatsAndActionString(t *testing.T) {
 			t.Errorf("%d: %q", a, a.String())
 		}
 	}
-	if _, err := New(nil, nil, Options{}, time.Now); err == nil {
+	if _, err := New[quake.Report](nil, nil, nil, Options{}, time.Now); err == nil {
 		t.Error("opsi kosong harus ditolak")
 	}
 }

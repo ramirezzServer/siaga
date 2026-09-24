@@ -2,6 +2,8 @@
 // adapter supaya bisa dibaca dan ditinjau sebagai SQL utuh.
 package quakesql
 
+import "github.com/ramirezzServer/siaga/services/geo-processor/internal/adapters/postgres/eventsql"
+
 // LockKey adalah kunci advisory lock pengelompokan gempa ("SIAGAQK" dalam ASCII).
 const LockKey int64 = 0x53494147414b
 
@@ -82,8 +84,8 @@ WHERE event_id IN (SELECT event_id FROM candidate)`
 // EventExists melaporkan apakah ID sudah dipakai.
 const EventExists = `SELECT EXISTS (SELECT 1 FROM hazard.event WHERE id = $1)`
 
-// Event membaca ringkasan kejadian.
-const Event = `SELECT status, level, revision, content_sha256 FROM hazard.event WHERE id = $1`
+// Event sama dengan eventsql.Event.
+const Event = eventsql.Event
 
 // RegionsWithin mencari kelurahan/desa dalam radius. Filter pertama memakai
 // indeks GiST geometri dengan radius derajat yang sengaja lebih lebar ($4);
@@ -116,7 +118,7 @@ const SaveEvent = `INSERT INTO hazard.event (
   $1, 'quake', $2, $3, $4, $5, $6, $7,
   ST_SetSRID(ST_MakePoint($9, $8), 4326),
   CASE WHEN $10::float8 > 0
-    THEN ST_Buffer(ST_SetSRID(ST_MakePoint($9, $8), 4326)::geography, $10::float8 * 1000.0, 'quad_segs=16')::geometry
+    THEN ST_Multi(ST_Buffer(ST_SetSRID(ST_MakePoint($9, $8), 4326)::geography, $10::float8 * 1000.0, 'quad_segs=16')::geometry)
   END,
   $11, $12, $13, $14
 )
@@ -151,18 +153,16 @@ ON CONFLICT (event_id) DO UPDATE SET
   shakemap_url = EXCLUDED.shakemap_url,
   source_url = EXCLUDED.source_url`
 
-// ClearImpacts menghapus wilayah terdampak lama sebelum ditulis ulang.
-const ClearImpacts = `DELETE FROM hazard.impact_region WHERE event_id = $1`
+// ClearImpacts sama dengan eventsql.ClearImpacts.
+const ClearImpacts = eventsql.ClearImpacts
 
 // SaveImpacts menulis wilayah terdampak dari array paralel.
 const SaveImpacts = `INSERT INTO hazard.impact_region (event_id, region_code, distance_km, level, within_felt)
 SELECT $1, code, km, lvl, felt
 FROM unnest($2::text[], $3::float8[], $4::int2[], $5::bool[]) AS t(code, km, lvl, felt)`
 
-// EndEvent menandai kejadian tidak aktif.
-const EndEvent = `UPDATE hazard.event
-SET status = $2, merged_into = $3, ended_at = $4, revision = $5, updated_at = now()
-WHERE id = $1`
+// EndEvent sama dengan eventsql.EndEvent.
+const EndEvent = eventsql.EndEvent
 
 // DueForExpiry mengambil kejadian gempa aktif yang sudah lewat masa aktifnya.
 const DueForExpiry = `SELECT id, status, level, revision, content_sha256
@@ -172,15 +172,11 @@ ORDER BY expires_at, id
 LIMIT $2
 FOR UPDATE SKIP LOCKED`
 
-// Enqueue menulis pesan ke outbox. Pesan dengan msg_id sama diabaikan.
-const Enqueue = `INSERT INTO hazard.outbox (subject, msg_id, payload) VALUES ($1, $2, $3)
-ON CONFLICT (msg_id) DO NOTHING`
+// Enqueue sama dengan eventsql.Enqueue.
+const Enqueue = eventsql.Enqueue
 
-// OutboxBatch mengambil pesan tertua yang tidak sedang dikunci proses lain.
-const OutboxBatch = `SELECT id, subject, msg_id, payload FROM hazard.outbox
-ORDER BY id
-LIMIT $1
-FOR UPDATE SKIP LOCKED`
+// OutboxBatch sama dengan eventsql.OutboxBatch.
+const OutboxBatch = eventsql.OutboxBatch
 
-// OutboxDelete menghapus pesan yang sudah terbit.
-const OutboxDelete = `DELETE FROM hazard.outbox WHERE id = ANY($1::bigint[])`
+// OutboxDelete sama dengan eventsql.OutboxDelete.
+const OutboxDelete = eventsql.OutboxDelete

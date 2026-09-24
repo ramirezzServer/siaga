@@ -17,7 +17,6 @@ import (
 	"github.com/ramirezzServer/siaga/libs/go/platform/natsx"
 	"github.com/ramirezzServer/siaga/libs/go/platform/natsx/natstest"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/app/consume"
-	"github.com/ramirezzServer/siaga/services/geo-processor/internal/app/quakes"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/domain/quake"
 )
 
@@ -74,12 +73,12 @@ func TestPublisherDeduplicatesAndChecksStream(t *testing.T) {
 func TestConsumerActions(t *testing.T) {
 	js, ctx := setup(t)
 	var calls atomic.Int32
-	process := func(_ context.Context, r quake.Report) (quakes.Result, error) {
+	process := func(_ context.Context, r quake.Report) (consume.Outcome, error) {
 		calls.Add(1)
 		if r.EventID == "sementara" {
-			return quakes.Result{}, errors.New("database\nputus")
+			return consume.Outcome{}, errors.New("database\nputus")
 		}
-		return quakes.Result{Changed: true}, nil
+		return consume.Outcome{Changed: true}, nil
 	}
 	decode := func(b []byte) (quake.Report, error) {
 		if string(b) == "rusak" {
@@ -88,12 +87,14 @@ func TestConsumerActions(t *testing.T) {
 		return quake.Report{EventID: string(b)}, nil
 	}
 	opts := consume.Options{MaxDeliveries: 3, Backoff: []time.Duration{10 * time.Millisecond}}
-	h, err := consume.New(decode, process, opts, time.Now)
+	h, err := consume.New(decode, process, []error{quake.ErrInvalid}, opts, time.Now)
 	if err != nil {
 		t.Fatal(err)
 	}
 	var acked atomic.Int32
-	c, err := NewConsumer(ctx, js, "test-quake", "geo-processor", h, quiet, func() { acked.Add(1) })
+	spec := QuakeConsumer
+	spec.Durable = "test-quake"
+	c, err := NewConsumer(ctx, js, spec, "geo-processor", h, quiet, func() { acked.Add(1) })
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -167,8 +168,8 @@ func TestNewConsumerNeedsRawStream(t *testing.T) {
 	}
 	t.Cleanup(nc.Close)
 	js, _ := jetstream.New(nc)
-	h, _ := consume.New(nil, nil, consume.DefaultOptions(), time.Now)
-	_, err = NewConsumer(context.Background(), js, "x", "geo-processor", h, quiet, nil)
+	h, _ := consume.New[quake.Report](nil, nil, nil, consume.DefaultOptions(), time.Now)
+	_, err = NewConsumer(context.Background(), js, WeatherConsumer, "geo-processor", h, quiet, nil)
 	if !errors.Is(err, jetstream.ErrStreamNotFound) {
 		t.Fatalf("err = %v, ingin ErrStreamNotFound", err)
 	}
@@ -181,8 +182,11 @@ func TestHeaderValue(t *testing.T) {
 	if got := headerValue("ééé", 3); got != "é" {
 		t.Errorf("potongan harus di batas rune: %q", got)
 	}
-	cfg := ConsumerConfig("d")
-	if cfg.FilterSubject != "raw.quake.>" || cfg.AckPolicy != jetstream.AckExplicitPolicy || cfg.MaxDeliver != -1 {
+	cfg := ConsumerConfig(QuakeConsumer)
+	if cfg.Durable != "geo-processor-quake" || cfg.FilterSubject != "raw.quake.>" || cfg.AckPolicy != jetstream.AckExplicitPolicy || cfg.MaxDeliver != -1 {
 		t.Errorf("config %+v", cfg)
+	}
+	if w := ConsumerConfig(WeatherConsumer); w.Durable != "geo-processor-weather" || w.FilterSubject != "raw.weather.>" {
+		t.Errorf("config cuaca %+v", w)
 	}
 }

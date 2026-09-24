@@ -1,0 +1,4 @@
+go test fuzz v1
+uint64(135)
+byte('r')
+byte('î')
