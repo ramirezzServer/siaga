@@ -2,7 +2,7 @@
 
 Platform ketahanan wilayah Jawa Barat: peringatan dini bencana (gempa, cuaca ekstrem, banjir, titik api) dan pemantauan serta prediksi kualitas udara (NAPAS) dalam satu peta real-time. Proyek portofolio independen, bukan layanan resmi BMKG, BNPB, atau BPBD. Selaras dengan SDGs 3, 11, dan 13.
 
-> Status: **Fase 1 (pipa data), irisan 1d-1**. Belum ada aplikasi yang bisa dibuka di browser. Yang sudah jalan: ingest menarik data gempa BMKG dan USGS, peringatan dini cuaca BMKG (CAP), prakiraan cuaca BMKG per kelurahan/desa Jawa Barat, serta prakiraan cuaca dan kualitas udara (CAMS) per simpul grid 0,25° dan debit 38 titik pantau sungai (GloFAS) dari Open-Meteo, lalu menerbitkannya ke NATS JetStream. geo-processor menggabungkan laporan gempa kedua sumber menjadi satu kejadian (deduplikasi terkalibrasi), menyusun rantai pesan CAP menjadi satu kejadian cuaca, memperkirakan kelurahan/desa terdampak, menerbitkan `hazard.quake.*` serta `hazard.weather.*`, dan menyimpan semua prakiraan ke hypertable TimescaleDB schema `ts`.
+> Status: **Fase 1 (pipa data), irisan 1d-2**. Belum ada aplikasi yang bisa dibuka di browser. Yang sudah jalan: ingest menarik data gempa BMKG dan USGS, peringatan dini cuaca BMKG (CAP), prakiraan cuaca BMKG per kelurahan/desa Jawa Barat, prakiraan cuaca dan kualitas udara (CAMS) per simpul grid 0,25° dan debit 38 titik pantau sungai (GloFAS) dari Open-Meteo, nilai sensor stasiun kualitas udara OpenAQ, dan titik panas satelit NASA FIRMS, lalu menerbitkannya ke NATS JetStream. geo-processor menggabungkan laporan gempa kedua sumber menjadi satu kejadian (deduplikasi terkalibrasi), menyusun rantai pesan CAP menjadi satu kejadian cuaca, memperkirakan kelurahan/desa terdampak, menerbitkan `hazard.quake.*` serta `hazard.weather.*`, dan menyimpan semua prakiraan, nilai sensor, dan titik panas ke hypertable TimescaleDB schema `ts`.
 
 ## Dokumen
 
@@ -23,12 +23,14 @@ make up               # PostgreSQL + NATS + Valkey + Mailpit (profil lite)
 make seed             # migrasi + import 6.612 wilayah Jawa Barat
 make adm4-list        # (opsional) bangun ulang daftar kode desa untuk sapuan prakiraan
 make grid-list        # (opsional) bangun ulang simpul grid 0,25° Open-Meteo
-make ingest           # tarik BMKG, USGS, Open-Meteo ke NATS (status: :8081/status)
-make geo              # gempa + cuaca → hazard.*, prakiraan → ts.* (status: :8082/status)
+make ingest           # tarik BMKG, USGS, Open-Meteo, OpenAQ, FIRMS ke NATS (status: :8081/status)
+make geo              # gempa + cuaca → hazard.*, deret waktu → ts.* (status: :8082/status)
 make check            # lint + test
 make calibrate-dedup  # ukur ambang deduplikasi dengan katalog historis BMKG + USGS
 make river-snap       # pilih sel GloFAS untuk 38 titik pantau sungai (±800 lokasi Open-Meteo)
 ```
+
+OpenAQ dan NASA FIRMS butuh key gratis: isi `OPENAQ_API_KEY` (daftar di explore.openaq.org) dan `FIRMS_MAP_KEY` (firms.modaps.eosdis.nasa.gov/api/map_key) di `.env`. Tanpa key, ingest tetap jalan tanpa kedua konektor itu.
 
 Profil full (Kubernetes lokal, sama dengan produksi): `make k3d-up && make tilt`.
 
