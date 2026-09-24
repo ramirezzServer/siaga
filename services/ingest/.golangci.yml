@@ -1,0 +1,29 @@
+version: "2"
+# misspell sengaja tidak dipakai: komentar dan pesan ditulis dalam bahasa Indonesia.
+linters:
+  default: standard
+  enable:
+    - errorlint
+    - gosec
+    - nolintlint
+    - revive
+    - unconvert
+    - unparam
+    - bodyclose
+    - noctx
+    - errname
+    - exhaustive
+  settings:
+    revive:
+      rules:
+        - name: exported
+          arguments: [disableStutteringCheck]
+  exclusions:
+    presets: [std-error-handling]
+formatters:
+  enable:
+    - gofumpt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes: [github.com/ramirezzServer/siaga]

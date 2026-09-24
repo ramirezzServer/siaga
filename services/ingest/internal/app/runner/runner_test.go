@@ -1,0 +1,189 @@
+package runner
+
+import (
+	"bytes"
+	"context"
+	"errors"
+	"log/slog"
+	"strings"
+	"sync"
+	"testing"
+	"time"
+
+	"github.com/ramirezzServer/siaga/services/ingest/internal/app/poll"
+	"github.com/ramirezzServer/siaga/services/ingest/internal/ports"
+)
+
+// fakeClock maju sendiri saat Sleep dipanggil, jadi loop berjalan tanpa menunggu.
+type fakeClock struct {
+	mu     sync.Mutex
+	now    time.Time
+	sleeps []time.Duration
+}
+
+func (c *fakeClock) Now() time.Time {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.now
+}
+
+func (c *fakeClock) Sleep(ctx context.Context, d time.Duration) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.sleeps = append(c.sleeps, d)
+	c.now = c.now.Add(d)
+	return nil
+}
+
+type step struct {
+	res poll.Result
+	err error
+}
+
+// scriptPoller menjalankan skenario lalu membatalkan ctx setelah langkah terakhir.
+type scriptPoller struct {
+	name   string
+	steps  []step
+	calls  int
+	cancel context.CancelFunc
+	at     []time.Time
+	clock  *fakeClock
+}
+
+func (p *scriptPoller) Name() string { return p.name }
+
+func (p *scriptPoller) Poll(context.Context) (poll.Result, error) {
+	p.at = append(p.at, p.clock.Now())
+	s := p.steps[p.calls]
+	p.calls++
+	if p.calls == len(p.steps) && p.cancel != nil {
+		p.cancel()
+	}
+	return s.res, s.err
+}
+
+func newRunner(clk *fakeClock) (*Runner, *bytes.Buffer) {
+	var buf bytes.Buffer
+	log := slog.New(slog.NewTextHandler(&buf, &slog.HandlerOptions{Level: slog.LevelDebug}))
+	return New(clk, log, Options{MaxBackoff: 4 * time.Minute, JitterFrac: 0.1, Rand: func() float64 { return 0.5 }}), &buf
+}
+
+func TestLoopBackoffAndRecovery(t *testing.T) {
+	clk := &fakeClock{now: time.Date(2026, 9, 24, 0, 0, 0, 0, time.UTC)}
+	r, logs := newRunner(clk)
+	ctx, cancel := context.WithCancel(context.Background())
+	boom := errors.New("sumber mati")
+	p := &scriptPoller{name: "uji", clock: clk, cancel: cancel, steps: []step{
+		{res: poll.Result{Published: 2, Events: 2}},
+		{err: boom},
+		{err: boom},
+		{err: boom},
+		{err: &ports.RetryAfterError{Status: 429, After: 3 * time.Minute}},
+		{res: poll.Result{Unchanged: true}},
+		{res: poll.Result{Published: 1, Rejected: 1, Rejections: []ports.Rejection{{Key: "x", Reason: boom}}, ArchiveErr: boom}},
+	}}
+	r.Run(ctx, []Job{{Poller: p, Interval: 30 * time.Second}})
+
+	want := []time.Duration{
+		30 * time.Second,                              // sukses
+		time.Minute, 2 * time.Minute, 4 * time.Minute, // backoff 2^n
+		4 * time.Minute,  // gagal kelima dibatasi MaxBackoff walau Retry-After 3 menit
+		30 * time.Second, // pulih
+	}
+	if !equal(clk.sleeps, want) {
+		t.Fatalf("jeda = %v, ingin %v", clk.sleeps, want)
+	}
+	st := r.Snapshot()
+	if len(st) != 1 || st[0].ConsecutiveFailures != 0 || st[0].Published != 3 || st[0].Rejected != 1 || st[0].LastError != "" {
+		t.Fatalf("status akhir %+v", st)
+	}
+	if !st[0].LastChange.Equal(p.at[6]) || !st[0].LastSuccess.Equal(p.at[6]) {
+		t.Fatalf("LastChange/LastSuccess %+v", st[0])
+	}
+	out := logs.String()
+	for _, want := range []string{"level=WARN msg=\"polling gagal\"", "level=ERROR msg=\"polling gagal\"", "record ditolak", "arsip gagal"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("log tidak memuat %q", want)
+		}
+	}
+}
+
+func TestRetryAfterLongerThanBackoff(t *testing.T) {
+	clk := &fakeClock{now: time.Date(2026, 9, 24, 0, 0, 0, 0, time.UTC)}
+	r, _ := newRunner(clk)
+	r.opt.MaxBackoff = time.Hour
+	ctx, cancel := context.WithCancel(context.Background())
+	p := &scriptPoller{name: "uji", clock: clk, cancel: cancel, steps: []step{
+		{err: &ports.RetryAfterError{Status: 503, After: 20 * time.Minute}},
+		{},
+	}}
+	r.Run(ctx, []Job{{Poller: p, Interval: 30 * time.Second}})
+	if clk.sleeps[0] != 20*time.Minute {
+		t.Fatalf("Retry-After harus dihormati, jeda %v", clk.sleeps[0])
+	}
+}
+
+func TestSharedLimiterSpacesRequests(t *testing.T) {
+	clk := &fakeClock{now: time.Date(2026, 9, 24, 0, 0, 0, 0, time.UTC)}
+	r, _ := newRunner(clk)
+	lim, err := NewLimiter("bmkg", 60, 1)
+	if err != nil || lim.Name() != "bmkg" {
+		t.Fatal(err)
+	}
+	jobs := []Job{
+		{Poller: &scriptPoller{name: "a", clock: clk, steps: []step{{}}}, Limiters: []*Limiter{lim}},
+		{Poller: &scriptPoller{name: "b", clock: clk, steps: []step{{}}}, Limiters: []*Limiter{lim}},
+		{Poller: &scriptPoller{name: "c", clock: clk, steps: []step{{err: errors.New("gagal")}}}, Limiters: []*Limiter{lim}},
+	}
+	err = r.RunOnce(context.Background(), jobs)
+	if err == nil || !strings.Contains(err.Error(), "gagal") {
+		t.Fatalf("RunOnce harus meneruskan galat: %v", err)
+	}
+	if !equal(clk.sleeps, []time.Duration{time.Second, time.Second}) {
+		t.Fatalf("anggaran 60/menit burst 1 harus memberi jeda 1 detik, jeda %v", clk.sleeps)
+	}
+	if got := r.Snapshot(); len(got) != 3 || got[0].Connector != "a" || got[2].ConsecutiveFailures != 1 {
+		t.Fatalf("snapshot %+v", got)
+	}
+}
+
+func TestCancelledContextStopsQuietly(t *testing.T) {
+	clk := &fakeClock{now: time.Date(2026, 9, 24, 0, 0, 0, 0, time.UTC)}
+	r, logs := newRunner(clk)
+	lim, _ := NewLimiter("x", 1, 1)
+	ctx, cancel := context.WithCancel(context.Background())
+	p := &scriptPoller{name: "uji", clock: clk, cancel: cancel, steps: []step{{err: context.Canceled}}}
+	r.Run(ctx, []Job{{Poller: p, Interval: time.Second, Limiters: []*Limiter{lim}}})
+	if strings.Contains(logs.String(), "polling gagal") {
+		t.Fatal("pembatalan saat shutdown tidak boleh dicatat sebagai kegagalan sumber")
+	}
+	// Anggaran habis dan ctx sudah batal: acquire berhenti tanpa polling.
+	if err := r.RunOnce(ctx, []Job{{Poller: p, Limiters: []*Limiter{lim}}}); !errors.Is(err, context.Canceled) {
+		t.Fatalf("RunOnce dengan ctx batal: %v", err)
+	}
+}
+
+func TestNewDefaultsAndLimiterValidation(t *testing.T) {
+	r := New(&fakeClock{}, slog.New(slog.DiscardHandler), Options{})
+	if r.opt.MaxBackoff != 10*time.Minute || r.opt.Rand == nil {
+		t.Fatalf("default tidak terisi: %+v", r.opt)
+	}
+	if _, err := NewLimiter("x", 0, 1); err == nil {
+		t.Fatal("anggaran 0/menit harus ditolak")
+	}
+}
+
+func equal(a, b []time.Duration) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
+}

@@ -6,4 +6,5 @@ use (
 	./libs/go/contracts
 	./libs/go/platform
 	./services/geo-processor
+	./services/ingest
 )

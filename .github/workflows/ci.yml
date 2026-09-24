@@ -13,7 +13,9 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  GO_MODULES: libs/go/platform libs/go/contracts services/geo-processor
+  GO_MODULES: libs/go/platform libs/go/contracts services/geo-processor services/ingest
+  # Layanan yang wajib coverage domain + app >= 85%.
+  GO_SERVICES: services/geo-processor services/ingest
 
 jobs:
   secrets:
@@ -58,23 +60,36 @@ jobs:
       - uses: golangci/golangci-lint-action@v8
         with:
           version: v2.13.2
+          working-directory: services/ingest
+      - uses: golangci/golangci-lint-action@v8
+        with:
+          version: v2.13.2
           working-directory: libs/go/platform
       - name: Unit test
         run: |
           for m in $GO_MODULES; do (cd "$m" && go test -race -count=1 -coverprofile=coverage.out ./...); done
       - name: Coverage domain >= 85%
         run: |
-          cd services/geo-processor
-          go test -count=1 -coverprofile=domain.out ./internal/domain/... ./internal/app/... >/dev/null
-          total=$(go tool cover -func=domain.out | awk '/^total:/ {sub("%","",$3); print $3}')
-          echo "coverage domain+app: ${total}%"
-          awk -v t="$total" 'BEGIN { exit (t >= 85) ? 0 : 1 }'
+          for s in $GO_SERVICES; do
+            (
+              cd "$s"
+              go test -count=1 -coverprofile=domain.out ./internal/domain/... ./internal/app/... >/dev/null
+              total=$(go tool cover -func=domain.out | awk '/^total:/ {sub("%","",$3); print $3}')
+              echo "$s coverage domain+app: ${total}%"
+              awk -v t="$total" 'BEGIN { exit (t >= 85) ? 0 : 1 }'
+            )
+          done
       - name: Fuzz singkat
         run: |
           cd services/geo-processor
           go test ./internal/domain/region -run='^$' -fuzz=FuzzParseCode -fuzztime=20s
           go test ./internal/domain/region -run='^$' -fuzz=FuzzParseLatLngPath -fuzztime=20s
           go test ./internal/adapters/cahyadsn -run='^$' -fuzz=FuzzParseDump -fuzztime=20s
+          cd ../ingest
+          go test ./internal/domain/ratelimit -run='^$' -fuzz=FuzzWindowBound -fuzztime=20s
+          go test ./internal/domain/schedule -run='^$' -fuzz=FuzzNextBounds -fuzztime=20s
+          go test ./internal/adapters/bmkg -run='^$' -fuzz=FuzzParse -fuzztime=20s
+          go test ./internal/adapters/usgs -run='^$' -fuzz=FuzzParse -fuzztime=20s
 
   node:
     name: TypeScript + kontrak

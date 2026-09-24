@@ -5,7 +5,7 @@ SHELL := bash
 .DEFAULT_GOAL := help
 
 COMPOSE     := docker compose -f deploy/compose/compose.lite.yaml --env-file .env
-GO_MODULES  := libs/go/platform libs/go/contracts services/geo-processor
+GO_MODULES  := libs/go/platform libs/go/contracts services/geo-processor services/ingest
 PROVINCE    ?= 32
 
 # DATABASE_URL untuk role siaga_geo, dibangun dari .env.
@@ -14,6 +14,11 @@ include .env
 export
 endif
 GEO_DATABASE_URL ?= postgres://siaga_geo:$(SIAGA_GEO_PASSWORD)@localhost:$(POSTGRES_PORT)/$(POSTGRES_DB)?sslmode=disable
+# Resep yang memakai URL berisi password diawali @ supaya make tidak mencetaknya;
+# gantinya dicetak versi tersamar ini.
+GEO_DATABASE_URL_SAFE = postgres://siaga_geo:***@localhost:$(POSTGRES_PORT)/$(POSTGRES_DB)
+# Arsip payload mentah ingest (juga bahan uji replay).
+INGEST_ARCHIVE_DIR ?= $(CURDIR)/.cache/ingest-archive
 
 .PHONY: help
 help: ## Tampilkan daftar perintah
@@ -56,22 +61,34 @@ psql: ## Buka psql sebagai superuser
 .PHONY: migrate migrate-down migrate-status regions-fetch regions-import seed
 # goose dijalankan dengan GOWORK=off: driver bawaannya memicu ambiguous import genproto di workspace mode.
 migrate: ## Jalankan migrasi semua layanan
-	cd services/geo-processor && GOWORK=off go tool goose -dir migrations -table ref.goose_db_version postgres "$(GEO_DATABASE_URL)" up
+	@echo "goose up ($(GEO_DATABASE_URL_SAFE))"
+	@cd services/geo-processor && GOWORK=off go tool goose -dir migrations -table ref.goose_db_version postgres "$(GEO_DATABASE_URL)" up
 
 migrate-down: ## Mundurkan satu migrasi geo-processor
-	cd services/geo-processor && GOWORK=off go tool goose -dir migrations -table ref.goose_db_version postgres "$(GEO_DATABASE_URL)" down
+	@echo "goose down ($(GEO_DATABASE_URL_SAFE))"
+	@cd services/geo-processor && GOWORK=off go tool goose -dir migrations -table ref.goose_db_version postgres "$(GEO_DATABASE_URL)" down
 
 migrate-status: ## Status migrasi
-	cd services/geo-processor && GOWORK=off go tool goose -dir migrations -table ref.goose_db_version postgres "$(GEO_DATABASE_URL)" status
+	@cd services/geo-processor && GOWORK=off go tool goose -dir migrations -table ref.goose_db_version postgres "$(GEO_DATABASE_URL)" status
 
 regions-fetch: ## Unduh data batas wilayah (PROVINCE=32)
 	scripts/fetch-region-data.sh $(PROVINCE)
 
 regions-import: regions-fetch ## Import batas wilayah ke ref.region
-	cd services/geo-processor && DATABASE_URL="$(GEO_DATABASE_URL)" go run ./cmd/import-regions \
+	@echo "import-regions provinsi $(PROVINCE) ($(GEO_DATABASE_URL_SAFE))"
+	@cd services/geo-processor && DATABASE_URL="$(GEO_DATABASE_URL)" go run ./cmd/import-regions \
 	  -source ../../.cache/wilayah_boundaries/db -province $(PROVINCE)
 
 seed: migrate regions-import ## Migrasi + import wilayah
+
+##@ Pipa data
+.PHONY: ingest ingest-record
+ingest: ## Jalankan ingest (butuh `make up`); status di http://127.0.0.1:8081/status
+	cd services/ingest && INGEST_ARCHIVE_DIR="$(INGEST_ARCHIVE_DIR)" go run ./cmd/ingest
+
+ingest-record: ## Rekam payload semua sumber sekali ke arsip, tanpa NATS
+	cd services/ingest && INGEST_ARCHIVE_DIR="$(INGEST_ARCHIVE_DIR)" go run ./cmd/ingest -once -publish=false
+	@echo "Arsip: $(INGEST_ARCHIVE_DIR)"
 
 ##@ Kualitas
 .PHONY: gen lint lint-go test test-go test-integration fuzz check
@@ -94,11 +111,15 @@ test-go:
 	@for m in $(GO_MODULES); do (cd $$m && go test -race -count=1 -cover ./...); done
 
 test-integration: ## Test integrasi (butuh `make up migrate`)
-	cd services/geo-processor && SIAGA_TEST_DATABASE_URL="$(GEO_DATABASE_URL)" go test -race -count=1 -tags integration ./...
+	@echo "test integrasi geo-processor ($(GEO_DATABASE_URL_SAFE))"
+	@cd services/geo-processor && SIAGA_TEST_DATABASE_URL="$(GEO_DATABASE_URL)" go test -race -count=1 -tags integration ./...
 
 fuzz: ## Fuzzing singkat semua target fuzz (30 detik per target)
 	@cd services/geo-processor && for t in FuzzParseCode FuzzParseLatLngPath; do go test ./internal/domain/region -run=^$$ -fuzz=$$t -fuzztime=30s; done
 	@cd services/geo-processor && go test ./internal/adapters/cahyadsn -run=^$$ -fuzz=FuzzParseDump -fuzztime=30s
+	@cd services/ingest && go test ./internal/domain/ratelimit -run=^$$ -fuzz=FuzzWindowBound -fuzztime=30s
+	@cd services/ingest && go test ./internal/domain/schedule -run=^$$ -fuzz=FuzzNextBounds -fuzztime=30s
+	@cd services/ingest && for p in bmkg usgs; do go test ./internal/adapters/$$p -run=^$$ -fuzz=FuzzParse -fuzztime=30s; done
 
 check: lint test ## Semua pemeriksaan sebelum push
 
