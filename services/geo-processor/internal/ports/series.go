@@ -3,6 +3,7 @@ package ports
 import (
 	"context"
 
+	"github.com/ramirezzServer/siaga/services/geo-processor/internal/domain/hotspot"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/domain/series"
 )
 
@@ -21,4 +22,8 @@ type SeriesStore interface {
 	SaveWeather(ctx context.Context, run series.WeatherRun) (SeriesResult, error)
 	SaveAirQuality(ctx context.Context, run series.AirQualityRun) (SeriesResult, error)
 	SaveDischarge(ctx context.Context, run series.DischargeRun) (SeriesResult, error)
+	// SaveObservation menyimpan stasiun, deret, dan nilai sensornya.
+	SaveObservation(ctx context.Context, obs series.StationObservation) (SeriesResult, error)
+	// SaveHotspot menyimpan satu deteksi titik panas (tanpa titik dan deret).
+	SaveHotspot(ctx context.Context, d hotspot.Detection) (SeriesResult, error)
 }

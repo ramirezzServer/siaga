@@ -11,6 +11,7 @@ import (
 	commonv1 "github.com/ramirezzServer/siaga/libs/go/contracts/gen/siaga/common/v1"
 	hazardv1 "github.com/ramirezzServer/siaga/libs/go/contracts/gen/siaga/hazard/v1"
 	rawv1 "github.com/ramirezzServer/siaga/libs/go/contracts/gen/siaga/raw/v1"
+	"github.com/ramirezzServer/siaga/services/geo-processor/internal/domain/hotspot"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/domain/series"
 )
 
@@ -132,7 +133,78 @@ func TestDecodeCorrupt(t *testing.T) {
 	if _, err := DecodeDischarge(bad); !errors.Is(err, series.ErrInvalid) {
 		t.Error(err)
 	}
+	if _, err := DecodeAirQualityObservation(bad); !errors.Is(err, series.ErrInvalid) {
+		t.Error(err)
+	}
+	if _, err := DecodeFireDetection(bad); !errors.Is(err, series.ErrInvalid) {
+		t.Error(err)
+	}
 	if !ts(nil).IsZero() {
 		t.Error("ts(nil)")
+	}
+}
+
+func TestDecodeAirQualityObservation(t *testing.T) {
+	obsAt := fetched.Add(-40 * time.Minute).Truncate(time.Hour)
+	m := &rawv1.AirQualityObservation{
+		Meta: meta(), Source: hazardv1.Source_SOURCE_OPENAQ,
+		Station: &rawv1.AirQualityStation{
+			Id: "openaq:2178", Name: " Dago ", Locality: "Bandung", Location: &commonv1.Point{Latitude: -6.88, Longitude: 107.61},
+			Provider: "AirGradient", IsMonitor: true, Timezone: "Asia/Jakarta",
+		},
+		Readings: []*rawv1.SensorReading{
+			{SensorId: 1, Parameter: "pm25", Units: "µg/m³", Value: 40.5, ObservedAt: timestamppb.New(obsAt.Add(-time.Hour))},
+			{SensorId: 2, Parameter: "o3", Units: "ppb", Value: 30, ObservedAt: timestamppb.New(obsAt)},
+		},
+	}
+	obs, err := DecodeAirQualityObservation(marshal(t, m))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := obs.Validate(now); err != nil {
+		t.Fatal(err)
+	}
+	if obs.Site.Kind != series.SiteStation || obs.Site.Name != "Dago" || !obs.IssuedAt.Equal(obs.Readings[1].ObservedAt) ||
+		!obs.Station.IsMonitor || obs.Readings[0].Value != 40.5 || obs.Cell != obs.Site.Location {
+		t.Fatalf("%+v", obs)
+	}
+	m.Source = hazardv1.Source_SOURCE_OPEN_METEO
+	obs, _ = DecodeAirQualityObservation(marshal(t, m))
+	if err := obs.Validate(now); !errors.Is(err, series.ErrInvalid) {
+		t.Fatalf("sumber salah lolos: %v", err)
+	}
+}
+
+func TestDecodeFireDetection(t *testing.T) {
+	at := time.Date(2026, 9, 24, 6, 12, 0, 0, time.UTC)
+	m := &rawv1.FireDetection{
+		Meta: meta(), Source: hazardv1.Source_SOURCE_NASA_FIRMS, Id: "MODIS_NRT:20260924T0612:-6.83712:107.44157",
+		Product: "MODIS_NRT", Satellite: "Aqua", Instrument: "MODIS",
+		Location: &commonv1.Point{Latitude: -6.83712, Longitude: 107.44157}, DetectedAt: timestamppb.New(at),
+		Confidence: rawv1.FireConfidence_FIRE_CONFIDENCE_NOMINAL, ConfidencePct: proto.Int32(72),
+		BrightnessK: 321.5, FrpMw: pf(12), ScanKm: 1.1, TrackKm: 1, Daytime: true, Version: "6.1NRT",
+	}
+	d, err := DecodeFireDetection(marshal(t, m))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := d.Validate(now); err != nil {
+		t.Fatal(err)
+	}
+	if d.Confidence != hotspot.Nominal || *d.ConfidencePct != 72 || d.BackgroundK != nil || *d.FRPMW != 12 || d.ArchiveKey != "c/k.json.gz" {
+		t.Fatalf("%+v", d)
+	}
+	for c, want := range map[rawv1.FireConfidence]hotspot.Confidence{
+		rawv1.FireConfidence_FIRE_CONFIDENCE_LOW: hotspot.Low, rawv1.FireConfidence_FIRE_CONFIDENCE_HIGH: hotspot.High,
+		rawv1.FireConfidence_FIRE_CONFIDENCE_UNSPECIFIED: "",
+	} {
+		m.Confidence = c
+		if d, _ := DecodeFireDetection(marshal(t, m)); d.Confidence != want {
+			t.Errorf("%v → %q", c, d.Confidence)
+		}
+	}
+	m.Source = hazardv1.Source_SOURCE_USGS
+	if _, err := DecodeFireDetection(marshal(t, m)); !errors.Is(err, hotspot.ErrInvalid) {
+		t.Fatal(err)
 	}
 }

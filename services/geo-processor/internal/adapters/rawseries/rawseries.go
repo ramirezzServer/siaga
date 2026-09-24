@@ -1,8 +1,10 @@
 // Package rawseries mendekode event raw deret waktu menjadi nilai domain
-// series geo-processor: raw.forecast.bmkg (RegionForecast),
-// raw.forecast.openmeteo (GridWeatherForecast), raw.aq.openmeteo
-// (AirQualityForecast), dan raw.flood.openmeteo (RiverDischargeForecast).
-// Validasi dilakukan use case; di sini hanya penerjemahan.
+// geo-processor: raw.forecast.bmkg (RegionForecast), raw.forecast.openmeteo
+// (GridWeatherForecast), raw.aq.openmeteo (AirQualityForecast),
+// raw.flood.openmeteo (RiverDischargeForecast), raw.aq.openaq
+// (AirQualityObservation), dan raw.fire.firms (FireDetection). Validasi
+// dilakukan use case; di sini hanya penerjemahan. Payload yang rusak
+// membungkus series.ErrInvalid.
 package rawseries
 
 import (
@@ -16,6 +18,7 @@ import (
 	commonv1 "github.com/ramirezzServer/siaga/libs/go/contracts/gen/siaga/common/v1"
 	hazardv1 "github.com/ramirezzServer/siaga/libs/go/contracts/gen/siaga/hazard/v1"
 	rawv1 "github.com/ramirezzServer/siaga/libs/go/contracts/gen/siaga/raw/v1"
+	"github.com/ramirezzServer/siaga/services/geo-processor/internal/domain/hotspot"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/domain/series"
 )
 
@@ -129,6 +132,77 @@ func DecodeDischarge(data []byte) (series.DischargeRun, error) {
 		})
 	}
 	return run, nil
+}
+
+// DecodeAirQualityObservation membaca nilai terbaru satu stasiun OpenAQ.
+// Waktu terbit deret adalah waktu ukur terbaru.
+func DecodeAirQualityObservation(data []byte) (series.StationObservation, error) {
+	var m rawv1.AirQualityObservation
+	if err := unmarshal(data, &m); err != nil {
+		return series.StationObservation{}, err
+	}
+	st := m.GetStation()
+	loc := point(st.GetLocation())
+	kind, _ := series.KindOf(st.GetId())
+	source := series.Source("")
+	if m.GetSource() == hazardv1.Source_SOURCE_OPENAQ {
+		source = series.SourceOpenAQ
+	}
+	fetched := ts(m.GetMeta().GetFetchedAt())
+	obs := series.StationObservation{
+		Run: series.Run{
+			Site:    series.Site{ID: st.GetId(), Kind: kind, Name: strings.TrimSpace(st.GetName()), Location: loc},
+			Dataset: series.AirQualityObs, Source: source, Model: series.ModelSensor, Cell: loc,
+			FetchedAt: fetched, ArchiveKey: m.GetMeta().GetArchiveKey(),
+		},
+		Station: series.Station{
+			Provider: st.GetProvider(), Owner: st.GetOwner(), Locality: st.GetLocality(),
+			IsMonitor: st.GetIsMonitor(), Timezone: st.GetTimezone(),
+		},
+	}
+	for _, r := range m.GetReadings() {
+		at := ts(r.GetObservedAt())
+		obs.Readings = append(obs.Readings, series.Reading{
+			SensorID: r.GetSensorId(), Parameter: r.GetParameter(), Unit: r.GetUnits(), Value: r.GetValue(), ObservedAt: at,
+		})
+		if at.After(obs.IssuedAt) {
+			obs.IssuedAt = at
+		}
+	}
+	return obs, nil
+}
+
+// DecodeFireDetection membaca satu deteksi titik panas FIRMS.
+func DecodeFireDetection(data []byte) (hotspot.Detection, error) {
+	var m rawv1.FireDetection
+	if err := unmarshal(data, &m); err != nil {
+		return hotspot.Detection{}, err
+	}
+	if m.GetSource() != hazardv1.Source_SOURCE_NASA_FIRMS {
+		return hotspot.Detection{}, fmt.Errorf("%w: sumber titik panas %s bukan NASA FIRMS", hotspot.ErrInvalid, m.GetSource())
+	}
+	d := hotspot.Detection{
+		ID: m.GetId(), Product: m.GetProduct(), Satellite: m.GetSatellite(), Instrument: m.GetInstrument(),
+		Lat: m.GetLocation().GetLatitude(), Lon: m.GetLocation().GetLongitude(), DetectedAt: ts(m.GetDetectedAt()),
+		BrightnessK: m.GetBrightnessK(), BackgroundK: m.BackgroundBrightnessK, FRPMW: m.FrpMw,
+		ScanKm: m.GetScanKm(), TrackKm: m.GetTrackKm(), Daytime: m.GetDaytime(), Version: m.GetVersion(),
+		FetchedAt: ts(m.GetMeta().GetFetchedAt()), ArchiveKey: m.GetMeta().GetArchiveKey(),
+	}
+	switch m.GetConfidence() {
+	case rawv1.FireConfidence_FIRE_CONFIDENCE_LOW:
+		d.Confidence = hotspot.Low
+	case rawv1.FireConfidence_FIRE_CONFIDENCE_NOMINAL:
+		d.Confidence = hotspot.Nominal
+	case rawv1.FireConfidence_FIRE_CONFIDENCE_HIGH:
+		d.Confidence = hotspot.High
+	case rawv1.FireConfidence_FIRE_CONFIDENCE_UNSPECIFIED:
+		// Dibiarkan kosong; Validate menolaknya.
+	}
+	if m.ConfidencePct != nil {
+		pct := int(m.GetConfidencePct())
+		d.ConfidencePct = &pct
+	}
+	return d, nil
 }
 
 // modelRun membentuk kepala deret Open-Meteo. Waktu terbit adalah waktu

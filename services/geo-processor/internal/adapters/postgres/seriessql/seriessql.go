@@ -138,3 +138,80 @@ const UpsertDischarge = `WITH up AS (
   RETURNING (xmax = 0) AS inserted
 )
 SELECT count(*) FILTER (WHERE inserted), count(*) FILTER (WHERE NOT inserted) FROM up`
+
+// UpsertStation menyimpan keterangan stasiun; hanya ditulis ulang bila berubah.
+// $1 titik, $2 sumber, $3 penyedia, $4 pemilik, $5 daerah, $6 monitor, $7 zona waktu.
+const UpsertStation = `INSERT INTO ts.station (site_id, source, provider, owner, locality, is_monitor, timezone)
+VALUES ($1, $2, $3, $4, $5, $6, $7)
+ON CONFLICT (site_id) DO UPDATE SET
+  source = EXCLUDED.source,
+  provider = EXCLUDED.provider,
+  owner = EXCLUDED.owner,
+  locality = EXCLUDED.locality,
+  is_monitor = EXCLUDED.is_monitor,
+  timezone = EXCLUDED.timezone,
+  updated_at = now()
+WHERE (ts.station.source, ts.station.provider, ts.station.owner, ts.station.locality, ts.station.is_monitor, ts.station.timezone)
+      IS DISTINCT FROM
+      (EXCLUDED.source, EXCLUDED.provider, EXCLUDED.owner, EXCLUDED.locality, EXCLUDED.is_monitor, EXCLUDED.timezone)`
+
+// UpsertObservations menyisipkan nilai sensor dari array sejajar dan
+// melaporkan jumlah baris baru dan baris yang berubah. Nilai untuk (sensor,
+// waktu ukur) yang sama hanya ditimpa bila berbeda (koreksi sumber).
+// $1 titik, $2 waktu ambil, $3 sensor, $4 parameter, $5 satuan, $6 waktu ukur, $7 nilai.
+const UpsertObservations = `WITH up AS (
+  INSERT INTO ts.aq_observation (site_id, fetched_at, sensor_id, parameter, unit, observed_at, value)
+  SELECT $1, $2, r.*
+  FROM unnest($3::bigint[], $4::text[], $5::text[], $6::timestamptz[], $7::real[]) AS r
+  ON CONFLICT (sensor_id, observed_at) DO UPDATE SET
+    site_id = EXCLUDED.site_id,
+    parameter = EXCLUDED.parameter,
+    unit = EXCLUDED.unit,
+    value = EXCLUDED.value,
+    fetched_at = EXCLUDED.fetched_at
+  WHERE (ts.aq_observation.site_id, ts.aq_observation.parameter, ts.aq_observation.unit, ts.aq_observation.value)
+        IS DISTINCT FROM (EXCLUDED.site_id, EXCLUDED.parameter, EXCLUDED.unit, EXCLUDED.value)
+  RETURNING (xmax = 0) AS inserted
+)
+SELECT count(*) FILTER (WHERE inserted), count(*) FILTER (WHERE NOT inserted) FROM up`
+
+// UpsertHotspot menyimpan satu deteksi titik panas. Kelurahan/desa dicari
+// seperti UpsertSite. Waktu ambil pertama dan kunci arsip tidak berubah
+// saat deteksi yang sama diterima lagi. Mengembalikan (baru, berubah).
+//
+// $1 ID, $2 waktu deteksi, $3 produk, $4 satelit, $5 instrumen, $6 lintang,
+// $7 bujur, $8 keyakinan, $9 persentase, $10 kecerahan, $11 latar, $12 FRP,
+// $13 scan, $14 track, $15 siang, $16 versi, $17 waktu ambil, $18 kunci arsip.
+const UpsertHotspot = `WITH p AS (SELECT ST_SetSRID(ST_MakePoint($7, $6), 4326) AS g),
+up AS (
+  INSERT INTO ts.hotspot (
+    id, detected_at, product, satellite, instrument, location, confidence, confidence_pct, brightness_k,
+    background_k, frp_mw, scan_km, track_km, daytime, version, region_code, first_fetched_at, archive_key
+  )
+  SELECT $1, $2, $3, $4, $5, p.g, $8, $9, $10, $11, $12, $13, $14, $15, $16, (
+      SELECT r.code FROM ref.region r
+      WHERE r.level = 4 AND ST_Covers(r.geom, p.g)
+      ORDER BY ST_Area(r.geom), r.code LIMIT 1
+    ), $17, $18
+  FROM p
+  ON CONFLICT (id, detected_at) DO UPDATE SET
+    satellite = EXCLUDED.satellite,
+    confidence = EXCLUDED.confidence,
+    confidence_pct = EXCLUDED.confidence_pct,
+    brightness_k = EXCLUDED.brightness_k,
+    background_k = EXCLUDED.background_k,
+    frp_mw = EXCLUDED.frp_mw,
+    scan_km = EXCLUDED.scan_km,
+    track_km = EXCLUDED.track_km,
+    daytime = EXCLUDED.daytime,
+    version = EXCLUDED.version
+  WHERE (ts.hotspot.satellite, ts.hotspot.confidence, ts.hotspot.confidence_pct, ts.hotspot.brightness_k,
+         ts.hotspot.background_k, ts.hotspot.frp_mw, ts.hotspot.scan_km, ts.hotspot.track_km, ts.hotspot.daytime,
+         ts.hotspot.version)
+        IS DISTINCT FROM
+        (EXCLUDED.satellite, EXCLUDED.confidence, EXCLUDED.confidence_pct, EXCLUDED.brightness_k,
+         EXCLUDED.background_k, EXCLUDED.frp_mw, EXCLUDED.scan_km, EXCLUDED.track_km, EXCLUDED.daytime,
+         EXCLUDED.version)
+  RETURNING (xmax = 0) AS inserted
+)
+SELECT count(*) FILTER (WHERE inserted), count(*) FILTER (WHERE NOT inserted) FROM up`

@@ -62,8 +62,11 @@ func TestEndToEnd(t *testing.T) {
 			`DELETE FROM ts.weather_forecast WHERE site_id IN ('adm4:98.01.01.2001', 'grid:-6.75:107.00')`,
 			`DELETE FROM ts.aq_forecast WHERE site_id = 'grid:-6.75:107.00'`,
 			`DELETE FROM ts.river_discharge WHERE site_id = 'river:uji-e2e'`,
-			`DELETE FROM ts.series WHERE site_id IN ('adm4:98.01.01.2001', 'grid:-6.75:107.00', 'river:uji-e2e')`,
-			`DELETE FROM ts.site WHERE id IN ('adm4:98.01.01.2001', 'grid:-6.75:107.00', 'river:uji-e2e')`,
+			`DELETE FROM ts.aq_observation WHERE site_id = 'openaq:980001'`,
+			`DELETE FROM ts.station WHERE site_id = 'openaq:980001'`,
+			`DELETE FROM ts.hotspot WHERE region_code = '98.01.01.2001'`,
+			`DELETE FROM ts.series WHERE site_id IN ('adm4:98.01.01.2001', 'grid:-6.75:107.00', 'river:uji-e2e', 'openaq:980001')`,
+			`DELETE FROM ts.site WHERE id IN ('adm4:98.01.01.2001', 'grid:-6.75:107.00', 'river:uji-e2e', 'openaq:980001')`,
 		} {
 			if _, err := pg.Exec(ctx, q); err != nil {
 				t.Fatal(err)
@@ -166,7 +169,15 @@ func TestEndToEnd(t *testing.T) {
 	}
 	h := up.GetHazard()
 	eq := h.GetEarthquake()
-	if h.GetPrimarySource() != hazardv1.Source_SOURCE_BMKG || h.GetRevision() != 2 || len(eq.GetCorroboratingReports()) != 1 ||
+	// Putaran kedaluwarsa bisa mengakhiri kejadian 2001 sebelum laporan USGS
+	// diproses; setiap expired sebelum updated menambah satu revisi.
+	wantRev := uint32(2)
+	for _, m := range bySubject["hazard.quake.expired"] {
+		if m.Sequence < bySubject["hazard.quake.updated"][0].Sequence {
+			wantRev++
+		}
+	}
+	if h.GetPrimarySource() != hazardv1.Source_SOURCE_BMKG || h.GetRevision() != wantRev || len(eq.GetCorroboratingReports()) != 1 ||
 		eq.GetCorroboratingReports()[0].GetSourceEventId() != "us7000ir9t" || h.GetImpactedRegionCount() == 0 ||
 		h.GetLevel() != hazardv1.AlertLevel_ALERT_LEVEL_SIAGA {
 		t.Fatalf("hazard %v", h)
@@ -176,6 +187,7 @@ func TestEndToEnd(t *testing.T) {
 
 	checkWeather(ctx, t, js)
 	checkSeries(ctx, t, js, dbURL)
+	checkObservations(ctx, t, js, dbURL)
 
 	stop()
 	if err := <-done; err != nil {
@@ -392,4 +404,90 @@ func keys(m map[string][]*jetstream.RawStreamMsg) map[string]int {
 		out[k] = len(v)
 	}
 	return out
+}
+
+// checkObservations menguji jalur pengukuran: nilai sensor stasiun OpenAQ ke
+// ts.aq_observation dan titik panas FIRMS ke ts.hotspot, keduanya dengan
+// kelurahan/desa dari ref.region; pesan ulangan tidak menambah baris, dan
+// titik panas yang melanggar invarian masuk DLQ.
+func checkObservations(ctx context.Context, t *testing.T, js jetstream.JetStream, dbURL string) {
+	t.Helper()
+	now := time.Now().UTC().Truncate(time.Minute)
+	publish := func(subject, id string, m proto.Message) {
+		b, err := proto.Marshal(m)
+		if err != nil {
+			t.Fatal(err)
+		}
+		msg := nats.NewMsg(subject)
+		msg.Data = b
+		msg.Header.Set(jetstream.MsgIDHeader, id)
+		if _, err := js.PublishMsg(ctx, msg); err != nil {
+			t.Fatal(err)
+		}
+	}
+	dlqBefore := uint64(0)
+	if st, err := js.Stream(ctx, streams.DLQ.Name); err == nil {
+		if info, _ := st.Info(ctx); info != nil {
+			dlqBefore = info.State.Msgs
+		}
+	}
+	loc := &commonv1.Point{Latitude: -6.85, Longitude: 107.03}
+	obs := &rawv1.AirQualityObservation{
+		Meta:   &rawv1.FetchMeta{Connector: "openaq-stasiun", FetchedAt: timestamppb.New(now)},
+		Source: hazardv1.Source_SOURCE_OPENAQ,
+		Station: &rawv1.AirQualityStation{
+			Id: "openaq:980001", Name: "Stasiun Uji E2E", Location: loc, Provider: "AirGradient", Timezone: "Asia/Jakarta",
+		},
+		Readings: []*rawv1.SensorReading{
+			{SensorId: 9800011, Parameter: "pm25", Units: "µg/m³", Value: 41.5, ObservedAt: timestamppb.New(now.Add(-time.Hour))},
+			{SensorId: 9800012, Parameter: "no2", Units: "ppb", Value: 18, ObservedAt: timestamppb.New(now.Add(-time.Hour))},
+		},
+	}
+	at := now.Add(-2 * time.Hour)
+	fire := &rawv1.FireDetection{
+		Meta:   &rawv1.FetchMeta{Connector: "firms-viirs-snpp-nrt", FetchedAt: timestamppb.New(now), ArchiveKey: "firms/k.csv.gz"},
+		Source: hazardv1.Source_SOURCE_NASA_FIRMS, Id: "VIIRS_SNPP_NRT:" + at.Format("20060102T1504") + ":-6.85000:107.03000",
+		Product: "VIIRS_SNPP_NRT", Satellite: "N", Instrument: "VIIRS", Location: loc, DetectedAt: timestamppb.New(at),
+		Confidence: rawv1.FireConfidence_FIRE_CONFIDENCE_HIGH, BrightnessK: 367, ScanKm: 0.39, TrackKm: 0.36, Version: "2.0NRT",
+	}
+	publish("raw.aq.openaq", "aq-oa-1", obs)
+	publish("raw.aq.openaq", "aq-oa-1-ulang", obs)
+	publish("raw.fire.firms", "fire-1", fire)
+	broken := proto.CloneOf(fire)
+	broken.Id = "VIIRS_SNPP_NRT:salah"
+	publish("raw.fire.firms", "fire-rusak", broken)
+
+	pg := mustPool(ctx, t, dbURL)
+	defer pg.Close()
+	deadline := time.Now().Add(30 * time.Second)
+	for {
+		var readings, hotspots int
+		var region string
+		_ = pg.QueryRow(ctx, `SELECT
+			(SELECT count(*) FROM ts.aq_observation WHERE site_id = 'openaq:980001'),
+			(SELECT count(*) FROM ts.hotspot WHERE id = $1),
+			coalesce((SELECT region_code FROM ts.hotspot WHERE id = $1), '')`, fire.GetId()).Scan(&readings, &hotspots, &region)
+		var dlq uint64
+		if st, err := js.Stream(ctx, streams.DLQ.Name); err == nil {
+			if info, _ := st.Info(ctx); info != nil {
+				dlq = info.State.Msgs
+			}
+		}
+		if readings == 2 && hotspots == 1 && dlq > dlqBefore {
+			if region != "98.01.01.2001" {
+				t.Fatalf("kelurahan titik panas %q", region)
+			}
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("pengukuran tidak lengkap dalam 30 detik: sensor %d, titik panas %d, DLQ %d→%d", readings, hotspots, dlqBefore, dlq)
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+	var provider, region string
+	if err := pg.QueryRow(ctx, `SELECT st.provider, s.region_code FROM ts.station st JOIN ts.site s ON s.id = st.site_id
+		WHERE st.site_id = 'openaq:980001'`).Scan(&provider, &region); err != nil || provider != "AirGradient" || region != "98.01.01.2001" {
+		t.Fatalf("stasiun %q di %q, %v", provider, region, err)
+	}
+	t.Logf("pengukuran: 2 sensor stasiun di %s, 1 titik panas VIIRS", region)
 }

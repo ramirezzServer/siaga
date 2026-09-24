@@ -196,6 +196,8 @@ func TestHeaderValue(t *testing.T) {
 		ForecastOpenMeteoConsumer:   "raw.forecast.openmeteo",
 		AirQualityOpenMeteoConsumer: "raw.aq.openmeteo",
 		FloodOpenMeteoConsumer:      "raw.flood.openmeteo",
+		AirQualityOpenAQConsumer:    "raw.aq.openaq",
+		FireFIRMSConsumer:           "raw.fire.firms",
 	} {
 		if spec.Filter != subject || seen[spec.Durable] || spec.Description == "" {
 			t.Errorf("%+v", spec)

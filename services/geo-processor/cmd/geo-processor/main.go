@@ -2,8 +2,8 @@
 // mengelompokkan laporan BMKG dan USGS menjadi kejadian gempa, menyusun pesan
 // CAP BMKG menjadi kejadian cuaca, menghitung wilayah terdampak, menyimpannya
 // di schema hazard, dan menerbitkan hazard.* lewat outbox transaksional.
-// Prakiraan cuaca, kualitas udara, dan debit sungai disimpan ke hypertable
-// schema ts.
+// Prakiraan cuaca, kualitas udara, dan debit sungai, nilai sensor stasiun
+// kualitas udara, dan titik panas satelit disimpan ke hypertable schema ts.
 //
 // Konfigurasi lewat environment variable; lihat config() di bawah.
 package main
@@ -43,6 +43,7 @@ import (
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/app/relay"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/app/timeseries"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/app/warnings"
+	"github.com/ramirezzServer/siaga/services/geo-processor/internal/domain/hotspot"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/domain/quake"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/domain/series"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/domain/weather"
@@ -198,6 +199,14 @@ func serve(ctx context.Context, cfg settings, log *slog.Logger) error {
 	if err != nil {
 		return err
 	}
+	stations, err := seriesHandler(rawseries.DecodeAirQualityObservation, tsvc.Observation)
+	if err != nil {
+		return err
+	}
+	hotspots, err := seriesHandler(rawseries.DecodeFireDetection, tsvc.Hotspot, hotspot.ErrInvalid)
+	if err != nil {
+		return err
+	}
 	consumers := []consumerJob{
 		{spec: natsjs.QuakeConsumer, handler: quakeHandler},
 		{spec: natsjs.WeatherConsumer, handler: weatherHandler},
@@ -205,6 +214,8 @@ func serve(ctx context.Context, cfg settings, log *slog.Logger) error {
 		{spec: natsjs.ForecastOpenMeteoConsumer, handler: forecastGrid},
 		{spec: natsjs.AirQualityOpenMeteoConsumer, handler: airQuality},
 		{spec: natsjs.FloodOpenMeteoConsumer, handler: discharge},
+		{spec: natsjs.AirQualityOpenAQConsumer, handler: stations},
+		{spec: natsjs.FireFIRMSConsumer, handler: hotspots},
 	}
 
 	var consumersReady atomic.Int32
@@ -231,6 +242,8 @@ func serve(ctx context.Context, cfg settings, log *slog.Logger) error {
 				natsjs.ForecastOpenMeteoConsumer.Durable:   forecastGrid.Snapshot(),
 				natsjs.AirQualityOpenMeteoConsumer.Durable: airQuality.Snapshot(),
 				natsjs.FloodOpenMeteoConsumer.Durable:      discharge.Snapshot(),
+				natsjs.AirQualityOpenAQConsumer.Durable:    stations.Snapshot(),
+				natsjs.FireFIRMSConsumer.Durable:           hotspots.Snapshot(),
 			},
 			"outbox": outbox.Snapshot(), "rules": cfg.rules, "weather_policy": cfg.weather,
 		}
@@ -290,12 +303,13 @@ func serve(ctx context.Context, cfg settings, log *slog.Logger) error {
 }
 
 // seriesHandler membuat handler consumer deret waktu: pesan yang melanggar
-// invarian series langsung ke DLQ, galat database dicoba ulang.
-func seriesHandler[R any](decode consume.Decoder[R], process func(context.Context, R) (timeseries.Result, error)) (*consume.Handler[R], error) {
+// invarian series (atau invarian tambahan) langsung ke DLQ, galat database
+// dicoba ulang.
+func seriesHandler[R any](decode consume.Decoder[R], process func(context.Context, R) (timeseries.Result, error), invalid ...error) (*consume.Handler[R], error) {
 	return consume.New(decode, func(ctx context.Context, r R) (consume.Outcome, error) {
 		res, err := process(ctx, r)
 		return consume.Outcome{Changed: res.Changed, Rows: res.Rows}, err
-	}, []error{series.ErrInvalid}, consume.DefaultOptions(), time.Now)
+	}, append([]error{series.ErrInvalid}, invalid...), consume.DefaultOptions(), time.Now)
 }
 
 // consumerJob adalah satu durable consumer beserta handler-nya.

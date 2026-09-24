@@ -1,13 +1,15 @@
 // Package timeseries adalah use case penyimpanan deret waktu geo-processor:
-// prakiraan cuaca (BMKG dan Open-Meteo), prakiraan kualitas udara model, dan
-// debit sungai dari event raw ke hypertable schema ts. Setiap keluaran model
-// disimpan utuh per waktu terbit; pesan ulangan tidak mengubah apa pun.
+// prakiraan cuaca (BMKG dan Open-Meteo), prakiraan kualitas udara model,
+// debit sungai, pengukuran stasiun kualitas udara, dan titik panas dari event
+// raw ke hypertable schema ts. Setiap keluaran model disimpan utuh per waktu
+// terbit; pesan ulangan tidak mengubah apa pun.
 package timeseries
 
 import (
 	"context"
 	"time"
 
+	"github.com/ramirezzServer/siaga/services/geo-processor/internal/domain/hotspot"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/domain/series"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/ports"
 )
@@ -61,5 +63,24 @@ func (s *Service) Discharge(ctx context.Context, run series.DischargeRun) (Resul
 		return Result{}, err
 	}
 	r, err := s.store.SaveDischarge(ctx, run)
+	return result(r), err
+}
+
+// Observation menyimpan nilai terbaru satu stasiun kualitas udara.
+func (s *Service) Observation(ctx context.Context, obs series.StationObservation) (Result, error) {
+	if err := obs.Validate(s.now()); err != nil {
+		return Result{}, err
+	}
+	r, err := s.store.SaveObservation(ctx, obs)
+	return result(r), err
+}
+
+// Hotspot menyimpan satu deteksi titik panas. Galat yang membungkus
+// hotspot.ErrInvalid tidak akan berhasil bila diulang.
+func (s *Service) Hotspot(ctx context.Context, d hotspot.Detection) (Result, error) {
+	if err := d.Validate(s.now()); err != nil {
+		return Result{}, err
+	}
+	r, err := s.store.SaveHotspot(ctx, d)
 	return result(r), err
 }

@@ -1,7 +1,8 @@
 // Package series berisi aturan murni untuk deret waktu yang disimpan di
 // schema ts: prakiraan cuaca (BMKG per kelurahan/desa, Open-Meteo per simpul
-// grid), prakiraan kualitas udara model, dan debit sungai. Invarian di sini
-// sama dengan constraint migrasi 00004_ts_series.sql (ADR 0012).
+// grid), prakiraan kualitas udara model, debit sungai, dan pengukuran stasiun
+// kualitas udara. Invarian di sini sama dengan constraint migrasi
+// 00004_ts_series.sql dan 00005_ts_observation.sql (ADR 0012–0013).
 package series
 
 import (
@@ -26,6 +27,8 @@ const (
 	Weather    Dataset = "weather"
 	AirQuality Dataset = "air_quality"
 	Discharge  Dataset = "discharge"
+	// AirQualityObs adalah pengukuran stasiun (bukan model).
+	AirQualityObs Dataset = "aq_observation"
 )
 
 // Source adalah penerbit data.
@@ -35,6 +38,7 @@ type Source string
 const (
 	SourceBMKG      Source = "bmkg"
 	SourceOpenMeteo Source = "openmeteo"
+	SourceOpenAQ    Source = "openaq"
 )
 
 // SiteKind adalah jenis titik pantau.
@@ -45,10 +49,16 @@ const (
 	SiteRegion SiteKind = "region"
 	SiteGrid   SiteKind = "grid"
 	SiteRiver  SiteKind = "river"
+	// SiteStation adalah stasiun pengukur, ID "openaq:<id lokasi>".
+	SiteStation SiteKind = "station"
 )
 
 // ModelBMKG adalah nama model untuk prakiraan BMKG per kelurahan/desa.
 const ModelBMKG = "bmkg"
+
+// ModelSensor adalah nama "model" deret pengukuran stasiun: nilainya dari
+// alat ukur, bukan keluaran model.
+const ModelSensor = "sensor"
 
 // Batas yang sama dengan constraint database.
 const (
@@ -63,6 +73,7 @@ var (
 	adm4ID  = regexp.MustCompile(`^adm4:([0-9]{2}\.[0-9]{2}\.[0-9]{2}\.[0-9]{4})$`)
 	gridID  = regexp.MustCompile(`^grid:-?[0-9]{1,2}\.[0-9]{2}:-?[0-9]{1,3}\.[0-9]{2}$`)
 	riverID = regexp.MustCompile(`^river:[a-z0-9]+(-[a-z0-9]+)*$`)
+	stnID   = regexp.MustCompile(`^openaq:[1-9][0-9]{0,11}$`)
 	adm4    = regexp.MustCompile(`^[0-9]{2}\.[0-9]{2}\.[0-9]{2}\.[0-9]{4}$`)
 	model   = regexp.MustCompile(`^[a-z0-9_]{1,40}$`)
 )
@@ -81,6 +92,8 @@ func KindOf(id string) (SiteKind, bool) {
 		return SiteGrid, true
 	case riverID.MatchString(id):
 		return SiteRiver, true
+	case stnID.MatchString(id):
+		return SiteStation, true
 	default:
 		return "", false
 	}
@@ -130,7 +143,7 @@ func (s Site) validate() []error {
 	case s.Kind == SiteRegion && "adm4:"+s.RegionCode != s.ID:
 		errs = append(errs, fmt.Errorf("kode wilayah %q tidak cocok dengan ID %s", s.RegionCode, s.ID))
 	case s.Kind != SiteRegion && s.RegionCode != "":
-		errs = append(errs, errors.New("kode wilayah titik grid dan sungai dihitung penyimpanan, bukan diisi"))
+		errs = append(errs, errors.New("kode wilayah titik grid, sungai, dan stasiun dihitung penyimpanan, bukan diisi"))
 	case s.RegionCode != "" && !adm4.MatchString(s.RegionCode):
 		errs = append(errs, fmt.Errorf("kode wilayah %q bukan adm4", s.RegionCode))
 	}
@@ -165,8 +178,12 @@ func (r Run) validate(now time.Time) []error {
 			bad("BMKG hanya prakiraan cuaca per kelurahan/desa dengan model %q", ModelBMKG)
 		}
 	case SourceOpenMeteo:
-		if r.Site.Kind == SiteRegion {
-			bad("Open-Meteo tidak menerbitkan per kelurahan/desa")
+		if r.Site.Kind == SiteRegion || r.Site.Kind == SiteStation || r.Dataset == AirQualityObs {
+			bad("Open-Meteo hanya keluaran model per simpul grid atau titik sungai")
+		}
+	case SourceOpenAQ:
+		if r.Dataset != AirQualityObs || r.Site.Kind != SiteStation || r.Model != ModelSensor {
+			bad("OpenAQ hanya pengukuran stasiun dengan model %q", ModelSensor)
 		}
 	default:
 		bad("sumber %q tidak dikenal", r.Source)

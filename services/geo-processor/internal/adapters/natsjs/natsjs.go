@@ -95,6 +95,14 @@ var (
 		Durable: "geo-processor-flood-openmeteo", Filter: "raw.flood.openmeteo",
 		Description: "geo-processor: debit sungai GloFAS ke ts.river_discharge",
 	}
+	AirQualityOpenAQConsumer = ConsumerSpec{
+		Durable: "geo-processor-aq-openaq", Filter: "raw.aq.openaq",
+		Description: "geo-processor: nilai sensor stasiun OpenAQ ke ts.aq_observation",
+	}
+	FireFIRMSConsumer = ConsumerSpec{
+		Durable: "geo-processor-fire-firms", Filter: "raw.fire.firms",
+		Description: "geo-processor: titik panas NASA FIRMS ke ts.hotspot",
+	}
 )
 
 // ConsumerConfig adalah konfigurasi durable consumer.
