@@ -11,8 +11,16 @@ const kindToken: Record<Exclude<HazardKind, HazardKind.UNSPECIFIED>, string> = {
 
 type Transition = "created" | "updated" | "expired";
 
-/** Pembentuk nama subjek NATS untuk event bahaya. */
+/** Potongan subjek untuk data raw dari ingest. Harus sama dengan libs/go/contracts/streams. */
+export type RawKind = "quake" | "weather" | "flood" | "fire" | "aq";
+export type RawSource = "bmkg" | "usgs" | "openmeteo" | "openaq" | "firms";
+
+/** Pembentuk nama subjek NATS. */
 export const subjects = {
+  raw(kind: RawKind, source: RawSource): string {
+    return `raw.${kind}.${source}`;
+  },
+
   hazard(kind: HazardKind, transition: Transition): string {
     if (kind === HazardKind.UNSPECIFIED) {
       throw new Error("HazardKind.UNSPECIFIED tidak punya subjek");

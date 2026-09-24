@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package siaga.raw.v1;
+
+import "google/protobuf/timestamp.proto";
+
+// Keterangan pengambilan yang diisi layanan ingest pada setiap event raw.
+// Field ini tidak ikut dihitung dalam ID event: dua pengambilan yang isinya
+// sama menghasilkan Nats-Msg-Id yang sama walau waktunya berbeda.
+message FetchMeta {
+  // Nama konektor yang mengambil data, misal "bmkg-autogempa".
+  string connector = 1;
+  // Waktu respons sumber diterima ingest (UTC).
+  google.protobuf.Timestamp fetched_at = 2;
+  // Kunci payload mentah di arsip ingest. Kosong bila arsip sedang gagal;
+  // event tetap diterbitkan karena peringatan lebih penting daripada arsip.
+  string archive_key = 3;
+  // SHA-256 heksadesimal dari seluruh payload mentah yang memuat record ini.
+  string payload_sha256 = 4;
+}

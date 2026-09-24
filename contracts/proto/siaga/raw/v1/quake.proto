@@ -1,0 +1,66 @@
+syntax = "proto3";
+
+package siaga.raw.v1;
+
+import "google/protobuf/timestamp.proto";
+import "siaga/common/v1/geo.proto";
+import "siaga/hazard/v1/hazard.proto";
+import "siaga/raw/v1/fetch.proto";
+
+// Feed asal laporan gempa. Satu gempa BMKG bisa muncul di beberapa feed
+// dengan isi berbeda (misal hanya feed dirasakan yang memuat skala MMI).
+enum QuakeFeed {
+  QUAKE_FEED_UNSPECIFIED = 0;
+  // autogempa.json: satu gempa terbaru, lengkap dengan shakemap.
+  QUAKE_FEED_BMKG_LATEST = 1;
+  // gempaterkini.json: 15 gempa M5+ terakhir.
+  QUAKE_FEED_BMKG_RECENT = 2;
+  // gempadirasakan.json: 15 gempa dirasakan terakhir.
+  QUAKE_FEED_BMKG_FELT = 3;
+  // Feed ringkasan USGS 2.5_day, disaring ke kotak Indonesia.
+  QUAKE_FEED_USGS_SUMMARY = 4;
+}
+
+// Status potensi tsunami menurut sumber.
+enum TsunamiPotential {
+  // Sumber tidak menyatakan apa pun tentang tsunami.
+  TSUNAMI_POTENTIAL_UNSPECIFIED = 0;
+  TSUNAMI_POTENTIAL_NONE = 1;
+  TSUNAMI_POTENTIAL_POTENTIAL = 2;
+}
+
+// Satu laporan gempa dari satu feed, sudah divalidasi dan waktunya UTC,
+// tetapi belum dinormalisasi atau dideduplikasi lintas sumber.
+// Subjek NATS: raw.quake.<sumber> (bmkg, usgs).
+message QuakeReport {
+  FetchMeta meta = 1;
+  siaga.hazard.v1.Source source = 2;
+  QuakeFeed feed = 3;
+  // ID kejadian di sumber. BMKG tidak punya ID resmi, jadi dipakai waktu
+  // kejadian UTC berformat YYYYMMDDhhmmss; sama di ketiga feed BMKG.
+  string source_event_id = 4;
+  google.protobuf.Timestamp occurred_at = 5;
+  siaga.common.v1.Point epicenter = 6;
+  double magnitude = 7;
+  // Jenis magnitudo menurut sumber (USGS: "mb", "mww", ...). Kosong untuk BMKG.
+  string magnitude_type = 8;
+  // Kedalaman dalam km. USGS bisa memberi nilai negatif kecil (di atas muka laut).
+  double depth_km = 9;
+  // Deskripsi lokasi apa adanya dari sumber.
+  string place = 10;
+  // Wilayah dirasakan beserta skala MMI dari BMKG, apa adanya (misal "II-III Kab. Lembata").
+  string felt_description = 11;
+  TsunamiPotential tsunami_potential = 12;
+  // Teks potensi dari BMKG apa adanya, termasuk yang bukan pernyataan tsunami.
+  string potential_text = 13;
+  // URL gambar shakemap BMKG, bila ada.
+  string shakemap_url = 14;
+  // Waktu revisi terakhir menurut sumber (USGS "updated"). Kosong untuk BMKG.
+  google.protobuf.Timestamp source_updated_at = 15;
+  // Status tinjauan sumber (USGS: "automatic", "reviewed", "deleted").
+  string review_status = 16;
+  // ID lain untuk kejadian yang sama di sumber yang sama (USGS "ids"), tanpa ID utama.
+  repeated string alternate_ids = 17;
+  // URL halaman kejadian di situs sumber.
+  string source_url = 18;
+}
