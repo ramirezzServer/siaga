@@ -45,6 +45,70 @@ func (l *Limiter) reserve(now time.Time) time.Duration {
 	return l.b.Reserve(now)
 }
 
+func (l *Limiter) reserveLow(now time.Time, headroom int) (bool, time.Duration) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return l.b.ReserveLow(now, headroom)
+}
+
+// MaxHeadroom adalah cadangan terbesar untuk Gate.Low (burst - 1).
+func (l *Limiter) MaxHeadroom() int {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return l.b.MaxHeadroom()
+}
+
+// Gate adalah ports.Throttle di atas beberapa anggaran. Anggaran biasa
+// dipesan sekaligus (seperti Job.Limiters); anggaran prioritas rendah hanya
+// dipakai bila masih menyisakan cadangan untuk request biasa, misal sapuan
+// prakiraan yang tidak boleh menunda polling gempa di anggaran BMKG bersama.
+type Gate struct {
+	clock ports.Clock
+	high  []*Limiter
+	low   []lowLane
+}
+
+type lowLane struct {
+	l        *Limiter
+	headroom int
+}
+
+var _ ports.Throttle = (*Gate)(nil)
+
+// NewGate membuat Gate dengan anggaran biasa.
+func NewGate(clock ports.Clock, limiters ...*Limiter) *Gate {
+	return &Gate{clock: clock, high: limiters}
+}
+
+// Low menambahkan anggaran prioritas rendah dengan cadangan headroom izin.
+func (g *Gate) Low(l *Limiter, headroom int) (*Gate, error) {
+	if headroom < 0 || headroom > l.MaxHeadroom() {
+		return nil, fmt.Errorf("cadangan %d untuk anggaran %s harus 0..%d", headroom, l.Name(), l.MaxHeadroom())
+	}
+	g.low = append(g.low, lowLane{l: l, headroom: headroom})
+	return g, nil
+}
+
+// Wait menunggu izin dari semua anggaran biasa, lalu dari setiap anggaran
+// prioritas rendah secara berurutan.
+func (g *Gate) Wait(ctx context.Context) error {
+	if err := acquire(ctx, g.clock, g.high); err != nil {
+		return err
+	}
+	for _, lane := range g.low {
+		for {
+			ok, wait := lane.l.reserveLow(g.clock.Now(), lane.headroom)
+			if ok {
+				break
+			}
+			if err := g.clock.Sleep(ctx, wait); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
 // Poller adalah satu konektor yang bisa dipolling (dipenuhi *poll.Poller).
 type Poller interface {
 	Name() string
@@ -70,6 +134,7 @@ type Status struct {
 	LastError           string        `json:"last_error,omitempty"`
 	Published           int           `json:"published_total"`
 	Rejected            int           `json:"rejected_total"`
+	Failed              int           `json:"failed_total"`
 }
 
 // Options mengatur Runner.
@@ -171,7 +236,14 @@ func (r *Runner) loop(ctx context.Context, j Job) {
 }
 
 func (r *Runner) acquire(ctx context.Context, limiters []*Limiter) error {
-	now := r.clock.Now()
+	return acquire(ctx, r.clock, limiters)
+}
+
+func acquire(ctx context.Context, clock ports.Clock, limiters []*Limiter) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	now := clock.Now()
 	var wait time.Duration
 	for _, l := range limiters {
 		wait = max(wait, l.reserve(now))
@@ -179,7 +251,7 @@ func (r *Runner) acquire(ctx context.Context, limiters []*Limiter) error {
 	if wait == 0 {
 		return nil
 	}
-	return r.clock.Sleep(ctx, wait)
+	return clock.Sleep(ctx, wait)
 }
 
 // pollOnce menjalankan satu polling, memperbarui status, dan menulis log.
@@ -195,6 +267,7 @@ func (r *Runner) pollOnce(ctx context.Context, j Job) (Status, error) {
 	st.LastAttempt = start.UTC()
 	st.Published += res.Published
 	st.Rejected += res.Rejected
+	st.Failed += res.Failed
 	if err != nil {
 		st.ConsecutiveFailures++
 		st.LastError = err.Error()
@@ -213,7 +286,7 @@ func (r *Runner) pollOnce(ctx context.Context, j Job) (Status, error) {
 		slog.String("connector", name), slog.Duration("elapsed", elapsed),
 		slog.Int("events", res.Events), slog.Int("published", res.Published),
 		slog.Int("duplicates", res.Duplicates), slog.Int("already_seen", res.AlreadySeen),
-		slog.Int("rejected", res.Rejected), slog.Bool("not_modified", res.NotModified),
+		slog.Int("rejected", res.Rejected), slog.Int("failed", res.Failed), slog.Bool("not_modified", res.NotModified),
 		slog.Bool("unchanged", res.Unchanged), slog.String("archive_key", res.ArchiveKey),
 	}
 	switch {
@@ -226,13 +299,16 @@ func (r *Runner) pollOnce(ctx context.Context, j Job) (Status, error) {
 		}
 		r.log.Log(ctx, level, "polling gagal", append(attrs,
 			slog.Int("consecutive_failures", snap.ConsecutiveFailures), slog.Any("error", err))...)
-	case res.Published > 0 || res.Rejected > 0:
+	case res.Published > 0 || res.Rejected > 0 || res.Failed > 0:
 		r.log.Info("polling selesai", attrs...)
 	default:
 		r.log.Debug("polling selesai", attrs...)
 	}
 	for _, rej := range res.Rejections {
 		r.log.Warn("record ditolak", slog.String("connector", name), slog.String("key", rej.Key), slog.Any("reason", rej.Reason))
+	}
+	for _, f := range res.Failures {
+		r.log.Warn("record gagal diambil; dicoba lagi di polling berikutnya", slog.String("connector", name), slog.String("key", f.Key), slog.Any("error", f.Reason))
 	}
 	if res.ArchiveErr != nil {
 		r.log.Warn("arsip gagal, event tetap diterbitkan", slog.String("connector", name), slog.Any("error", res.ArchiveErr))

@@ -187,3 +187,65 @@ func equal(a, b []time.Duration) bool {
 	}
 	return true
 }
+
+func TestGateHighAndLowLanes(t *testing.T) {
+	clk := &fakeClock{now: time.Date(2026, 9, 24, 0, 0, 0, 0, time.UTC)}
+	shared, _ := NewLimiter("bmkg", 60, 3)
+	own, _ := NewLimiter("bmkg-prakiraan", 60, 1)
+	g, err := NewGate(clk, own).Low(shared, 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := NewGate(clk).Low(shared, 3); err == nil {
+		t.Fatal("cadangan melebihi burst-1 harus ditolak")
+	}
+	// Request rendah pertama langsung jalan; berikutnya menunggu anggaran sendiri (1 dtk)
+	// dan cadangan 2 izin di anggaran bersama.
+	if err := g.Wait(t.Context()); err != nil || len(clk.sleeps) != 0 {
+		t.Fatalf("err=%v jeda=%v", err, clk.sleeps)
+	}
+	// Request biasa memakai cadangan tanpa menunggu.
+	for range 2 {
+		if w := shared.reserve(clk.Now()); w != 0 {
+			t.Fatalf("request biasa menunggu %v", w)
+		}
+	}
+	if err := g.Wait(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	// Anggaran sendiri 1 dtk, lalu bersama harus pulih sampai 3 izin (sisa 3 dtk lagi).
+	var total time.Duration
+	for _, d := range clk.sleeps {
+		total += d
+	}
+	if total != 3*time.Second {
+		t.Fatalf("jeda total %v (%v), ingin 3 dtk", total, clk.sleeps)
+	}
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+	if err := g.Wait(ctx); !errors.Is(err, context.Canceled) {
+		t.Fatalf("err = %v", err)
+	}
+	// Cadangan penuh: request rendah menunggu di anggaran bersama lalu dibatalkan.
+	g2, _ := NewGate(clk).Low(shared, 2)
+	for range 3 {
+		_ = shared.reserve(clk.Now())
+	}
+	ctx2, cancel2 := context.WithCancel(t.Context())
+	clk2 := &cancelClock{fakeClock: clk, cancel: cancel2}
+	g2.clock = clk2
+	if err := g2.Wait(ctx2); !errors.Is(err, context.Canceled) {
+		t.Fatalf("err = %v", err)
+	}
+}
+
+// cancelClock membatalkan ctx pada Sleep pertama.
+type cancelClock struct {
+	*fakeClock
+	cancel context.CancelFunc
+}
+
+func (c *cancelClock) Sleep(ctx context.Context, d time.Duration) error {
+	c.cancel()
+	return c.fakeClock.Sleep(ctx, d)
+}

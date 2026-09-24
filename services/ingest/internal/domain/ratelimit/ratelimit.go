@@ -62,3 +62,32 @@ func (b *Bucket) Reserve(now time.Time) time.Duration {
 	}
 	return 0
 }
+
+// MaxHeadroom adalah cadangan terbesar yang bisa diminta ReserveLow: satu
+// kurang dari Burst, supaya request prioritas rendah tetap mungkin jalan.
+func (b *Bucket) MaxHeadroom() int { return b.burst - 1 }
+
+// ReserveLow memesan satu request prioritas rendah pada waktu now, tetapi
+// hanya bila request itu bisa jalan sekarang dan setelahnya masih tersisa
+// headroom izin langsung untuk request biasa (Reserve). Bila syarat itu tidak
+// terpenuhi, tidak ada yang dipesan dan retryAfter adalah jeda paling cepat
+// syarat itu bisa terpenuhi, dengan anggapan tidak ada pesanan lain.
+//
+// Dengan begitu lalu lintas prioritas rendah (misal sapuan prakiraan) hanya
+// memakai sisa anggaran dan tidak pernah membuat request biasa (misal gempa)
+// menunggu di belakangnya. headroom dibatasi ke 0..MaxHeadroom.
+func (b *Bucket) ReserveLow(now time.Time, headroom int) (ok bool, retryAfter time.Duration) {
+	headroom = min(max(headroom, 0), b.MaxHeadroom())
+	tat := b.tat
+	if tat.Before(now) {
+		tat = now
+	}
+	// Request ke-(headroom+1) yang dipesan sekarang boleh jalan pada allowAt;
+	// bila itu belum sekarang, sisa izin langsung kurang dari headroom+1.
+	allowAt := tat.Add(time.Duration(headroom)*b.interval - b.tolerance)
+	if wait := allowAt.Sub(now); wait > 0 {
+		return false, wait
+	}
+	b.tat = tat.Add(b.interval)
+	return true, 0
+}

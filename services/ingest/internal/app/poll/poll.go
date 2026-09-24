@@ -3,24 +3,19 @@
 package poll
 
 import (
-	"bytes"
-	"compress/gzip"
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"errors"
 	"fmt"
-	"time"
 
-	"github.com/ramirezzServer/siaga/services/ingest/internal/domain/eventid"
+	"github.com/ramirezzServer/siaga/services/ingest/internal/app/emit"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/ports"
 )
 
 // ErrParse membungkus galat saat payload tidak bisa dibaca sama sekali.
 var ErrParse = errors.New("payload sumber tidak bisa dibaca")
 
-// maxRejectionsKept membatasi contoh penolakan yang disimpan di Result.
-const maxRejectionsKept = 10
+// MaxRejectionsKept membatasi contoh penolakan dan kegagalan di Result.
+const MaxRejectionsKept = 10
 
 // Poller menyimpan status satu konektor antar-polling. Tidak aman dipakai
 // bersamaan; runner menjalankan satu goroutine per konektor.
@@ -58,8 +53,13 @@ type Result struct {
 	Duplicates  int  // pesan yang ditolak broker karena ID sudah ada
 	AlreadySeen int  // record yang isinya sudah pernah terbit
 	Rejected    int
-	// Contoh penolakan, paling banyak maxRejectionsKept.
+	// Contoh penolakan, paling banyak MaxRejectionsKept.
 	Rejections []ports.Rejection
+	// Failed adalah record yang gagal diambil (misal dokumen detail CAP) dan
+	// akan dicoba lagi di polling berikutnya; polling itu sendiri tetap sukses.
+	Failed int
+	// Contoh kegagalan, paling banyak MaxRejectionsKept.
+	Failures   []ports.Rejection
 	ArchiveKey string
 	// ArchiveErr tidak menggagalkan polling: peringatan lebih penting daripada arsip.
 	ArchiveErr error
@@ -80,8 +80,7 @@ func (p *Poller) Poll(ctx context.Context) (Result, error) {
 		res.NotModified = true
 		return res, nil
 	}
-	digest := sha256.Sum256(resp.Body)
-	sum := hex.EncodeToString(digest[:])
+	sum := emit.Sum(resp.Body)
 	if sum == p.doneSum {
 		res.Unchanged = true
 		p.etag, p.lastModified = resp.ETag, resp.LastModified
@@ -91,7 +90,7 @@ func (p *Poller) Poll(ctx context.Context) (Result, error) {
 	if p.archive != nil {
 		if sum == p.archivedSum {
 			res.ArchiveKey = p.archivedKey
-		} else if key, err := p.store(ctx, sum, resp.Body, fetchedAt); err != nil {
+		} else if key, err := emit.Archive(ctx, p.archive, p.conn.Name(), p.conn.ArchiveExt(), sum, resp.Body, fetchedAt); err != nil {
 			res.ArchiveErr = err
 		} else {
 			res.ArchiveKey = key
@@ -104,7 +103,7 @@ func (p *Poller) Poll(ctx context.Context) (Result, error) {
 		return res, fmt.Errorf("%s: %w: %w", p.conn.Name(), ErrParse, err)
 	}
 	res.Events, res.Rejected = len(events), len(rejections)
-	res.Rejections = rejections[:min(len(rejections), maxRejectionsKept)]
+	res.Rejections = rejections[:min(len(rejections), MaxRejectionsKept)]
 
 	meta := ports.FetchMeta{
 		Connector: p.conn.Name(), FetchedAt: fetchedAt,
@@ -112,25 +111,18 @@ func (p *Poller) Poll(ctx context.Context) (Result, error) {
 	}
 	current := make(map[string]string, len(events))
 	for _, ev := range events {
-		content, err := ev.Content()
+		content, contentSum, err := emit.Content(ev)
 		if err != nil {
-			return res, fmt.Errorf("%s: serialisasi record %s: %w", p.conn.Name(), ev.Key(), err)
+			return res, fmt.Errorf("%s: %w", p.conn.Name(), err)
 		}
-		contentDigest := sha256.Sum256(content)
-		contentSum := hex.EncodeToString(contentDigest[:])
 		current[ev.Key()] = contentSum
 		if p.seen[ev.Key()] == contentSum {
 			res.AlreadySeen++
 			continue
 		}
-		data, err := ev.Encode(meta)
+		ack, err := emit.Publish(ctx, p.pub, ev, content, meta)
 		if err != nil {
-			return res, fmt.Errorf("%s: encode record %s: %w", p.conn.Name(), ev.Key(), err)
-		}
-		msg := ports.Message{Subject: ev.Subject(), ID: eventid.MsgID(p.conn.Name(), ev.Key(), content), Data: data}
-		ack, err := p.pub.Publish(ctx, msg)
-		if err != nil {
-			return res, fmt.Errorf("%s: menerbitkan %s ke %s: %w", p.conn.Name(), ev.Key(), msg.Subject, err)
+			return res, fmt.Errorf("%s: %w", p.conn.Name(), err)
 		}
 		if ack.Duplicate {
 			res.Duplicates++
@@ -147,22 +139,4 @@ func (p *Poller) Poll(ctx context.Context) (Result, error) {
 	// lebih awal, sumber akan menjawab 304 dan record yang gagal tidak pernah dicoba lagi.
 	p.etag, p.lastModified = resp.ETag, resp.LastModified
 	return res, nil
-}
-
-// store mengompres payload lalu menyimpannya di arsip dengan kunci
-// <konektor>/<YYYY>/<MM>/<DD>/<hhmmss>Z-<sha256[:12]>.<ext>.gz (UTC).
-func (p *Poller) store(ctx context.Context, sum string, body []byte, fetchedAt time.Time) (string, error) {
-	key := fmt.Sprintf("%s/%s-%s.%s.gz", p.conn.Name(), fetchedAt.Format("2006/01/02/150405Z"), sum[:12], p.conn.ArchiveExt())
-	var buf bytes.Buffer
-	zw := gzip.NewWriter(&buf)
-	if _, err := zw.Write(body); err != nil {
-		return "", fmt.Errorf("kompresi arsip: %w", err)
-	}
-	if err := zw.Close(); err != nil {
-		return "", fmt.Errorf("kompresi arsip: %w", err)
-	}
-	if err := p.archive.Put(ctx, key, buf.Bytes()); err != nil {
-		return "", fmt.Errorf("arsip %s: %w", key, err)
-	}
-	return key, nil
 }

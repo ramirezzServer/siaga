@@ -112,3 +112,30 @@ type Connector interface {
 	// dilaporkan lewat Rejection.
 	Parse(body []byte, fetchedAt time.Time) ([]Event, []Rejection, error)
 }
+
+// StatusCoder dipenuhi galat Fetcher yang membawa kode status HTTP sumber
+// (misal 404 untuk kode wilayah yang tidak dikenal sumber).
+type StatusCoder interface {
+	error
+	HTTPStatus() int
+}
+
+// Throttle menahan pemanggil sampai anggaran request mengizinkan satu request.
+// Dipakai use case yang mengirim lebih dari satu request per putaran (misal
+// dokumen CAP per peringatan atau sapuan prakiraan per kelurahan).
+type Throttle interface {
+	// Wait mengembalikan ctx.Err() bila dibatalkan sebelum izin didapat.
+	Wait(ctx context.Context) error
+}
+
+// FeedItem adalah satu entri daftar peringatan (misal RSS nowcast BMKG) yang
+// menunjuk ke dokumen detail.
+type FeedItem struct {
+	// Key adalah ID pesan di sumber (RSS guid = identifier CAP).
+	Key string
+	// File adalah nama dokumen detail di sumber, misal "CJB20260924001_alert.xml".
+	File  string
+	Title string
+	// Digest berubah bila isi entri berubah; dokumen detail lalu diambil ulang.
+	Digest string
+}

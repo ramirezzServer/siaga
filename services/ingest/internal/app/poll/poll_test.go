@@ -275,7 +275,7 @@ func TestPollRejectionsKeptBounded(t *testing.T) {
 	}
 	r := newRig(b.String())
 	res, err := r.p.Poll(context.Background())
-	if err != nil || res.Rejected != 25 || len(res.Rejections) != maxRejectionsKept || res.Published != 1 {
+	if err != nil || res.Rejected != 25 || len(res.Rejections) != MaxRejectionsKept || res.Published != 1 {
 		t.Fatalf("%+v, %v", res, err)
 	}
 }

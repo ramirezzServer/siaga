@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/ramirezzServer/siaga/services/ingest/internal/app/runner"
+	"github.com/ramirezzServer/siaga/services/ingest/internal/app/sweep"
 )
 
 func TestEndpoints(t *testing.T) {
@@ -15,6 +16,9 @@ func TestEndpoints(t *testing.T) {
 	now := time.Date(2026, 9, 24, 3, 0, 0, 0, time.UTC)
 	h := Handler(func() bool { return ready },
 		func() []runner.Status { return []runner.Status{{Connector: "bmkg-autogempa", ConsecutiveFailures: 2}} },
+		func() []sweep.Status {
+			return []sweep.Status{{Connector: "bmkg-prakiraan", Codes: 5957, Current: &sweep.Progress{Done: 12}}}
+		},
 		func() time.Time { return now })
 
 	get := func(path string) *httptest.ResponseRecorder {
@@ -37,12 +41,16 @@ func TestEndpoints(t *testing.T) {
 		Now        time.Time       `json:"now"`
 		Ready      bool            `json:"ready"`
 		Connectors []runner.Status `json:"connectors"`
+		Sweeps     []sweep.Status  `json:"sweeps"`
 	}
 	if err := json.NewDecoder(rec.Body).Decode(&body); err != nil {
 		t.Fatal(err)
 	}
 	if !body.Ready || !body.Now.Equal(now) || len(body.Connectors) != 1 || body.Connectors[0].ConsecutiveFailures != 2 {
 		t.Fatalf("/status %+v", body)
+	}
+	if len(body.Sweeps) != 1 || body.Sweeps[0].Codes != 5957 || body.Sweeps[0].Current == nil || body.Sweeps[0].Current.Done != 12 {
+		t.Fatalf("/status sapuan %+v", body.Sweeps)
 	}
 	if rec := httptest.NewRecorder(); true {
 		h.ServeHTTP(rec, httptest.NewRequestWithContext(t.Context(), http.MethodPost, "/status", nil))

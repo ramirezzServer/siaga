@@ -1,5 +1,6 @@
 // Package httpstatus menyajikan endpoint kesehatan ingest:
-// /healthz (proses hidup), /readyz (siap menerbitkan), /status (per konektor).
+// /healthz (proses hidup), /readyz (siap menerbitkan), /status (per konektor
+// dan per sapuan).
 package httpstatus
 
 import (
@@ -8,11 +9,13 @@ import (
 	"time"
 
 	"github.com/ramirezzServer/siaga/services/ingest/internal/app/runner"
+	"github.com/ramirezzServer/siaga/services/ingest/internal/app/sweep"
 )
 
 // Handler membangun mux. ready melaporkan apakah ingest bisa menerbitkan
-// (misal NATS tersambung); status mengembalikan snapshot konektor.
-func Handler(ready func() bool, status func() []runner.Status, now func() time.Time) http.Handler {
+// (misal NATS tersambung); status dan sweeps mengembalikan snapshot konektor
+// polling dan sapuan.
+func Handler(ready func() bool, status func() []runner.Status, sweeps func() []sweep.Status, now func() time.Time) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
@@ -33,7 +36,8 @@ func Handler(ready func() bool, status func() []runner.Status, now func() time.T
 			Now        time.Time       `json:"now"`
 			Ready      bool            `json:"ready"`
 			Connectors []runner.Status `json:"connectors"`
-		}{now().UTC(), ready(), status()})
+			Sweeps     []sweep.Status  `json:"sweeps"`
+		}{now().UTC(), ready(), status(), sweeps()})
 	})
 	return mux
 }

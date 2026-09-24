@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+    <?xml-stylesheet type="text/xsl" href="/cap/nowcast-rss-style.xsl"?>
+    <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+        <channel>
+            <title>Peringatan Dini Cuaca BMKG</title>
+            <link>https://www.bmkg.go.id/alerts/nowcast/id/rss.xml</link>
+            <description>Peringatan Dini Cuaca dari BMKG (Badan Meteorologi, Klimatologi, dan Geofisika)</description>
+            <atom:link href="https://www.bmkg.go.id/alerts/nowcast/id/rss.xml" rel="self" type="application/rss+xml"/>
+            <language>id</language>
+            <copyright>public domain</copyright>
+            <pubDate>Thu, 24 Sep 2026 07:15:30 +0000</pubDate>
+            <lastBuildDate>Thu, 24 Sep 2026 07:15:30 +0000</lastBuildDate>
+            <docs>http://blogs.law.harvard.edu/tech/rss</docs>
+            
+        <item>
+            <title>Hujan Lebat disertai Petir di Gorontalo</title>
+            <link>https://www.bmkg.go.id/alerts/nowcast/id/CGT20260924002_alert.xml</link>
+            <description>Hujan lebat disertai petir akan terjadi pada 24 September 2026, 15:27 WITA di sebagian wilayah Gorontalo, khususnya di DENGILO, MANANGGU.
+ Kondisi ini berpotensi menimbulkan dampak berupa jarak pandang berkurang, angin kencang, dan banjir lokal.
+ Masyarakat dihimbau untuk tetap waspada, mengurangi aktivitas di luar ruangan, serta mengambil langkah-langkah pencegahan yang diperlukan guna menjaga keselamatan.
+ Kondisi diperkirakan dapat berlangsung hingga 24 September 2026, 17:27 WITA.</description>
+            <author>cuaca.ekstrem@bmkg.go.id (BMKG)</author>
+            <category>Met</category>
+            <guid isPermaLink="false">2.49.0.1.360.0.2026.09.24.07.75.002</guid>
+            <pubDate>Thu, 24 Sep 2026 15:07:00 +0800</pubDate>
+        </item>
+
+        <item>
+            <title>Hujan Lebat disertai Petir di Sulawesi Barat</title>
+            <link>https://www.bmkg.go.id/alerts/nowcast/id/CSK20260924001_alert.xml</link>
+            <description>Hujan lebat disertai petir akan terjadi pada 24 September 2026, 15:15 WITA di sebagian wilayah Sulawesi Barat, khususnya di DAPURANG, MALUNDA, PASANGKAYU, SARUDU, SUMARORONG, TAPALANG.
+ Kondisi ini berpotensi menimbulkan dampak berupa jarak pandang berkurang, angin kencang, dan banjir lokal.
+ Masyarakat dihimbau untuk tetap waspada, mengurangi aktivitas di luar ruangan, serta mengambil langkah-langkah pencegahan yang diperlukan guna menjaga keselamatan.
+ Kondisi diperkirakan dapat berlangsung hingga 24 September 2026, 17:00 WITA.</description>
+            <author>cuaca.ekstrem@bmkg.go.id (BMKG)</author>
+            <category>Met</category>
+            <guid isPermaLink="false">2.49.0.1.360.0.2026.09.24.07.76.001</guid>
+            <pubDate>Thu, 24 Sep 2026 15:00:00 +0800</pubDate>
+        </item>
+
+        <item>
+            <title>Hujan Lebat disertai Petir di Aceh</title>
+            <link>https://www.bmkg.go.id/alerts/nowcast/id/CAH20260924001_alert.xml</link>
+            <description>Hujan lebat disertai petir akan terjadi pada 24 September 2026, 14:04 WIB di sebagian wilayah Aceh, khususnya di DABUN GELANG, DARUL HASANAH, KLUET TENGAH, KOTA JANTHO, PINING, SERBAJADI, TANOH ALAS.
+ Kondisi ini berpotensi menimbulkan dampak berupa jarak pandang berkurang, angin kencang, dan banjir lokal.
+ Masyarakat dihimbau untuk tetap waspada, mengurangi aktivitas di luar ruangan, serta mengambil langkah-langkah pencegahan yang diperlukan guna menjaga keselamatan.
+ Kondisi diperkirakan dapat berlangsung hingga 24 September 2026, 18:24 WIB.</description>
+            <author>cuaca.ekstrem@bmkg.go.id (BMKG)</author>
+            <category>Met</category>
+            <guid isPermaLink="false">2.49.0.1.360.0.2026.09.24.07.11.001</guid>
+            <pubDate>Thu, 24 Sep 2026 13:54:00 +0700</pubDate>
+        </item>
+
+        <item>
+            <title>Hujan Lebat disertai Petir di Gorontalo</title>
+            <link>https://www.bmkg.go.id/alerts/nowcast/id/CGT20260924001_alert.xml</link>
+            <description>Hujan lebat disertai petir akan terjadi pada 24 September 2026, 15:02 WITA di sebagian wilayah Gorontalo, khususnya di DENGILO, SUWAWA TIMUR.
+ Kondisi ini berpotensi menimbulkan dampak berupa jarak pandang berkurang, angin kencang, dan banjir lokal.
+ Masyarakat dihimbau untuk tetap waspada, mengurangi aktivitas di luar ruangan, serta mengambil langkah-langkah pencegahan yang diperlukan guna menjaga keselamatan.
+ Kondisi diperkirakan dapat berlangsung hingga 24 September 2026, 17:02 WITA.</description>
+            <author>cuaca.ekstrem@bmkg.go.id (BMKG)</author>
+            <category>Met</category>
+            <guid isPermaLink="false">2.49.0.1.360.0.2026.09.24.07.75.001</guid>
+            <pubDate>Thu, 24 Sep 2026 14:42:00 +0800</pubDate>
+        </item>
+
+        <item>
+            <title>Hujan Lebat disertai Petir di Bengkulu</title>
+            <link>https://www.bmkg.go.id/alerts/nowcast/id/CBK20260924002_alert.xml</link>
+            <description>Hujan lebat disertai petir akan terjadi pada 24 September 2026, 13:50 WIB di sebagian wilayah Bengkulu, khususnya di KARANG TINGGI, KOTA PADANG, LUBUK SANDI, MERIGI KELINDANG, MERIGI SAKTI, SEMIDANG ALAS, TABA PENANJUNG.
+ Kondisi ini berpotensi menimbulkan dampak berupa jarak pandang berkurang, angin kencang, dan banjir lokal.
+ Masyarakat dihimbau untuk tetap waspada, mengurangi aktivitas di luar ruangan, serta mengambil langkah-langkah pencegahan yang diperlukan guna menjaga keselamatan.
+ Kondisi diperkirakan dapat berlangsung hingga 24 September 2026, 17:00 WIB.</description>
+            <author>cuaca.ekstrem@bmkg.go.id (BMKG)</author>
+            <category>Met</category>
+            <guid isPermaLink="false">2.49.0.1.360.0.2026.09.24.07.17.002</guid>
+            <pubDate>Thu, 24 Sep 2026 13:40:00 +0700</pubDate>
+        </item>
+
+        <item>
+            <title>Hujan Lebat disertai Petir di Lampung</title>
+            <link>https://www.bmkg.go.id/alerts/nowcast/id/CLG20260924001_alert.xml</link>
+            <description>Hujan lebat disertai petir akan terjadi pada 24 September 2026, 13:50 WIB di sebagian wilayah Lampung, khususnya di ABUNG KUNANG, ABUNG TIMUR, ANAK RATU AJI, ANAK TUHA, BANGUN REJO, BEKRI, BLAMBANGAN UMPU, BUNGA MAYANG, KOTABUMI, KOTABUMI SELATAN, KOTABUMI UTARA, MUARA SUNGKAI, NEGARA BATIN, NEGERI AGUNG, PADANG RATU, PUBIAN, SELAGAI LINGGA, SUNGKAI BARAT, SUNGKAI JAYA, SUNGKAI SELATAN.
+ Kondisi ini berpotensi menimbulkan dampak berupa jarak pandang berkurang, angin kencang, dan banjir lokal.
+ Masyarakat dihimbau untuk tetap waspada, mengurangi aktivitas di luar ruangan, serta mengambil langkah-langkah pencegahan yang diperlukan guna menjaga keselamatan.
+ Kondisi diperkirakan dapat berlangsung hingga 24 September 2026, 16:30 WIB.</description>
+            <author>cuaca.ekstrem@bmkg.go.id (BMKG)</author>
+            <category>Met</category>
+            <guid isPermaLink="false">2.49.0.1.360.0.2026.09.24.07.18.001</guid>
+            <pubDate>Thu, 24 Sep 2026 13:40:00 +0700</pubDate>
+        </item>
+
+        <item>
+            <title>Hujan Lebat disertai Petir di Kep. Bangka Belitung</title>
+            <link>https://www.bmkg.go.id/alerts/nowcast/id/CBB20260924001_alert.xml</link>
+            <description>Hujan lebat disertai petir akan terjadi pada 24 September 2026, 13:45 WIB di sebagian wilayah Kep. Bangka Belitung, khususnya di KELAPA, MENDO BARAT, SIMPANG RIMBA.
+ Kondisi ini berpotensi menimbulkan dampak berupa jarak pandang berkurang, angin kencang, dan banjir lokal.
+ Masyarakat dihimbau untuk tetap waspada, mengurangi aktivitas di luar ruangan, serta mengambil langkah-langkah pencegahan yang diperlukan guna menjaga keselamatan.
+ Kondisi diperkirakan dapat berlangsung hingga 24 September 2026, 16:00 WIB.</description>
+            <author>cuaca.ekstrem@bmkg.go.id (BMKG)</author>
+            <category>Met</category>
+            <guid isPermaLink="false">2.49.0.1.360.0.2026.09.24.07.19.001</guid>
+            <pubDate>Thu, 24 Sep 2026 13:35:00 +0700</pubDate>
+        </item>
+
+        <item>
+            <title>Hujan Lebat disertai Petir di Kep. Riau</title>
+            <link>https://www.bmkg.go.id/alerts/nowcast/id/CKR20260924004_alert.xml</link>
+            <description>Hujan lebat disertai petir akan terjadi pada 24 September 2026, 13:29 WIB di sebagian wilayah Kep. Riau, khususnya di BUNGURAN BARAT, BUNGURAN BATUBI, BUNGURAN UTARA, SENAYANG.
+ Kondisi ini berpotensi menimbulkan dampak berupa jarak pandang berkurang, angin kencang, dan banjir lokal.
+ Masyarakat dihimbau untuk tetap waspada, mengurangi aktivitas di luar ruangan, serta mengambil langkah-langkah pencegahan yang diperlukan guna menjaga keselamatan.
+ Kondisi diperkirakan dapat berlangsung hingga 24 September 2026, 15:30 WIB.</description>
+            <author>cuaca.ekstrem@bmkg.go.id (BMKG)</author>
+            <category>Met</category>
+            <guid isPermaLink="false">2.49.0.1.360.0.2026.09.24.07.21.004</guid>
+            <pubDate>Thu, 24 Sep 2026 13:28:00 +0700</pubDate>
+        </item>
+
+        <item>
+            <title>Hujan Lebat disertai Petir di Sumatera Utara</title>
+            <link>https://www.bmkg.go.id/alerts/nowcast/id/CSU20260924001_alert.xml</link>
+            <description>Hujan lebat disertai petir akan terjadi pada 24 September 2026, 13:55 WIB di sebagian wilayah Sumatera Utara, khususnya di AFULU, ALASA, ALASA TALUMUZOI, AMANDRAYA, ANGKOLA BARAT, ANGKOLA SANGKUNUR, ANGKOLA SELATAN, ANGKOLA TIMUR, ARAMO, ARSE, BAHOROK, BATAHAN, BATANG ANGKOLA, BATANG NATAL, BATANG ONANG, BATANG SERANGAN, BATANG TORU, BORONADU, DOLOK SILAU, GALANG, GIDO, GOMO, GUNUNG MERIAH, GUNUNGSITOLI IDANOI, HAMPARAN PERAK, HIBALA, HILISALAWA'AHE, HURUNA, IDANOTAE, LABUHAN DELI, LAHEWA, LAHEWA TIMUR, LAHOMI, LAHUSA, LOLOFITU MOI, MA'U, MANDREHE, MANDREHE BARAT, MANDREHE UTARA, MARANCAR, MAZINO, MEDAN DELI, MORO'O, MUARA BATANG GADIS, NAMOHALU ESIWA, NATAL, ONOHAZUMBA, PADANGSIDIMPUAN ANGKOLA JULU, PADANGSIDIMPUAN BATUNADUA, PADANGSIDIMPUAN HUTAIMBARU, PADANGSIDIMPUAN SELATAN, PADANGSIDIMPUAN TENGGARA, PADANGSIDIMPUAN UTARA, PAGAR MERBAU, PAGARAN, PAHAE JAE, PAHAE JULU, PANGARIBUAN, PEGAJAHAN, PERBAUNGAN, PULAU-PULAU BATU, PULAU-PULAU BATU TIMUR, PULAU-PULAU BATU UTARA, PURBA, SAIPAR DOLOK HOLE, SAYUR MATINGGI, SERBA JADI, SIABU, SIATAS BARITA, SIBABANGUN, SIBORONG-BORONG, SIMANGUMBAN, SIPIROK, SIPOHOLON, SIROMBU, SOGAE'ADU, SOSOPAN, STM HULU, TANAH MASA, TANO TOMBANGAN ANGKOLA, TARUTUNG, TUGALA OYO, ULU IDANOTAE, ULU MORO'O, ULUNOYO, ULUSUSUA.
+ Kondisi ini berpotensi menimbulkan dampak berupa jarak pandang berkurang, angin kencang, dan banjir lokal.
+ Masyarakat dihimbau untuk tetap waspada, mengurangi aktivitas di luar ruangan, serta mengambil langkah-langkah pencegahan yang diperlukan guna menjaga keselamatan.
+ Kondisi diperkirakan dapat berlangsung hingga 24 September 2026, 16:55 WIB.</description>
+            <author>cuaca.ekstrem@bmkg.go.id (BMKG)</author>
+            <category>Met</category>
+            <guid isPermaLink="false">2.49.0.1.360.0.2026.09.24.07.12.001</guid>
+            <pubDate>Thu, 24 Sep 2026 13:25:00 +0700</pubDate>
+        </item>
+
+        <item>
+            <title>Hujan Lebat disertai Petir di Sulawesi Tengah</title>
+            <link>https://www.bmkg.go.id/alerts/nowcast/id/CSG20260924006_alert.xml</link>
+            <description>Hujan lebat disertai petir akan terjadi pada 24 September 2026, 14:30 WITA di sebagian wilayah Sulawesi Tengah, khususnya di BANAWA, BANAWA SELATAN, BANAWA TENGAH, BASIDONDO, DOLO SELATAN, DONDO, MARAWOLA BARAT, MEPANGA, NUHON, OGODEIDE, PALOLO, PINEMBANI, RIO PAKAVA, SIMPANG RAYA, TOMINI, ULUJADI.
+ Kondisi ini berpotensi menimbulkan dampak berupa jarak pandang berkurang, angin kencang, dan banjir lokal.
+ Masyarakat dihimbau untuk tetap waspada, mengurangi aktivitas di luar ruangan, serta mengambil langkah-langkah pencegahan yang diperlukan guna menjaga keselamatan.
+ Kondisi diperkirakan dapat berlangsung hingga 24 September 2026, 17:30 WITA.</description>
+            <author>cuaca.ekstrem@bmkg.go.id (BMKG)</author>
+            <category>Met</category>
+            <guid isPermaLink="false">2.49.0.1.360.0.2026.09.24.07.72.006</guid>
+            <pubDate>Thu, 24 Sep 2026 14:04:00 +0800</pubDate>
+        </item>
+
+        <item>
+            <title>Hujan Lebat disertai Petir di Sumatera Selatan</title>
+            <link>https://www.bmkg.go.id/alerts/nowcast/id/CSS20260924003_alert.xml</link>
+            <description>Hujan lebat disertai petir akan terjadi pada 24 September 2026, 12:20 WIB di sebagian wilayah Sumatera Selatan, khususnya di BABAT TOMAN, BANYUASIN II, BATANG HARI LEKO, BAYUNG LENCIR, BTS. ULU, JAYALOKA, KARANG JAYA, KELEKAR, LALAN, LEMPUING JAYA, MESUJI RAYA, MUARA KELINGI, MUARA LAKITAN, MULAK ULU, RAWAS ILIR, SANGA DESA, SELANGIT, STL ULU TERAWAS, SUKA KARYA, TIANG PUMPUNG KEPUNGUT, TUAH NEGERI, TUNGKAL JAYA, ULU MUSI, ULU RAWAS.
+ Kondisi ini berpotensi menimbulkan dampak berupa jarak pandang berkurang, angin kencang, dan banjir lokal.
+ Masyarakat dihimbau untuk tetap waspada, mengurangi aktivitas di luar ruangan, serta mengambil langkah-langkah pencegahan yang diperlukan guna menjaga keselamatan.
+ Kondisi diperkirakan dapat berlangsung hingga 24 September 2026, 14:40 WIB.</description>
+            <author>cuaca.ekstrem@bmkg.go.id (BMKG)</author>
+            <category>Met</category>
+            <guid isPermaLink="false">2.49.0.1.360.0.2026.09.24.07.16.003</guid>
+            <pubDate>Thu, 24 Sep 2026 12:00:00 +0700</pubDate>
+        </item>
+        </channel>
+    </rss>

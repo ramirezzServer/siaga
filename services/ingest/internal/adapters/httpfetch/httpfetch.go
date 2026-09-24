@@ -34,6 +34,11 @@ func (e *StatusError) Error() string {
 	return fmt.Sprintf("HTTP %d: %s", e.Status, e.Body)
 }
 
+// HTTPStatus mengembalikan kode status HTTP (ports.StatusCoder).
+func (e *StatusError) HTTPStatus() int { return e.Status }
+
+var _ ports.StatusCoder = (*StatusError)(nil)
+
 // Fetcher adalah ports.Fetcher di atas net/http.
 type Fetcher struct {
 	client *http.Client
