@@ -65,7 +65,10 @@ func Publish(ctx context.Context, pub ports.Publisher, ev ports.Event, content [
 	if err != nil {
 		return ports.PublishResult{}, fmt.Errorf("encode record %s: %w", ev.Key(), err)
 	}
-	msg := ports.Message{Subject: ev.Subject(), ID: eventid.MsgID(meta.Connector, ev.Key(), content), Data: data}
+	msg := ports.Message{
+		Subject: ev.Subject(), ID: eventid.MsgID(meta.Connector, ev.Key(), content), Data: data,
+		FetchedAt: meta.FetchedAt,
+	}
 	res, err := pub.Publish(ctx, msg)
 	if err != nil {
 		return res, fmt.Errorf("menerbitkan %s ke %s: %w", ev.Key(), msg.Subject, err)

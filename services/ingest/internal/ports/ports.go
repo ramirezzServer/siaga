@@ -101,6 +101,9 @@ type Message struct {
 	// ID deterministik untuk deduplikasi di broker (Nats-Msg-Id).
 	ID   string
 	Data []byte
+	// FetchedAt adalah waktu ambil payload sumber (sama dengan FetchMeta),
+	// dikirim juga sebagai header supaya consumer bisa mengukur latensi pipa.
+	FetchedAt time.Time
 }
 
 // PublishResult melaporkan hasil penerbitan.

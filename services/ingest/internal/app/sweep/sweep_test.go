@@ -59,11 +59,15 @@ type fakeFetcher struct {
 	mu       sync.Mutex
 	replies  map[string][]reply
 	requests []ports.Request
+	onFetch  func(context.Context)
 }
 
-func (f *fakeFetcher) Fetch(_ context.Context, r ports.Request) (ports.Response, error) {
+func (f *fakeFetcher) Fetch(ctx context.Context, r ports.Request) (ports.Response, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
+	if f.onFetch != nil {
+		f.onFetch(ctx)
+	}
 	f.requests = append(f.requests, r)
 	code := strings.TrimPrefix(r.URL, "adm4=")
 	q := f.replies[code]
@@ -333,5 +337,38 @@ func TestNewValidatesAndLimits(t *testing.T) {
 		func(o *Options) { o.Limit = 2 })
 	if p, _ := r.s.Sweep(t.Context()); p.Total != 2 || p.Published != 2 || r.s.Name() != "bmkg-prakiraan" {
 		t.Fatalf("%+v", p)
+	}
+}
+
+func TestObserverSeesEveryItem(t *testing.T) {
+	type seen struct{ code, outcome string }
+	var got []seen
+	var ctxs []any
+	type key struct{}
+	r := newRig(t, []string{"a", "b", "c"}, map[string][]reply{
+		"a": {{body: "ok:1"}}, "b": {{err: statusError(http.StatusNotFound)}}, "c": {{body: "rusak"}},
+	}, func(o *Options) {
+		o.Observe = func(ctx context.Context, code string) (context.Context, func(string, error)) {
+			return context.WithValue(ctx, key{}, code), func(outcome string, _ error) { got = append(got, seen{code, outcome}) }
+		}
+	})
+	r.f.onFetch = func(ctx context.Context) { ctxs = append(ctxs, ctx.Value(key{})) }
+	if _, err := r.s.Sweep(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	want := []seen{{"a", OutcomePublished}, {"b", OutcomeNotFound}, {"c", OutcomeRejected}}
+	if fmt.Sprint(got) != fmt.Sprint(want) {
+		t.Fatalf("pengamat %v, ingin %v", got, want)
+	}
+	if fmt.Sprint(ctxs) != "[a b c]" {
+		t.Fatalf("fetch tidak memakai context pengamat: %v", ctxs)
+	}
+	for o, want := range map[outcome]string{
+		duplicate: OutcomeDuplicate, unchanged: OutcomeUnchanged, notModified: OutcomeNotModified,
+		failed: OutcomeFailed, outcome(99): "unknown",
+	} {
+		if o.String() != want {
+			t.Errorf("%d.String() = %q, ingin %q", o, o.String(), want)
+		}
 	}
 }

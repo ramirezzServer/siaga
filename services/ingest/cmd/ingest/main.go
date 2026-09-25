@@ -23,6 +23,7 @@ import (
 	"flag"
 	"fmt"
 	"log/slog"
+	"maps"
 	"net/http"
 	"os"
 	"os/signal"
@@ -35,11 +36,13 @@ import (
 
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
+	"go.opentelemetry.io/otel"
 
 	"github.com/ramirezzServer/siaga/libs/go/contracts/streams"
 	"github.com/ramirezzServer/siaga/libs/go/platform/envx"
 	"github.com/ramirezzServer/siaga/libs/go/platform/logx"
 	"github.com/ramirezzServer/siaga/libs/go/platform/natsx"
+	"github.com/ramirezzServer/siaga/libs/go/platform/otelx"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/archiveurl"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/bmkg"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/firms"
@@ -52,6 +55,7 @@ import (
 	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/regionlist"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/sitelist"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/sysclock"
+	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/telemetry"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/usgs"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/app/capfeed"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/app/poll"
@@ -65,6 +69,10 @@ import (
 )
 
 const service = "ingest"
+
+// version diisi saat build image (-ldflags "-X main.version=..."); dipakai
+// sebagai service.version di telemetri.
+var version = "dev"
 
 func main() {
 	if err := run(); err != nil {
@@ -359,6 +367,8 @@ type deps struct {
 	clock    ports.Clock
 	log      *slog.Logger
 	limiters map[string]*runner.Limiter
+	// sweepObserve membuat pengamat per konektor sapuan; boleh nil.
+	sweepObserve func(connector string) sweep.ItemObserver
 }
 
 // plan merakit semua job polling dan sapuan sesuai konfigurasi.
@@ -420,6 +430,9 @@ func plan(cfg settings, d deps) ([]runner.Job, []*sweep.Sweeper, error) {
 		}
 		opts := sweep.DefaultOptions()
 		opts.Interval, opts.Limit = cfg.forecastInterval, cfg.forecastLimit
+		if d.sweepObserve != nil {
+			opts.Observe = d.sweepObserve(fcSrc.Name())
+		}
 		sw, err := sweep.New(fcSrc, forecast.Order(codes, cfg.forecastFocus), d.fetch, d.archive, d.pub, d.clock, gate, d.log, opts)
 		if err != nil {
 			return nil, nil, err
@@ -442,15 +455,29 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	log := logx.New(os.Stderr, service, cfg.logLevel)
-
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
+
+	tel, err := otelx.Setup(ctx, otelx.Options{Service: service, Version: version, Log: logx.New(os.Stderr, service, cfg.logLevel)})
+	if err != nil {
+		return err
+	}
+	defer func() {
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		_ = tel.Shutdown(shutdownCtx)
+	}()
+	log := logx.New(os.Stderr, service, cfg.logLevel, tel.LogHandler())
+	inst, err := telemetry.New(otel.GetTracerProvider(), otel.GetMeterProvider())
+	if err != nil {
+		return err
+	}
 
 	archive, err := openArchive(ctx, cfg, log)
 	if err != nil {
 		return err
 	}
+	archive = inst.Archive(archive)
 	if archive == nil && !*publish {
 		return errors.New("mode rekam (-publish=false) butuh INGEST_ARCHIVE_URL")
 	}
@@ -475,6 +502,9 @@ func run() error {
 		}
 		pub = jspub.New(js, streams.Raw.Name)
 		ready = func() bool { return nc.Status() == nats.CONNECTED }
+		if _, err := natsx.ObserveStreams(otel.GetMeterProvider().Meter(telemetry.Scope), js, streams.Raw.Name); err != nil {
+			return err
+		}
 	}
 
 	limiters, err := budgets()
@@ -487,13 +517,14 @@ func run() error {
 	}
 	clock := sysclock.Clock{}
 	jobs, sweepers, err := plan(cfg, deps{
-		fetch: httpfetch.New(20 * time.Second), archive: archive, pub: pub, clock: clock, log: log, limiters: limiters,
+		fetch: inst.Fetcher(httpfetch.New(20 * time.Second)), archive: archive, pub: pub, clock: clock, log: log,
+		limiters: limiters, sweepObserve: inst.SweepItem,
 	})
 	if err != nil {
 		return err
 	}
 
-	r := runner.New(clock, log, runner.Options{MaxBackoff: 10 * time.Minute, JitterFrac: 0.1})
+	r := runner.New(clock, log, runner.Options{MaxBackoff: 10 * time.Minute, JitterFrac: 0.1, Observe: inst.Poll})
 	if *once {
 		errs := []error{r.RunOnce(ctx, jobs)}
 		for _, sw := range sweepers {
@@ -510,6 +541,15 @@ func run() error {
 			out[i] = sw.Snapshot()
 		}
 		return out
+	}
+	budgetList := make([]*runner.Limiter, 0, len(limiters))
+	for _, name := range slices.Sorted(maps.Keys(limiters)) {
+		budgetList = append(budgetList, limiters[name])
+	}
+	if _, err := inst.Observe(telemetry.Sources{
+		Connectors: r.Snapshot, Sweeps: sweepStatus, Limiters: budgetList, Now: clock.Now,
+	}); err != nil {
+		return err
 	}
 	if cfg.httpAddr != "" {
 		srv := &http.Server{
@@ -537,7 +577,8 @@ func run() error {
 	for _, sw := range sweepers {
 		names = append(names, sw.Name())
 	}
-	log.Info("ingest berjalan", slog.Any("connectors", names), slog.Bool("publish", *publish))
+	log.Info("ingest berjalan", slog.Any("connectors", names), slog.Bool("publish", *publish),
+		slog.Bool("trace", tel.Enabled(otelx.Traces)), slog.Bool("metrics", tel.Enabled(otelx.Metrics)), slog.Bool("logs", tel.Enabled(otelx.Logs)))
 	var wg sync.WaitGroup
 	for _, sw := range sweepers {
 		wg.Go(func() { sw.Run(ctx) })

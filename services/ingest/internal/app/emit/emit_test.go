@@ -93,12 +93,12 @@ func TestContentAndPublish(t *testing.T) {
 		t.Fatal("galat isi harus dikembalikan")
 	}
 	p := &pub{}
-	meta := ports.FetchMeta{Connector: "uji", ArchiveKey: "a"}
+	meta := ports.FetchMeta{Connector: "uji", ArchiveKey: "a", FetchedAt: time.Date(2026, 9, 25, 1, 2, 3, 0, time.UTC)}
 	if _, err := Publish(t.Context(), p, e, content, meta); err != nil {
 		t.Fatal(err)
 	}
 	m := p.msgs[0]
-	if m.Subject != "raw.uji.test" || m.ID != eventid.MsgID("uji", "k", content) || string(m.Data) != "v|a" {
+	if m.Subject != "raw.uji.test" || m.ID != eventid.MsgID("uji", "k", content) || string(m.Data) != "v|a" || !m.FetchedAt.Equal(meta.FetchedAt) {
 		t.Fatalf("%+v", m)
 	}
 	if res, _ := Publish(t.Context(), p, e, content, meta); !res.Duplicate {

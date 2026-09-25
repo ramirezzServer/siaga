@@ -44,7 +44,16 @@ type Options struct {
 	Limit int
 	// MaxSamples membatasi contoh kode di Status.
 	MaxSamples int
+	// Observe boleh nil. Dipanggil untuk setiap kode setelah izin anggaran
+	// didapat; lihat ItemObserver.
+	Observe ItemObserver
 }
+
+// ItemObserver dipanggil di awal pengambilan satu kode. Context yang
+// dikembalikan dipakai pengambilan itu (misal membawa span trace), dan fungsi
+// yang dikembalikan dipanggil sekali di akhir dengan hasilnya (lihat
+// Outcome*) dan galatnya. Dipakai adapter telemetri.
+type ItemObserver func(ctx context.Context, code string) (context.Context, func(outcome string, err error))
 
 // DefaultOptions sesuai dokumen arsitektur: sapuan tiap 6 jam.
 func DefaultOptions() Options {
@@ -178,6 +187,38 @@ const (
 	failed
 )
 
+// Nama hasil pengambilan satu kode untuk ItemObserver dan metrik.
+const (
+	OutcomePublished   = "published"
+	OutcomeDuplicate   = "duplicate"
+	OutcomeUnchanged   = "unchanged"
+	OutcomeNotModified = "not_modified"
+	OutcomeNotFound    = "not_found"
+	OutcomeRejected    = "rejected"
+	OutcomeFailed      = "failed"
+)
+
+func (o outcome) String() string {
+	switch o {
+	case published:
+		return OutcomePublished
+	case duplicate:
+		return OutcomeDuplicate
+	case unchanged:
+		return OutcomeUnchanged
+	case notModified:
+		return OutcomeNotModified
+	case notFound:
+		return OutcomeNotFound
+	case rejected:
+		return OutcomeRejected
+	case failed:
+		return OutcomeFailed
+	default:
+		return "unknown"
+	}
+}
+
 // Sweep menjalankan satu sapuan penuh. Galat hanya bila ctx dibatalkan.
 func (s *Sweeper) Sweep(ctx context.Context) (Progress, error) {
 	p := &Progress{StartedAt: s.clock.Now().UTC(), Total: len(s.codes)}
@@ -188,7 +229,7 @@ func (s *Sweeper) Sweep(ctx context.Context) (Progress, error) {
 	for round := 0; round <= s.opts.Retries && len(queue) > 0; round++ {
 		var retry []string
 		for _, code := range queue {
-			out, err := s.one(ctx, code)
+			out, err := s.item(ctx, code)
 			if ctx.Err() != nil {
 				s.finish(p, true)
 				return *p, ctx.Err()
@@ -209,11 +250,22 @@ func (s *Sweeper) Sweep(ctx context.Context) (Progress, error) {
 	return *p, nil
 }
 
-// one mengambil satu kode.
-func (s *Sweeper) one(ctx context.Context, code string) (outcome, error) {
+// item menunggu izin anggaran lalu mengambil satu kode.
+func (s *Sweeper) item(ctx context.Context, code string) (outcome, error) {
 	if err := s.throttle.Wait(ctx); err != nil {
 		return failed, err
 	}
+	if s.opts.Observe == nil {
+		return s.one(ctx, code)
+	}
+	ictx, done := s.opts.Observe(ctx, code)
+	out, err := s.one(ictx, code)
+	done(out.String(), err)
+	return out, err
+}
+
+// one mengambil satu kode.
+func (s *Sweeper) one(ctx context.Context, code string) (outcome, error) {
 	req := s.src.Request(code)
 	req.ETag = s.etag[code]
 	resp, err := s.fetch.Fetch(ctx, req)
@@ -244,7 +296,7 @@ func (s *Sweeper) one(ctx context.Context, code string) (outcome, error) {
 	meta := ports.FetchMeta{Connector: s.src.Name(), FetchedAt: fetchedAt, PayloadSHA256: bodySum}
 	if s.archive != nil {
 		if key, err := emit.Archive(ctx, s.archive, s.src.Name(), s.src.ArchiveExt(), bodySum, resp.Body, fetchedAt); err != nil {
-			s.log.Warn("arsip gagal, event tetap diterbitkan", slog.String("code", code), slog.Any("error", err))
+			s.log.WarnContext(ctx, "arsip gagal, event tetap diterbitkan", slog.String("code", code), slog.Any("error", err))
 		} else {
 			meta.ArchiveKey = key
 		}

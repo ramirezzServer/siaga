@@ -63,6 +63,22 @@ func (b *Bucket) Reserve(now time.Time) time.Duration {
 	return 0
 }
 
+// Available mengembalikan jumlah request yang bisa dipesan pada now tanpa
+// menunggu (0..Burst), tanpa memesan apa pun. Dipakai untuk metrik sisa
+// anggaran; Reserve tetap satu-satunya cara memperoleh izin.
+func (b *Bucket) Available(now time.Time) int {
+	tat := b.tat
+	if tat.Before(now) {
+		tat = now
+	}
+	// Request ke-k (k>=1) boleh jalan bila tat + (k-1)*interval - tolerance <= now.
+	slack := now.Sub(tat) + b.tolerance
+	if slack < 0 {
+		return 0
+	}
+	return min(int(slack/b.interval)+1, b.burst)
+}
+
 // MaxHeadroom adalah cadangan terbesar yang bisa diminta ReserveLow: satu
 // kurang dari Burst, supaya request prioritas rendah tetap mungkin jalan.
 func (b *Bucket) MaxHeadroom() int { return b.burst - 1 }

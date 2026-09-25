@@ -208,3 +208,63 @@ func FuzzPriorityHeadroom(f *testing.F) {
 		}
 	})
 }
+
+func TestAvailable(t *testing.T) {
+	b, _ := New(60, 3)
+	if got := b.Available(t0); got != 3 {
+		t.Fatalf("bucket baru: tersedia %d, ingin 3", got)
+	}
+	_ = b.Reserve(t0)
+	_ = b.Reserve(t0)
+	if got := b.Available(t0); got != 1 {
+		t.Fatalf("setelah 2 pesanan: tersedia %d, ingin 1", got)
+	}
+	_ = b.Reserve(t0)
+	_ = b.Reserve(t0) // menunggu 1 detik
+	if got := b.Available(t0); got != 0 {
+		t.Fatalf("anggaran habis: tersedia %d, ingin 0", got)
+	}
+	if got := b.Available(t0.Add(time.Hour)); got != 3 {
+		t.Fatalf("setelah lama diam: tersedia %d, ingin 3 (tidak melebihi burst)", got)
+	}
+}
+
+// Properti: Available(now) sama persis dengan jumlah Reserve berturut-turut
+// pada now yang tidak perlu menunggu, dan tidak mengubah bucket.
+func FuzzAvailable(f *testing.F) {
+	f.Add(uint8(55), uint8(5), []byte{0, 0, 3, 0, 9})
+	f.Add(uint8(1), uint8(1), []byte{255, 1})
+	f.Fuzz(func(t *testing.T, per, burst uint8, gaps []byte) {
+		p := int(per%120) + 1
+		bu := int(burst)%p + 1
+		b, err := New(p, bu)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(gaps) > 500 {
+			gaps = gaps[:500]
+		}
+		now := t0
+		for i, g := range gaps {
+			if i%2 == 0 {
+				now = now.Add(time.Duration(g) * 97 * time.Millisecond)
+			}
+			before := *b
+			got := b.Available(now)
+			if *b != before {
+				t.Fatal("Available mengubah bucket")
+			}
+			probe := *b
+			want := 0
+			for want <= bu && probe.Reserve(now) == 0 {
+				want++
+			}
+			if got != want || got < 0 || got > bu {
+				t.Fatalf("Available = %d, Reserve tanpa tunggu = %d (burst %d)", got, want, bu)
+			}
+			if g%3 == 0 {
+				_ = b.Reserve(now)
+			}
+		}
+	})
+}

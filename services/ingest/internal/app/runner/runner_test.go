@@ -249,3 +249,78 @@ func (c *cancelClock) Sleep(ctx context.Context, d time.Duration) error {
 	c.cancel()
 	return c.fakeClock.Sleep(ctx, d)
 }
+
+type ctxKey struct{}
+
+func TestObserverWrapsEveryPoll(t *testing.T) {
+	clk := &fakeClock{now: time.Date(2026, 9, 25, 0, 0, 0, 0, time.UTC)}
+	type seen struct {
+		connector string
+		res       poll.Result
+		err       error
+	}
+	var got []seen
+	var polledWith []any
+	boom := errors.New("sumber mati")
+	p := &ctxPoller{name: "usgs-2.5-day", results: []step{{res: poll.Result{Published: 2}}, {err: boom}}, got: &polledWith}
+	r := New(clk, slog.New(slog.DiscardHandler), Options{
+		Rand: func() float64 { return 0.5 },
+		Observe: func(ctx context.Context, connector string) (context.Context, func(poll.Result, error)) {
+			return context.WithValue(ctx, ctxKey{}, "span-"+connector), func(res poll.Result, err error) {
+				got = append(got, seen{connector, res, err})
+			}
+		},
+	})
+	err := r.RunOnce(context.Background(), []Job{{Poller: p, Interval: time.Minute}, {Poller: p, Interval: time.Minute}})
+	if !errors.Is(err, boom) {
+		t.Fatalf("err = %v", err)
+	}
+	if len(got) != 2 || got[0].res.Published != 2 || !errors.Is(got[1].err, boom) || got[0].connector != "usgs-2.5-day" {
+		t.Fatalf("pengamat menerima %+v", got)
+	}
+	if len(polledWith) != 2 || polledWith[0] != "span-usgs-2.5-day" {
+		t.Fatalf("polling tidak memakai context dari pengamat: %v", polledWith)
+	}
+	st := r.Snapshot()[0]
+	if st.Attempts != 2 || st.Failures != 1 || st.ConsecutiveFailures != 1 {
+		t.Fatalf("status %+v", st)
+	}
+}
+
+// ctxPoller mencatat nilai ctxKey dari context yang dipakai polling.
+type ctxPoller struct {
+	name    string
+	results []step
+	n       int
+	got     *[]any
+}
+
+func (p *ctxPoller) Name() string { return p.name }
+
+func (p *ctxPoller) Poll(ctx context.Context) (poll.Result, error) {
+	*p.got = append(*p.got, ctx.Value(ctxKey{}))
+	s := p.results[p.n]
+	p.n++
+	return s.res, s.err
+}
+
+func TestLimiterStats(t *testing.T) {
+	now := time.Date(2026, 9, 25, 0, 0, 0, 0, time.UTC)
+	l, err := NewLimiter("bmkg", 60, 3)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if st := l.Stats(now); st.Available != 3 || st.Reserved != 0 || st.Burst != 3 || st.PerMinute != 60 || st.Name != "bmkg" {
+		t.Fatalf("awal %+v", st)
+	}
+	_ = l.reserve(now)
+	if ok, _ := l.reserveLow(now, 1); !ok {
+		t.Fatal("jalur rendah harus dapat izin")
+	}
+	if ok, _ := l.reserveLow(now, 1); ok {
+		t.Fatal("jalur rendah tidak boleh memakai cadangan terakhir")
+	}
+	if st := l.Stats(now); st.Available != 1 || st.Reserved != 2 {
+		t.Fatalf("setelah dua pesanan %+v (pesanan rendah yang ditolak tidak dihitung)", st)
+	}
+}

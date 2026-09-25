@@ -25,6 +25,8 @@ type Limiter struct {
 	name string
 	mu   sync.Mutex
 	b    *ratelimit.Bucket
+	// reserved menghitung izin yang sudah dipesan sejak start.
+	reserved int64
 }
 
 // NewLimiter membuat anggaran perMinute request per menit dengan lonjakan burst.
@@ -39,16 +41,42 @@ func NewLimiter(name string, perMinute, burst int) (*Limiter, error) {
 // Name mengembalikan nama anggaran.
 func (l *Limiter) Name() string { return l.name }
 
+// LimiterStats adalah keadaan anggaran untuk metrik.
+type LimiterStats struct {
+	Name      string
+	PerMinute int
+	Burst     int
+	// Available adalah izin yang bisa dipakai sekarang tanpa menunggu.
+	Available int
+	// Reserved adalah jumlah izin yang dipesan sejak start (kumulatif).
+	Reserved int64
+}
+
+// Stats mengembalikan keadaan anggaran pada now tanpa memesan izin.
+func (l *Limiter) Stats(now time.Time) LimiterStats {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	return LimiterStats{
+		Name: l.name, PerMinute: l.b.PerMinute(), Burst: l.b.Burst(),
+		Available: l.b.Available(now), Reserved: l.reserved,
+	}
+}
+
 func (l *Limiter) reserve(now time.Time) time.Duration {
 	l.mu.Lock()
 	defer l.mu.Unlock()
+	l.reserved++
 	return l.b.Reserve(now)
 }
 
 func (l *Limiter) reserveLow(now time.Time, headroom int) (bool, time.Duration) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	return l.b.ReserveLow(now, headroom)
+	ok, wait := l.b.ReserveLow(now, headroom)
+	if ok {
+		l.reserved++
+	}
+	return ok, wait
 }
 
 // MaxHeadroom adalah cadangan terbesar untuk Gate.Low (burst - 1).
@@ -135,7 +163,16 @@ type Status struct {
 	Published           int           `json:"published_total"`
 	Rejected            int           `json:"rejected_total"`
 	Failed              int           `json:"failed_total"`
+	// Attempts dan Failures menghitung polling dan polling gagal sejak start.
+	Attempts int `json:"attempts_total"`
+	Failures int `json:"failures_total"`
 }
+
+// PollObserver dipanggil di awal setiap polling dengan nama konektor. Context
+// yang dikembalikan dipakai polling itu (misal membawa span trace), dan fungsi
+// yang dikembalikan dipanggil sekali di akhir dengan hasilnya. Dipakai adapter
+// telemetri, supaya use case tidak bergantung pada OpenTelemetry.
+type PollObserver func(ctx context.Context, connector string) (context.Context, func(poll.Result, error))
 
 // Options mengatur Runner.
 type Options struct {
@@ -145,6 +182,8 @@ type Options struct {
 	JitterFrac float64
 	// Rand menghasilkan bilangan acak di [0,1); nil memakai math/rand/v2.
 	Rand func() float64
+	// Observe boleh nil.
+	Observe PollObserver
 }
 
 // Runner menjalankan Job.
@@ -258,18 +297,25 @@ func acquire(ctx context.Context, clock ports.Clock, limiters []*Limiter) error 
 // Mengembalikan salinan status setelah polling.
 func (r *Runner) pollOnce(ctx context.Context, j Job) (Status, error) {
 	name := j.Poller.Name()
+	pctx, done := ctx, func(poll.Result, error) {}
+	if r.opt.Observe != nil {
+		pctx, done = r.opt.Observe(ctx, name)
+	}
 	start := r.clock.Now()
-	res, err := j.Poller.Poll(ctx)
+	res, err := j.Poller.Poll(pctx)
 	elapsed := r.clock.Now().Sub(start)
+	done(res, err)
 
 	r.mu.Lock()
 	st := r.status[name]
 	st.LastAttempt = start.UTC()
+	st.Attempts++
 	st.Published += res.Published
 	st.Rejected += res.Rejected
 	st.Failed += res.Failed
 	if err != nil {
 		st.ConsecutiveFailures++
+		st.Failures++
 		st.LastError = err.Error()
 	} else {
 		st.ConsecutiveFailures = 0
@@ -297,21 +343,21 @@ func (r *Runner) pollOnce(ctx context.Context, j Job) (Status, error) {
 		if snap.ConsecutiveFailures >= 3 {
 			level = slog.LevelError
 		}
-		r.log.Log(ctx, level, "polling gagal", append(attrs,
+		r.log.Log(pctx, level, "polling gagal", append(attrs,
 			slog.Int("consecutive_failures", snap.ConsecutiveFailures), slog.Any("error", err))...)
 	case res.Published > 0 || res.Rejected > 0 || res.Failed > 0:
-		r.log.Info("polling selesai", attrs...)
+		r.log.InfoContext(pctx, "polling selesai", attrs...)
 	default:
-		r.log.Debug("polling selesai", attrs...)
+		r.log.DebugContext(pctx, "polling selesai", attrs...)
 	}
 	for _, rej := range res.Rejections {
-		r.log.Warn("record ditolak", slog.String("connector", name), slog.String("key", rej.Key), slog.Any("reason", rej.Reason))
+		r.log.WarnContext(pctx, "record ditolak", slog.String("connector", name), slog.String("key", rej.Key), slog.Any("reason", rej.Reason))
 	}
 	for _, f := range res.Failures {
-		r.log.Warn("record gagal diambil; dicoba lagi di polling berikutnya", slog.String("connector", name), slog.String("key", f.Key), slog.Any("error", f.Reason))
+		r.log.WarnContext(pctx, "record gagal diambil; dicoba lagi di polling berikutnya", slog.String("connector", name), slog.String("key", f.Key), slog.Any("error", f.Reason))
 	}
 	if res.ArchiveErr != nil {
-		r.log.Warn("arsip gagal, event tetap diterbitkan", slog.String("connector", name), slog.Any("error", res.ArchiveErr))
+		r.log.WarnContext(pctx, "arsip gagal, event tetap diterbitkan", slog.String("connector", name), slog.Any("error", res.ArchiveErr))
 	}
 	return snap, err
 }
