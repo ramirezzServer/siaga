@@ -59,7 +59,7 @@ Batas percobaan diatur aplikasi, bukan server (`MaxDeliver = -1`): galat sementa
 
 ## Event raw
 
-Event `raw.*` adalah satu record dari satu feed sumber, sudah divalidasi dan waktunya UTC, tetapi belum dinormalisasi atau dideduplikasi lintas sumber. Payload mentah utuh disimpan di arsip ingest; event membawa kuncinya di `meta.archive_key`.
+Event `raw.*` adalah satu record dari satu feed sumber, sudah divalidasi dan waktunya UTC, tetapi belum dinormalisasi atau dideduplikasi lintas sumber. Payload mentah utuh disimpan di arsip ingest (Garage, `s3://siaga-arsip/raw/`); event membawa kuncinya di `meta.archive_key`. Perintah `replay` menerbitkan ulang event dari arsip dengan `meta` dan `Nats-Msg-Id` yang sama seperti saat polling langsung, jadi konsumen tidak bisa (dan tidak perlu) membedakan event replay dari event asli (ADR 0014).
 
 - **ID pesan** = 128 bit pertama SHA-256 dari (nama konektor, ID record di sumber, isi record tanpa `meta`). Isi yang sama menghasilkan ID yang sama sehingga ditolak JetStream selama jendela duplikat; revisi dari sumber (misal magnitudo diperbarui) menghasilkan ID baru dan ikut terbit.
 - **Tidak berurutan dan bisa berulang.** Ingest menerbitkan ulang record yang sama setelah restart (JetStream menolaknya bila masih dalam 24 jam). Konsumen wajib idempotent terhadap `source_event_id` + isi.

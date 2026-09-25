@@ -19,18 +19,22 @@ Butuh Linux atau WSL2 (Windows). Panduan Windows: [docs/setup/windows-wsl2.md](d
 ```bash
 make doctor           # cek prasyarat
 make deps             # unduh dependensi, kunci versi
-make up               # PostgreSQL + NATS + Valkey + Mailpit (profil lite)
+make up               # PostgreSQL + NATS + Valkey + Garage + Mailpit (profil lite)
 make seed             # migrasi + import 6.612 wilayah Jawa Barat
 make adm4-list        # (opsional) bangun ulang daftar kode desa untuk sapuan prakiraan
 make grid-list        # (opsional) bangun ulang simpul grid 0,25° Open-Meteo
-make ingest           # tarik BMKG, USGS, Open-Meteo, OpenAQ, FIRMS ke NATS (status: :8081/status)
+make ingest           # tarik BMKG, USGS, Open-Meteo, OpenAQ, FIRMS ke NATS, arsip mentah ke Garage (status: :8081/status)
 make geo              # gempa + cuaca → hazard.*, deret waktu → ts.* (status: :8082/status)
 make check            # lint + test
 make calibrate-dedup  # ukur ambang deduplikasi dengan katalog historis BMKG + USGS
 make river-snap       # pilih sel GloFAS untuk 38 titik pantau sungai (±800 lokasi Open-Meteo)
+make archive-ls       # isi arsip payload mentah per konektor; archive-verify memeriksa integritasnya
+make replay FROM=2026-09-24 TO=2026-09-25   # putar ulang arsip ke NATS, urut waktu ambil asli
 ```
 
 OpenAQ dan NASA FIRMS butuh key gratis: isi `OPENAQ_API_KEY` (daftar di explore.openaq.org) dan `FIRMS_MAP_KEY` (firms.modaps.eosdis.nasa.gov/api/map_key) di `.env`. Tanpa key, ingest tetap jalan tanpa kedua konektor itu.
+
+Payload mentah setiap sumber diarsipkan ke Garage (bucket `siaga-arsip`, awalan `raw/`) dan bisa diputar ulang untuk uji replay atau memulihkan stream NATS (ADR 0014). Arsip lokal dari sebelum fase 1e dipindahkan dengan `make archive-upload`.
 
 Profil full (Kubernetes lokal, sama dengan produksi): `make k3d-up && make tilt`.
 

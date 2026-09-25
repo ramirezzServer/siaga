@@ -2,9 +2,43 @@
 
 Dokumen ini adalah titik lanjut untuk sesi kerja berikutnya, termasuk chat baru dengan asisten AI. Perbarui setiap akhir sesi.
 
-## Status: Fase 1d-2 selesai di workspace asisten, menunggu verifikasi di WSL (2026-09-25)
+## Status: Fase 1e-1 selesai di workspace asisten, menunggu verifikasi di WSL (2026-09-25)
 
-Fase 0, 1a, 1b terverifikasi di WSL dan CI. Fase 1c diterapkan di WSL (`bfd3099`). Patch 1d-1 dan 1d-2 ditulis, di-lint, dan dites di workspace asisten (uji integrasi PostgreSQL 16 + PostGIS 3.4 + TimescaleDB 2.30.1, uji ujung ke ujung dengan JetStream, replay ingest → NATS 2.11.9 → geo-processor dengan server tiruan); belum dijalankan di WSL dan CI. Rekaman asli OpenAQ dan FIRMS (2026-09-24 17.03 UTC, `ambil-sampel-1d-2.sh`) sudah menjadi fixture test dan bahan replay.
+Fase 0 sampai 1d-2 ter-commit dan CI hijau (1d-2 di `70b4700`). Fase 1e dipecah tiga: **1e-1** arsip Garage + replay (bagian ini), **1e-2** observability + deploy, **1e-3** backfill + kalibrasi (lihat Berikutnya).
+
+### Fase 1e-1: arsip di Garage dan replay dari arsip
+
+| Bagian         | Isi                                                                                                                                                                                                                               | Terverifikasi di workspace asisten                                                                                                                              |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Garage         | Service `garage` v2.3.0 di Compose lite (`--single-node --default-bucket`, `deploy/compose/garage.toml`), bucket `siaga-arsip`, awalan `raw/`; rahasia dan access key di `.env`; `make env` menambah variabel baru ke `.env` lama | `make-env.sh` diuji untuk `.env` baru, `.env` lama, dan `.env` lengkap. Garage asli belum pernah jalan (image Docker tidak terjangkau dari workspace)           |
+| Port + adapter | `ports.ArchiveReader`/`ArchiveStore`; `s3archive` (aws-sdk-go-v2, Content-MD5, checksum CRC `WhenRequired`); `fsarchive` bisa `Get`/`List`; `archiveurl` (`INGEST_ARCHIVE_URL` = folder, `file://`, atau `s3://…?endpoint=`)      | Uji kesesuaian bersama `archivetest` untuk folder dan S3 tiruan dalam proses (paginasi, galat 500, retry); uji integrasi Garage ditulis tetapi belum dijalankan |
+| Domain         | `domain/archivekey` (bentuk kanonik kunci, batas rentang waktu), `emit.Unarchive` (gzip + SHA-256)                                                                                                                                | `FuzzParse`; coverage 97%                                                                                                                                       |
+| Replay         | Use case `app/replay` + perintah `replay` (11 feed satu payload, gabung urut waktu ambil, FetchMeta asli, `-speed`, `-publish=false`, `-strict`, `-json`)                                                                         | Coverage 99%; `FuzzRunOrdered`; `cmd/replay` memutar rekaman asli BMKG/USGS/FIRMS ke JetStream dalam proses, replay kedua 0 pesan baru                          |
+| Alat arsip     | Use case `app/archivetool` + perintah `archive` (`ls`, `verify`, `cp`); `make archive-ls`, `archive-verify`, `archive-upload`, `replay`                                                                                           | Salin folder → S3 tiruan → folder, verifikasi objek rusak dan kunci asing                                                                                       |
+| Ingest         | Arsip dibuka dan dicek sebelum polling pertama (gagal start bila Garage mati atau kredensial salah); `INGEST_ARCHIVE_DIR` lama tetap diterima                                                                                     | `TestConfigArchive`, `TestOpenArchive`                                                                                                                          |
+| Repo           | ADR 0014, README, `docs/events.md`, `.env.example`, job CI `archive` (Garage asli + uji integrasi), dua target fuzz baru                                                                                                          | —                                                                                                                                                               |
+
+### Verifikasi yang perlu dijalankan di WSL (1e-1)
+
+```bash
+bash "/mnt/c/KULIAH/PROJECT CODE/siaga-titipan/terapkan-fase-1e-1.sh"   # deps, check, commit
+make up                # menambah variabel Garage ke .env lalu menjalankan Garage
+docker compose -f deploy/compose/compose.lite.yaml --env-file .env exec garage /garage bucket info siaga-arsip
+make test-integration  # kini juga TestGarage (uji kesesuaian terhadap Garage asli, >1.000 objek)
+make archive-upload    # pindahkan arsip lokal fase 1a–1d ke Garage (aman diulang)
+make ingest            # log harus menyebut "arsip payload aktif" lokasi s3://siaga-arsip/raw/
+make archive-ls        # setelah beberapa menit: objek bertambah per konektor
+make replay ARGS="-publish=false -strict"   # semua payload yang bisa diputar harus terbaca
+```
+
+Uji replay ke NATS sungguhan sebaiknya di stack terpisah atau setelah `make reset` (lihat ADR 0014, Konsekuensi).
+
+### Temuan yang perlu ditindaklanjuti (1e-1)
+
+- **Kuota Open-Meteo ternyata dibagi jumlah variabel.** Kode Open-Meteo (`calculateQueryWeight`): bobot per lokasi = max(1, hari/14 × variabel/10). Reanalisis GloFAS 1984–2022 dengan satu variabel (`river_discharge`, `models=consolidated_v4`) hanya ±102 panggilan per titik (±3.900 untuk 38 titik), bukan ±1.000 per titik seperti catatan 1d-1. Backfill cukup beberapa menit (batas 600/menit), bukan berhari-hari.
+- **Replay CAP, prakiraan BMKG, dan OpenAQ belum bisa**: konteks request (entri RSS, kode desa di URL, gabungan daftar lokasi + nilai terbaru) tidak ada di kunci arsip. Perlu metadata objek sebelum alert-engine fase 3 (T3 butuh replay CAP).
+- **Ukuran arsip belum diukur.** Sapuan prakiraan BMKG kemungkinan penyumbang terbesar; lihat `make archive-ls` setelah seminggu, lalu putuskan retensi di 1e-2.
+- Errorlint di workspace asisten dibangun dari mirror GitHub v1.8.0 (v1.9.0 hanya di Codeberg yang diblokir); CI memakai golangci-lint 2.13.2 resmi, jadi temuan errorlint versi baru baru terlihat di CI.
 
 ### Fase 1d-2: OpenAQ dan NASA FIRMS
 
@@ -17,13 +51,11 @@ Fase 0, 1a, 1b terverifikasi di WSL dan CI. Fase 1c diterapkan di WSL (`bfd3099`
 | Consumer | `geo-processor-aq-openaq`, `geo-processor-fire-firms` → use case `timeseries` (`Observation`, `Hotspot`)                                                                                                                                         | `TestEndToEnd` kini juga menguji keduanya, pesan ulangan, dan DLQ                                                       |
 | Repo     | ADR 0013, `docs/events.md`, README, `.env.example`, target fuzz baru di `make fuzz` dan CI                                                                                                                                                       | —                                                                                                                       |
 
-Replay di workspace asisten dengan rekaman asli: ingest `-once` terhadap server tiruan membaca 31 lokasi OpenAQ dan hanya mengirim 2 request `/latest` (dua stasiun aktif), lalu menerbitkan 2 stasiun dan 162 titik panas (VIIRS SNPP 30, NOAA-20 72, NOAA-21 57, MODIS 3; tanpa penolakan). geo-processor menyimpan semuanya tanpa galat dan DLQ kosong; 147 titik panas jatuh di desa Jawa Barat (terbanyak Kab. Sukabumi, Tasikmalaya, Sumedang), sisanya di Banten/Jawa Tengah/laut. Key tidak ada di arsip maupun log.
+Status: ter-commit di `70b4700`, CI hijau. Replay di workspace asisten dengan rekaman asli: ingest `-once` terhadap server tiruan membaca 31 lokasi OpenAQ dan hanya mengirim 2 request `/latest` (dua stasiun aktif), lalu menerbitkan 2 stasiun dan 162 titik panas (VIIRS SNPP 30, NOAA-20 72, NOAA-21 57, MODIS 3; tanpa penolakan). geo-processor menyimpan semuanya tanpa galat dan DLQ kosong; 147 titik panas jatuh di desa Jawa Barat (terbanyak Kab. Sukabumi, Tasikmalaya, Sumedang), sisanya di Banten/Jawa Tengah/laut. Key tidak ada di arsip maupun log.
 
 Perbaikan kecil di luar 1d-2: `TestEndToEnd` sesekali gagal karena putaran kedaluwarsa gempa 2001 bisa berjalan sebelum laporan USGS diproses (revisi 3, bukan 2); kini revisi yang diharapkan dihitung dari urutan pesan `expired`.
 
-### Verifikasi yang perlu dijalankan di WSL
-
-Setelah patch 1d-1 terpasang dan ter-commit:
+### Verifikasi 1d-2 di WSL
 
 ```bash
 bash "/mnt/c/KULIAH/PROJECT CODE/siaga-titipan/terapkan-fase-1d-2.sh"   # deps, check, migrasi 00005, test integrasi, commit
@@ -75,7 +107,7 @@ Setelah jalan beberapa menit: `psql` → `SELECT dataset, model, count(*), max(l
 
 - **17 dari 38 titik sungai perlu diperiksa manual** (tanda di `docs/calibration/titik-sungai.md`). Koordinat awal adalah perkiraan dari nama lokasi, dan debit musim kemarau kecil membuat alur utama sulit dibedakan (misal Cikeas dan Ciliwung di Depok memakai sel yang sama, dan beberapa titik muara jatuh di sel yang debitnya lebih kecil dari titik hulunya). Cara: buka sel di peta OSM, tulis koordinat sel yang benar di `docs/calibration/titik-sungai-32.csv` dengan radius 0 dan catatan asal verifikasinya, lalu `make river-snap`. Titik bertanda belum boleh dipakai untuk ambang banjir.
 - **Batas Open-Meteo 600/menit dihitung per lokasi.** Rekaman pertama kena HTTP 429 tanpa `Retry-After`. Polling rutin memakai 178 lokasi sekaligus; `river-snap` membatasi diri 400 lokasi/menit. Jangan menjalankan `river-snap` dua kali bersamaan.
-- **Ambang banjir belum ada.** Persentil reanalisis GloFAS 1984–2022 butuh ±1.000 panggilan per titik (±38.000 total), jadi harus dicicil beberapa hari dalam kuota 10.000/hari; masuk fase 1e bersama arsip dan kalibrasi. `hazard.flood.*` belum diterbitkan.
+- **Ambang banjir belum ada.** Persentil reanalisis GloFAS 1984–2022 (±102 panggilan per titik, lihat temuan 1e-1); masuk fase 1e-3. `hazard.flood.*` belum diterbitkan.
 - **Grid 70 simpul**, bukan ±120 seperti perkiraan dokumen arsitektur: hanya sel yang menyentuh desa Jawa Barat.
 - **CAMS global** memberi PM2,5 ±135 µg/m³ di Bandung pada 00 UTC rekaman; wajar sebagai model mentah, bahan koreksi bias fase 4.
 - Temuan 1c masih terbuka: rekaman CAP Jawa Barat asli, kalibrasi `WEATHER_MIN_COVERAGE`, cek `not_found` sapuan prakiraan BMKG; dari 1b: rumus radius dirasakan dan recall deduplikasi 98,5%.
@@ -115,7 +147,7 @@ Kontrak `siaga.raw.v1`, stream `RAW`/`HAZARD`, layanan ingest dengan konektor BM
 ## Utang kecil yang diketahui
 
 - Compose lite memakai `nats:2.11-alpine`, sedangkan test memakai server 2.15 dalam proses. Replay 1c dan 1d-1 sudah dijalankan dengan binary `nats-server` 2.11.9 tanpa masalah; naikkan image saat Renovate aktif.
-- ingest dan geo-processor belum punya Dockerfile dan manifest Kubernetes; dijalankan lewat `make ingest` dan `make geo`. Ditambahkan di fase 1e bersama Garage dan OpenTelemetry.
+- ingest dan geo-processor belum punya Dockerfile dan manifest Kubernetes; dijalankan lewat `make ingest` dan `make geo`. Garage juga baru ada di Compose lite. Ketiganya masuk fase 1e-2.
 - `/status` geo-processor menampilkan ambang dengan durasi dalam nanodetik (JSON bawaan `time.Duration`). Kosmetik; rapikan saat dashboard Grafana dibuat.
 - Renovate sudah dikonfigurasi (`renovate.json`) tetapi GitHub App Renovate belum dipasang di repo.
 - Runner `ubuntu-latest` pindah ke Ubuntu 26 mulai 2026-10-19. Pantau run CI pertama setelah tanggal itu.
@@ -131,7 +163,9 @@ Target demo fase 1: dashboard Grafana berisi data live semua sumber.
 - [x] **1c** BMKG CAP nowcast (RSS + dokumen CAP id/en) dan sapuan prakiraan adm4 (5.957 desa, jalur prioritas rendah 50/menit di anggaran BMKG) (ADR 0009). geo-processor: kejadian `weather` dari rantai pesan CAP, wilayah terdampak dari irisan poligon (ADR 0010).
 - [x] **1d-1** Open-Meteo (cuaca grid 0,25°, kualitas udara CAMS, debit GloFAS 38 titik) dan schema `ts` (`site`, `series`, hypertable `weather_forecast`, `aq_forecast`, `river_discharge`), consumer `raw.forecast.bmkg` → `ts.weather_forecast` (ADR 0011–0012).
 - [x] **1d-2** OpenAQ v3 (stasiun dalam kotak Jawa Barat tiap 15 menit, `X-API-Key`) → `raw.aq.openaq` → `ts.aq_observation`; NASA FIRMS (VIIRS/MODIS NRT, satu kotak tiap 30 menit, MAP_KEY) → `raw.fire.firms` → `ts.hotspot`; key opsional di `.env`, disamarkan di galat dan log (ADR 0013). Menunggu rekaman asli.
-- [ ] **1e** Arsip ke Garage, uji replay dari arsip (termasuk set berlabel untuk T4 dan kalibrasi radius dirasakan), OpenTelemetry (trace ID di header `traceparent`) + dashboard Grafana Cloud, Dockerfile + manifest ingest dan geo-processor (key OpenAQ/FIRMS lewat Secret SOPS), backfill reanalisis GloFAS untuk ambang persentil banjir, backfill jam OpenAQ yang terlewat, kalibrasi ambang titik api dari arsip FIRMS.
+- [x] **1e-1** Arsip payload mentah ke Garage (Compose lite, adapter S3, `INGEST_ARCHIVE_URL`), perintah `archive` (ls, verify, cp) dan `replay` dari arsip ke NATS urut waktu ambil (ADR 0014). Menunggu verifikasi di WSL.
+- [ ] **1e-2** OpenTelemetry (trace ID di header `traceparent` NATS, metrik per sumber: terlambat, galat, kuota) + dashboard Grafana Cloud (butuh akun gratis); Dockerfile + manifest Kubernetes ingest, geo-processor, dan Garage (key OpenAQ/FIRMS dan kredensial arsip lewat Secret SOPS); retensi arsip dan backup Garage ke Oracle Object Storage.
+- [ ] **1e-3** Backfill dan kalibrasi: reanalisis GloFAS (`consolidated_v4`, ±3.900 panggilan) → ambang persentil banjir → `hazard.flood.*` (setelah 17 titik sungai bertanda diperiksa manual); arsip FIRMS standar (SP) → ambang titik api → `hazard.fire.*`; backfill jam OpenAQ yang terlewat (`/v3/sensors/{id}/hours`); set berlabel T4 dan kalibrasi radius dirasakan dari arsip gempa; replay CAP/prakiraan/OpenAQ (metadata request di objek arsip).
 
 Titik pantau sungai (38 titik GloFAS + 7 sub-DAS indeks hujan) dan aturan tingkat peringatan ada di PRD, bagian Sungai yang dipantau dan Aturan bisnis.
 
@@ -150,6 +184,8 @@ Workspace cloud asisten tidak bisa menjangkau `proxy.golang.org`, `go.dev`, atau
 - gitleaks 8.30.1 diunduh dari rilis GitHub untuk memeriksa patch sebelum dikirim; nilai key palsu di test harus berentropi rendah (misal `KUNCIUJIKUNCIUJI…`) supaya tidak ditandai `generic-api-key`.
 - Host BMKG (`www.bmkg.go.id`, `api.bmkg.go.id`) tidak selalu terjangkau dari workspace; replay memakai server tiruan (`BMKG_CAP_BASE_URL`, `BMKG_FORECAST_URL`) dan binary `nats-server` dari rilis GitHub.
 - Menjalankan skrip pihak ketiga yang diunduh (misal `extract_tsv.py` repo-gempa) ditolak kebijakan workspace; pakai data yang sudah jadi.
+
+- Sesi 1e-1: membangun Go dari source sempat ditolak pemeriksa keamanan workspace dan baru jalan setelah pengguna mengizinkan eksplisit. golangci-lint butuh mirror GitHub untuk semua dependensi vanity; `codeberg.org` (go-errorlint v1.9.0, garif) diblokir, jadi dipakai mirror GitHub v1.8.0/v0.1.0 dengan nama modul diganti, dan `decorder` (GitLab) dibuang. Registry Docker juga diblokir, jadi Garage asli tidak bisa dijalankan di workspace; uji S3 memakai server tiruan (`s3archive/s3test`).
 
 Karena itu `go.sum` dari asisten tidak dipakai: patch tidak menyertakan `go.sum`/`go.work.sum`, dan `make deps` di WSL yang membuatnya.
 
