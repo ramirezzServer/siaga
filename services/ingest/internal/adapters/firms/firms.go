@@ -34,10 +34,25 @@ var ErrStructure = errors.New("payload FIRMS tidak dikenali")
 // deteksi larut malam UTC yang terbit terlambat tetap terambil.
 const Days = 2
 
+// Parser membaca CSV satu produk FIRMS. Tidak butuh key, jadi dipakai juga
+// untuk replay payload dari arsip.
+type Parser struct {
+	product fire.Product
+}
+
+// NewParsers membuat satu Parser per produk NRT, bernama sama dengan konektornya.
+func NewParsers() []*Parser {
+	out := make([]*Parser, len(fire.Products))
+	for i, p := range fire.Products {
+		out[i] = &Parser{product: p}
+	}
+	return out
+}
+
 // Connector mengambil satu produk FIRMS untuk satu kotak.
 type Connector struct {
+	Parser
 	base, key string
-	product   fire.Product
 	box       area.Box
 }
 
@@ -53,7 +68,7 @@ func NewConnectors(base, key string, box area.Box) ([]*Connector, error) {
 	}
 	out := make([]*Connector, len(fire.Products))
 	for i, p := range fire.Products {
-		out[i] = &Connector{base: strings.TrimRight(base, "/"), key: key, product: p, box: box}
+		out[i] = &Connector{Parser: Parser{product: p}, base: strings.TrimRight(base, "/"), key: key, box: box}
 	}
 	return out, nil
 }
@@ -61,8 +76,8 @@ func NewConnectors(base, key string, box area.Box) ([]*Connector, error) {
 var mapKey = regexp.MustCompile(`^[A-Za-z0-9]{16,64}$`)
 
 // Name misal "firms-viirs-snpp-nrt".
-func (c *Connector) Name() string {
-	return "firms-" + strings.ReplaceAll(strings.ToLower(string(c.product)), "_", "-")
+func (p *Parser) Name() string {
+	return "firms-" + strings.ReplaceAll(strings.ToLower(string(p.product)), "_", "-")
 }
 
 // Request membentuk URL Area API. Tidak ada ETag dari FIRMS.
@@ -86,8 +101,8 @@ var (
 
 // Parse membaca CSV menjadi event raw.fire.firms. Baris yang rusak ditolak
 // sendiri-sendiri; header yang tidak dikenali menolak seluruh payload.
-func (c *Connector) Parse(body []byte, fetchedAt time.Time) ([]ports.Event, []ports.Rejection, error) {
-	inst, _ := c.product.Instrument()
+func (p *Parser) Parse(body []byte, fetchedAt time.Time) ([]ports.Event, []ports.Rejection, error) {
+	inst, _ := p.product.Instrument()
 	want := viirsColumns
 	if inst == fire.MODIS {
 		want = modisColumns
@@ -117,7 +132,7 @@ func (c *Connector) Parse(body []byte, fetchedAt time.Time) ([]ports.Event, []po
 		if errors.Is(err, io.EOF) {
 			break
 		}
-		key := fmt.Sprintf("%s:baris-%d", c.product, line)
+		key := fmt.Sprintf("%s:baris-%d", p.product, line)
 		if err != nil {
 			rejected = append(rejected, ports.Rejection{Key: key, Reason: err})
 			continue
@@ -128,7 +143,7 @@ func (c *Connector) Parse(body []byte, fetchedAt time.Time) ([]ports.Event, []po
 			}
 			return ""
 		}
-		d, err := c.detection(inst, get)
+		d, err := p.detection(inst, get)
 		if err == nil {
 			key = d.ID()
 			err = d.Validate(fetchedAt)
@@ -152,7 +167,7 @@ func (c *Connector) Parse(body []byte, fetchedAt time.Time) ([]ports.Event, []po
 }
 
 // detection membaca satu baris tanpa memvalidasi.
-func (c *Connector) detection(inst fire.Instrument, get func(string) string) (fire.Detection, error) {
+func (p *Parser) detection(inst fire.Instrument, get func(string) string) (fire.Detection, error) {
 	var errs []error
 	num := func(name string) float64 {
 		v, err := strconv.ParseFloat(get(name), 64)
@@ -169,7 +184,7 @@ func (c *Connector) detection(inst fire.Instrument, get func(string) string) (fi
 		return &v
 	}
 	d := fire.Detection{
-		Product: c.product, Satellite: get("satellite"), Instrument: fire.Instrument(strings.ToUpper(get("instrument"))),
+		Product: p.product, Satellite: get("satellite"), Instrument: fire.Instrument(strings.ToUpper(get("instrument"))),
 		Lat: round5(num("latitude")), Lon: round5(num("longitude")),
 		ScanKm: num("scan"), TrackKm: num("track"), Version: get("version"),
 	}

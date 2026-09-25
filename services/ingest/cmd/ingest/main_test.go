@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/archiveurl"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/nopub"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/sysclock"
 )
@@ -24,6 +25,43 @@ func TestConfig(t *testing.T) {
 	}
 	if _, err := config(lookup(map[string]string{"LOG_LEVEL": "cerewet"})); err == nil {
 		t.Fatal("level log salah harus ditolak")
+	}
+}
+
+func TestConfigArchive(t *testing.T) {
+	s, err := config(lookup(map[string]string{
+		"INGEST_ARCHIVE_URL":       " s3://siaga-arsip/raw?endpoint=http://127.0.0.1:3900 ",
+		"ARCHIVE_S3_ACCESS_KEY_ID": "GK1", "ARCHIVE_S3_SECRET_ACCESS_KEY": " rahasia ",
+	}))
+	if err != nil || s.archiveURL != "s3://siaga-arsip/raw?endpoint=http://127.0.0.1:3900" ||
+		s.archiveCreds.AccessKeyID != "GK1" || s.archiveCreds.SecretAccessKey != "rahasia" {
+		t.Fatalf("%+v, %v", s, err)
+	}
+	// Nama lama fase 1a–1d tetap berlaku sebagai folder.
+	if s, err := config(lookup(map[string]string{"INGEST_ARCHIVE_DIR": "/tmp/arsip"})); err != nil || s.archiveURL != "/tmp/arsip" {
+		t.Fatalf("%+v, %v", s, err)
+	}
+	if _, err := config(lookup(map[string]string{"INGEST_ARCHIVE_DIR": "/a", "INGEST_ARCHIVE_URL": "/b"})); err == nil {
+		t.Fatal("dua pengaturan arsip sekaligus harus ditolak")
+	}
+}
+
+func TestOpenArchive(t *testing.T) {
+	log := slog.New(slog.DiscardHandler)
+	if a, err := openArchive(t.Context(), settings{}, log); err != nil || a != nil {
+		t.Fatal(a, err)
+	}
+	a, err := openArchive(t.Context(), settings{archiveURL: t.TempDir()}, log)
+	if err != nil || a == nil {
+		t.Fatal(a, err)
+	}
+	if _, err := openArchive(t.Context(), settings{archiveURL: "s3://siaga-arsip"}, log); err == nil {
+		t.Fatal("s3 tanpa endpoint harus gagal")
+	}
+	// Garage tidak jalan: gagal saat start, bukan diam-diam tanpa arsip.
+	bad := settings{archiveURL: "s3://siaga-arsip?endpoint=http://127.0.0.1:1", archiveCreds: archiveurl.Credentials{AccessKeyID: "GK1", SecretAccessKey: "rahasia-uji"}}
+	if _, err := openArchive(t.Context(), bad, log); err == nil {
+		t.Fatal("bucket yang tidak terjangkau harus gagal")
 	}
 }
 

@@ -1,6 +1,7 @@
 // Package emit berisi langkah bersama semua use case ingest: mengarsipkan
 // payload mentah dengan kunci baku dan menerbitkan event dengan ID
-// deterministik. Dipakai polling feed tunggal, feed CAP, dan sapuan prakiraan.
+// deterministik. Dipakai polling feed tunggal, feed CAP, sapuan prakiraan,
+// serta kebalikannya (Unarchive) untuk replay dan verifikasi arsip.
 package emit
 
 import (
@@ -9,9 +10,12 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
+	"io"
 	"time"
 
+	"github.com/ramirezzServer/siaga/services/ingest/internal/domain/archivekey"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/domain/eventid"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/ports"
 )
@@ -22,9 +26,9 @@ func Sum(b []byte) string {
 	return hex.EncodeToString(d[:])
 }
 
-// ArchiveKey membentuk kunci arsip <konektor>/<YYYY>/<MM>/<DD>/<hhmmss>Z-<sha256[:12]>.<ext>.gz (UTC).
+// ArchiveKey membentuk kunci arsip baku (lihat domain/archivekey).
 func ArchiveKey(connector, ext, sum string, at time.Time) string {
-	return fmt.Sprintf("%s/%s-%s.%s.gz", connector, at.UTC().Format("2006/01/02/150405Z"), sum[:min(12, len(sum))], ext)
+	return archivekey.Build(connector, ext, sum, at)
 }
 
 // Archive mengompres body lalu menyimpannya di arsip. sum adalah Sum(body).
@@ -67,4 +71,39 @@ func Publish(ctx context.Context, pub ports.Publisher, ev ports.Event, content [
 		return res, fmt.Errorf("menerbitkan %s ke %s: %w", ev.Key(), msg.Subject, err)
 	}
 	return res, nil
+}
+
+// ErrCorrupt menandai objek arsip yang tidak bisa dipercaya: kunci tidak
+// baku, gzip rusak, terlalu besar, atau SHA-256 isinya tidak cocok dengan kunci.
+var ErrCorrupt = errors.New("objek arsip rusak")
+
+// DefaultMaxPayload membatasi payload hasil dekompresi (bom gzip).
+const DefaultMaxPayload = 256 << 20
+
+// Unarchive adalah kebalikan Archive: membaca kunci baku, mendekompresi data,
+// dan memastikan SHA-256 payload cocok dengan potongan di kunci. Mengembalikan
+// payload beserta SHA-256 penuhnya.
+func Unarchive(key string, data []byte, maxPayload int64) (k archivekey.Key, body []byte, sum string, err error) {
+	if k, err = archivekey.Parse(key); err != nil {
+		return k, nil, "", fmt.Errorf("%w: %w", ErrCorrupt, err)
+	}
+	zr, err := gzip.NewReader(bytes.NewReader(data))
+	if err != nil {
+		return k, nil, "", fmt.Errorf("%w: %s: gzip: %w", ErrCorrupt, key, err)
+	}
+	body, err = io.ReadAll(io.LimitReader(zr, maxPayload+1))
+	if err == nil {
+		err = zr.Close()
+	}
+	if err != nil {
+		return k, nil, "", fmt.Errorf("%w: %s: gzip: %w", ErrCorrupt, key, err)
+	}
+	if int64(len(body)) > maxPayload {
+		return k, nil, "", fmt.Errorf("%w: %s: payload lebih dari %d byte", ErrCorrupt, key, maxPayload)
+	}
+	sum = Sum(body)
+	if !k.Matches(sum) {
+		return k, nil, "", fmt.Errorf("%w: %s: SHA-256 isi %s tidak cocok dengan kunci", ErrCorrupt, key, sum[:archivekey.SumLen])
+	}
+	return k, body, sum, nil
 }

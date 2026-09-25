@@ -6,7 +6,57 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/archivetest"
+	"github.com/ramirezzServer/siaga/services/ingest/internal/ports"
 )
+
+func TestConformance(t *testing.T) {
+	archivetest.Run(t, func(t *testing.T) ports.ArchiveStore {
+		a, err := New(t.TempDir())
+		if err != nil {
+			t.Fatal(err)
+		}
+		return a
+	}, archivetest.Options{Many: 1200})
+}
+
+func TestListHidesTempFilesAndRejectsEscapes(t *testing.T) {
+	a, err := New(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := t.Context()
+	if err := a.Put(ctx, "c/x.gz", []byte("1")); err != nil {
+		t.Fatal(err)
+	}
+	// Sisa file sementara dari proses yang mati di tengah Put.
+	if err := os.WriteFile(filepath.Join(a.Root(), "c", ".tmp-123"), []byte("setengah"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	var keys []string
+	for o, err := range a.List(ctx, "", "") {
+		if err != nil {
+			t.Fatal(err)
+		}
+		keys = append(keys, o.Key)
+	}
+	if len(keys) != 1 || keys[0] != "c/x.gz" {
+		t.Fatalf("%v", keys)
+	}
+	if _, err := a.Get(ctx, "c/.tmp-123"); !errors.Is(err, ErrInvalidKey) {
+		t.Fatalf("Get file sementara: %v", err)
+	}
+	for _, prefix := range []string{"../", "a/../../b/", `a\b`} {
+		var got error
+		for _, err := range a.List(ctx, prefix, "") {
+			got = err
+		}
+		if !errors.Is(got, ErrInvalidKey) {
+			t.Errorf("List(%q) = %v", prefix, got)
+		}
+	}
+}
 
 func TestPut(t *testing.T) {
 	a, err := New(filepath.Join(t.TempDir(), "arsip"))

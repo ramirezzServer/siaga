@@ -40,9 +40,9 @@ import (
 	"github.com/ramirezzServer/siaga/libs/go/platform/envx"
 	"github.com/ramirezzServer/siaga/libs/go/platform/logx"
 	"github.com/ramirezzServer/siaga/libs/go/platform/natsx"
+	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/archiveurl"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/bmkg"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/firms"
-	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/fsarchive"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/httpfetch"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/httpstatus"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/jspub"
@@ -74,13 +74,16 @@ func main() {
 }
 
 type settings struct {
-	natsURL     string
-	archiveDir  string
-	httpAddr    string
-	connectors  []string
-	bmkgBaseURL string
-	usgsURL     string
-	logLevel    slog.Level
+	natsURL string
+	// archiveURL: folder, file:///folder, atau s3://bucket/awalan?endpoint=...
+	// (adapters/archiveurl). Kosong = payload mentah tidak diarsipkan.
+	archiveURL   string
+	archiveCreds archiveurl.Credentials
+	httpAddr     string
+	connectors   []string
+	bmkgBaseURL  string
+	usgsURL      string
+	logLevel     slog.Level
 
 	capBaseURL   string
 	capProvinces []string
@@ -109,8 +112,12 @@ type settings struct {
 func config(lookup envx.Lookup) (settings, error) {
 	env := envx.NewReader(lookup)
 	s := settings{
-		natsURL:           env.Default("NATS_URL", "nats://127.0.0.1:4222"),
-		archiveDir:        env.Default("INGEST_ARCHIVE_DIR", ""),
+		natsURL:    env.Default("NATS_URL", "nats://127.0.0.1:4222"),
+		archiveURL: strings.TrimSpace(env.Default("INGEST_ARCHIVE_URL", "")),
+		archiveCreds: archiveurl.Credentials{
+			AccessKeyID:     strings.TrimSpace(env.Default("ARCHIVE_S3_ACCESS_KEY_ID", "")),
+			SecretAccessKey: strings.TrimSpace(env.Default("ARCHIVE_S3_SECRET_ACCESS_KEY", "")),
+		},
 		httpAddr:          env.Default("INGEST_HTTP_ADDR", "127.0.0.1:8081"),
 		bmkgBaseURL:       env.Default("BMKG_TEWS_BASE_URL", bmkg.DefaultTEWSBaseURL),
 		usgsURL:           env.Default("USGS_SUMMARY_URL", usgs.DefaultSummaryURL),
@@ -132,6 +139,13 @@ func config(lookup envx.Lookup) (settings, error) {
 		firmsBaseURL:        env.Default("FIRMS_BASE_URL", firms.DefaultBaseURL),
 	}
 	var errs []error
+	// INGEST_ARCHIVE_DIR (fase 1a–1d) tetap diterima sebagai folder arsip.
+	switch dir := strings.TrimSpace(env.Default("INGEST_ARCHIVE_DIR", "")); {
+	case dir != "" && s.archiveURL != "":
+		errs = append(errs, errors.New("isi salah satu saja: INGEST_ARCHIVE_URL atau INGEST_ARCHIVE_DIR"))
+	case dir != "":
+		s.archiveURL = dir
+	}
 	level, err := logx.ParseLevel(env.Default("LOG_LEVEL", "info"))
 	errs = append(errs, err)
 	s.logLevel = level
@@ -316,6 +330,27 @@ func keyedSources(cfg settings, d deps, explicit func(string) bool) ([]runner.Jo
 	return jobs, nil
 }
 
+// openArchive membuka arsip payload mentah dan memastikan bisa ditulis.
+// Arsip yang tidak bisa dibuka menggagalkan start (salah konfigurasi harus
+// kelihatan); galat arsip saat berjalan hanya dicatat per polling.
+func openArchive(ctx context.Context, cfg settings, log *slog.Logger) (ports.Archive, error) {
+	if cfg.archiveURL == "" {
+		log.Warn("INGEST_ARCHIVE_URL kosong; payload mentah tidak diarsipkan")
+		return nil, nil
+	}
+	store, err := archiveurl.Open(cfg.archiveURL, cfg.archiveCreds, nil)
+	if err != nil {
+		return nil, err
+	}
+	checkCtx, cancel := context.WithTimeout(ctx, 15*time.Second)
+	defer cancel()
+	if err := store.Check(checkCtx); err != nil {
+		return nil, err
+	}
+	log.Info("arsip payload aktif", slog.String("lokasi", store.Location()))
+	return store, nil
+}
+
 // deps adalah adapter yang dipakai bersama semua konektor.
 type deps struct {
 	fetch    ports.Fetcher
@@ -412,18 +447,12 @@ func run() error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	var archive ports.Archive
-	if cfg.archiveDir != "" {
-		a, err := fsarchive.New(cfg.archiveDir)
-		if err != nil {
-			return err
-		}
-		archive = a
-		log.Info("arsip payload aktif", slog.String("dir", a.Root()))
-	} else if !*publish {
-		return errors.New("mode rekam (-publish=false) butuh INGEST_ARCHIVE_DIR")
-	} else {
-		log.Warn("INGEST_ARCHIVE_DIR kosong; payload mentah tidak diarsipkan")
+	archive, err := openArchive(ctx, cfg, log)
+	if err != nil {
+		return err
+	}
+	if archive == nil && !*publish {
+		return errors.New("mode rekam (-publish=false) butuh INGEST_ARCHIVE_URL")
 	}
 
 	var pub ports.Publisher = &nopub.Publisher{}

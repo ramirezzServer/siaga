@@ -4,7 +4,9 @@ package ports
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"iter"
 	"strings"
 	"time"
 )
@@ -66,6 +68,31 @@ func (e *RetryAfterError) Error() string {
 // Archive menyimpan payload mentah. Put harus idempotent untuk key yang sama.
 type Archive interface {
 	Put(ctx context.Context, key string, data []byte) error
+}
+
+// ErrArchiveNotFound dikembalikan ArchiveReader.Get untuk kunci yang tidak ada.
+var ErrArchiveNotFound = errors.New("objek arsip tidak ditemukan")
+
+// ArchiveObject adalah satu entri daftar arsip.
+type ArchiveObject struct {
+	Key  string
+	Size int64
+}
+
+// ArchiveReader membaca arsip untuk replay, verifikasi, dan penyalinan.
+type ArchiveReader interface {
+	// Get membaca isi objek apa adanya (payload masih ter-gzip).
+	Get(ctx context.Context, key string) ([]byte, error)
+	// List mengembalikan objek berawalan prefix yang kuncinya lebih besar dari
+	// startAfter (kosong = dari awal), urut byte kunci seperti ListObjectsV2
+	// S3. Iterasi berhenti di galat pertama.
+	List(ctx context.Context, prefix, startAfter string) iter.Seq2[ArchiveObject, error]
+}
+
+// ArchiveStore adalah arsip yang bisa ditulis dan dibaca.
+type ArchiveStore interface {
+	Archive
+	ArchiveReader
 }
 
 // Message adalah satu pesan yang siap diterbitkan.

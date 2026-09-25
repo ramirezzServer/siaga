@@ -112,3 +112,39 @@ func TestContentAndPublish(t *testing.T) {
 		t.Fatalf("err = %v", err)
 	}
 }
+
+func TestUnarchive(t *testing.T) {
+	at := time.Date(2026, 9, 24, 7, 20, 5, 0, time.UTC)
+	body := []byte(`{"gempa":1}`)
+	a := memArchive{}
+	key, err := Archive(t.Context(), a, "bmkg-autogempa", "json", Sum(body), body, at)
+	if err != nil {
+		t.Fatal(err)
+	}
+	k, got, sum, err := Unarchive(key, a[key], 1<<20)
+	if err != nil || !bytes.Equal(got, body) || sum != Sum(body) || k.Connector != "bmkg-autogempa" || !k.FetchedAt.Equal(at) {
+		t.Fatal(k, got, sum, err)
+	}
+	gz := func(b []byte) []byte {
+		var buf bytes.Buffer
+		zw := gzip.NewWriter(&buf)
+		_, _ = zw.Write(b)
+		_ = zw.Close()
+		return buf.Bytes()
+	}
+	for name, tc := range map[string]struct {
+		key  string
+		data []byte
+		max  int64
+	}{
+		"kunci tidak baku": {"sembarang.gz", a[key], 1 << 20},
+		"bukan gzip":       {key, []byte("bukan gzip"), 1 << 20},
+		"gzip terpotong":   {key, a[key][:len(a[key])-6], 1 << 20},
+		"isi lain":         {key, gz([]byte("isi lain")), 1 << 20},
+		"terlalu besar":    {key, a[key], 3},
+	} {
+		if _, _, _, err := Unarchive(tc.key, tc.data, tc.max); !errors.Is(err, ErrCorrupt) {
+			t.Errorf("%s: %v", name, err)
+		}
+	}
+}

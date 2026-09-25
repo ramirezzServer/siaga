@@ -149,7 +149,7 @@ func FuzzParseFIRMS(f *testing.F) {
 		if modis {
 			p = fire.MODISProduct
 		}
-		c := &Connector{base: DefaultBaseURL, key: key, product: p, box: area.JawaBarat}
+		c := &Connector{Parser: Parser{product: p}, base: DefaultBaseURL, key: key, box: area.JawaBarat}
 		events, _, err := c.Parse(body, fetched)
 		if err != nil && !errors.Is(err, ErrStructure) {
 			t.Fatalf("galat tanpa ErrStructure: %v", err)
@@ -188,5 +188,21 @@ func TestRecordedPayloads(t *testing.T) {
 	}
 	if total < 600 {
 		t.Fatalf("hanya %d deteksi", total)
+	}
+}
+
+func TestParsersMatchConnectors(t *testing.T) {
+	conns, err := NewConnectors(DefaultBaseURL, key, area.JawaBarat)
+	if err != nil {
+		t.Fatal(err)
+	}
+	parsers := NewParsers()
+	if len(parsers) != len(conns) {
+		t.Fatal(len(parsers), len(conns))
+	}
+	for i, p := range parsers {
+		if p.Name() != conns[i].Name() {
+			t.Fatalf("%s != %s", p.Name(), conns[i].Name())
+		}
 	}
 }
