@@ -2,9 +2,41 @@
 
 Dokumen ini adalah titik lanjut untuk sesi kerja berikutnya, termasuk chat baru dengan asisten AI. Perbarui setiap akhir sesi.
 
-## Status: Fase 1e-1 selesai di workspace asisten, menunggu verifikasi di WSL (2026-09-25)
+## Status: Fase 1e-2a selesai di workspace asisten, menunggu verifikasi di WSL (2026-09-25)
 
-Fase 0 sampai 1d-2 ter-commit dan CI hijau (1d-2 di `70b4700`). Fase 1e dipecah tiga: **1e-1** arsip Garage + replay (bagian ini), **1e-2** observability + deploy, **1e-3** backfill + kalibrasi (lihat Berikutnya).
+Fase 0 sampai 1e-1 ter-commit (1e-1 di `2da995a`). Fase 1e dipecah: **1e-1** arsip Garage + replay, **1e-2a** OpenTelemetry + dashboard (bagian ini), **1e-2b** deploy (Dockerfile, manifest, collector, SOPS, retensi dan backup arsip), **1e-3** backfill + kalibrasi (lihat Berikutnya).
+
+### Fase 1e-2a: OpenTelemetry dan dashboard pipa data
+
+| Bagian        | Isi                                                                                                                                                                                                                                                                                   | Terverifikasi di workspace asisten                                                                                                                                                                                         |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Platform      | `otelx` (SDK dari env standar OTLP/HTTP, noop tanpa endpoint, resource `siaga/<layanan>`, metrik runtime Go, galat ekspor dibatasi), `natsx` (carrier header, span `send`/`process`, gauge stream dan consumer JetStream), `logx` (`trace_id`/`span_id`, handler OTLP tambahan)       | Exporter terhadap server OTLP tiruan (ketiga sinyal + header auth); `FuzzValidTraceParent` (sama dengan constraint database); trace melintasi NATS dalam proses                                                            |
+| ingest        | Adapter `telemetry`: span per polling, per kode sapuan, per request HTTP (URL tersamar), per tulis arsip; histogram `http.client.request.duration`; gauge umur data, kegagalan beruntun, sisa anggaran; header `Siaga-Fetched-At` dan `traceparent` di `raw.*`; `ratelimit.Available` | Coverage adapter 99%; `FuzzAvailable`; `TestPublishPropagatesTrace`                                                                                                                                                        |
+| geo-processor | Span consumer lanjut dari header, histogram pemrosesan/antrean/latensi pipa, span dan histogram per query (`pgx.QueryTracer`), `hazard.outbox.traceparent` (migrasi 00006) diteruskan relay, gauge outbox dan metrik dari statistik consumer                                          | `TestTraceFromRawToHazard` (PostgreSQL asli: trace `raw.*` → query → outbox → `hazard.quake.created`), `TestOutboxTraceParentAndBacklog`, migrasi naik-turun-naik                                                          |
+| Grafana       | Profil Compose `obs` (`grafana/otel-lgtm:0.34.0`, Grafana di `:3300`, OTLP di `:4318`), `make obs-up`/`obs-down`, dashboard "SIAGA — Pipa data" (31 panel) di-provision, panduan Grafana Cloud                                                                                        | ingest + geo-processor jalan terhadap sumber tiruan, NATS, PostgreSQL, dan Prometheus 3.14 / Tempo 3.0.3 / Loki 3.7.8 (versi di image): semua query dashboard mengembalikan data, trace gempa lengkap 20 span dalam ±90 ms |
+| Repo          | ADR 0015, `docs/events.md` (header), `docs/setup/grafana-cloud.md`, README, `.env.example`, target fuzz baru di `make fuzz` dan CI                                                                                                                                                    | —                                                                                                                                                                                                                          |
+
+### Verifikasi yang perlu dijalankan di WSL (1e-2a)
+
+```bash
+bash "/mnt/c/KULIAH/PROJECT CODE/siaga-titipan/terapkan-fase-1e-2a.sh"   # deps, check, commit
+make up migrate        # migrasi 00006
+make test-integration  # termasuk TestTraceFromRawToHazard
+make obs-up            # unduh image otel-lgtm (±1 GB) lalu jalankan
+# isi OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4318 di .env, lalu:
+make ingest            # terminal 1; log start: "trace":true,"metrics":true,"logs":true
+make geo               # terminal 2
+```
+
+Buka http://127.0.0.1:3300 (dashboard "SIAGA — Pipa data" jadi halaman utama). Setelah ±5 menit: panel keterlambatan sumber terisi semua konektor, dan tabel "Trace gempa terbaru" berisi trace yang bisa diklik (menu Explore → Tempo juga bisa mencari `{name="poll bmkg-autogempa"}`). Tampilan panel di Grafana 13 belum pernah dilihat asisten (hanya query-nya yang diuji), jadi laporkan panel yang kosong atau berantakan.
+
+### Temuan yang perlu ditindaklanjuti (1e-2a)
+
+- **Keputusan retensi arsip masih menunggu data seminggu** (temuan 1e-1); pindah ke 1e-2b bersama backup ke Oracle Object Storage. Panel "Arsip payload mentah" kini menunjukkan byte per detik yang ditulis.
+- Pesan `hazard.*.expired` dari putaran kedaluwarsa tidak punya trace induk (putaran berjalan di luar pemrosesan pesan); span penerbitannya menjadi root sendiri.
+- Bridge log (`otel/log`, `otel/sdk/log`, `otlploghttp`, `otelslog`) masih v0.x di OpenTelemetry Go; API-nya bisa berubah saat Renovate menaikkan versi.
+- `elapsed` di log polling tercetak dalam nanodetik (JSON bawaan `slog.Duration`), sama dengan utang `/status`; histogram `siaga_ingest_poll_duration_seconds` sudah dalam detik.
+- Metrik server NATS dan Garage belum dikumpulkan (butuh collector di cluster, 1e-2b).
 
 ### Fase 1e-1: arsip di Garage dan replay dari arsip
 
@@ -147,7 +179,7 @@ Kontrak `siaga.raw.v1`, stream `RAW`/`HAZARD`, layanan ingest dengan konektor BM
 ## Utang kecil yang diketahui
 
 - Compose lite memakai `nats:2.11-alpine`, sedangkan test memakai server 2.15 dalam proses. Replay 1c dan 1d-1 sudah dijalankan dengan binary `nats-server` 2.11.9 tanpa masalah; naikkan image saat Renovate aktif.
-- ingest dan geo-processor belum punya Dockerfile dan manifest Kubernetes; dijalankan lewat `make ingest` dan `make geo`. Garage juga baru ada di Compose lite. Ketiganya masuk fase 1e-2.
+- ingest dan geo-processor belum punya Dockerfile dan manifest Kubernetes; dijalankan lewat `make ingest` dan `make geo`. Garage dan Grafana lokal juga baru ada di Compose lite. Semuanya masuk fase 1e-2b.
 - `/status` geo-processor menampilkan ambang dengan durasi dalam nanodetik (JSON bawaan `time.Duration`). Kosmetik; rapikan saat dashboard Grafana dibuat.
 - Renovate sudah dikonfigurasi (`renovate.json`) tetapi GitHub App Renovate belum dipasang di repo.
 - Runner `ubuntu-latest` pindah ke Ubuntu 26 mulai 2026-10-19. Pantau run CI pertama setelah tanggal itu.
@@ -164,7 +196,8 @@ Target demo fase 1: dashboard Grafana berisi data live semua sumber.
 - [x] **1d-1** Open-Meteo (cuaca grid 0,25°, kualitas udara CAMS, debit GloFAS 38 titik) dan schema `ts` (`site`, `series`, hypertable `weather_forecast`, `aq_forecast`, `river_discharge`), consumer `raw.forecast.bmkg` → `ts.weather_forecast` (ADR 0011–0012).
 - [x] **1d-2** OpenAQ v3 (stasiun dalam kotak Jawa Barat tiap 15 menit, `X-API-Key`) → `raw.aq.openaq` → `ts.aq_observation`; NASA FIRMS (VIIRS/MODIS NRT, satu kotak tiap 30 menit, MAP_KEY) → `raw.fire.firms` → `ts.hotspot`; key opsional di `.env`, disamarkan di galat dan log (ADR 0013). Menunggu rekaman asli.
 - [x] **1e-1** Arsip payload mentah ke Garage (Compose lite, adapter S3, `INGEST_ARCHIVE_URL`), perintah `archive` (ls, verify, cp) dan `replay` dari arsip ke NATS urut waktu ambil (ADR 0014). Menunggu verifikasi di WSL.
-- [ ] **1e-2** OpenTelemetry (trace ID di header `traceparent` NATS, metrik per sumber: terlambat, galat, kuota) + dashboard Grafana Cloud (butuh akun gratis); Dockerfile + manifest Kubernetes ingest, geo-processor, dan Garage (key OpenAQ/FIRMS dan kredensial arsip lewat Secret SOPS); retensi arsip dan backup Garage ke Oracle Object Storage.
+- [x] **1e-2a** OpenTelemetry di ingest dan geo-processor (trace lewat header `traceparent` NATS dan kolom outbox, metrik sumber/kuota/antrean/latensi/query, log OTLP), Grafana lokal `make obs-up` dan dashboard pipa data, panduan Grafana Cloud (ADR 0015). Menunggu verifikasi di WSL.
+- [ ] **1e-2b** Dockerfile ingest dan geo-processor (`-ldflags -X main.version`), manifest Kubernetes ingest, geo-processor, Garage, dan OTel Collector (ke Grafana Cloud, plus metrik server NATS dan Garage); key OpenAQ/FIRMS, kredensial arsip, dan token Grafana Cloud lewat Secret SOPS; retensi arsip (lifecycle Garage, setelah seminggu data) dan backup Garage ke Oracle Object Storage.
 - [ ] **1e-3** Backfill dan kalibrasi: reanalisis GloFAS (`consolidated_v4`, ±3.900 panggilan) → ambang persentil banjir → `hazard.flood.*` (setelah 17 titik sungai bertanda diperiksa manual); arsip FIRMS standar (SP) → ambang titik api → `hazard.fire.*`; backfill jam OpenAQ yang terlewat (`/v3/sensors/{id}/hours`); set berlabel T4 dan kalibrasi radius dirasakan dari arsip gempa; replay CAP/prakiraan/OpenAQ (metadata request di objek arsip).
 
 Titik pantau sungai (38 titik GloFAS + 7 sub-DAS indeks hujan) dan aturan tingkat peringatan ada di PRD, bagian Sungai yang dipantau dan Aturan bisnis.
@@ -186,6 +219,8 @@ Workspace cloud asisten tidak bisa menjangkau `proxy.golang.org`, `go.dev`, atau
 - Menjalankan skrip pihak ketiga yang diunduh (misal `extract_tsv.py` repo-gempa) ditolak kebijakan workspace; pakai data yang sudah jadi.
 
 - Sesi 1e-1: membangun Go dari source sempat ditolak pemeriksa keamanan workspace dan baru jalan setelah pengguna mengizinkan eksplisit. golangci-lint butuh mirror GitHub untuk semua dependensi vanity; `codeberg.org` (go-errorlint v1.9.0, garif) diblokir, jadi dipakai mirror GitHub v1.8.0/v0.1.0 dengan nama modul diganti, dan `decorder` (GitLab) dibuang. Registry Docker juga diblokir, jadi Garage asli tidak bisa dijalankan di workspace; uji S3 memakai server tiruan (`s3archive/s3test`).
+
+- Sesi 1e-2a: pemeriksa keamanan workspace kembali menolak `GOSUMDB=off` sampai pengguna mengizinkan. Mirror GitHub tambahan: `open-telemetry/opentelemetry-go` (v1.46.0, semua submodul), `opentelemetry-go-contrib` (tag v1.46.0 untuk `bridges/otelslog` v0.20.1 dan `instrumentation/runtime` v0.71.0), `opentelemetry-proto-go` (`otlp/v1.11.0`), `opentelemetry-go-instrumentation` (`sdk/v1.2.1`), `grpc/grpc-go` v1.83.2, `googleapis/go-genproto` (sparse `googleapis/api` dan `googleapis/rpc`), `uber-go/multierr` v1.11.0 (untuk goose). Modul non-GitHub yang dibawa `go.mod` grpc (cloud.google.com/…, dll.) cukup `go.mod` kosong. goose dibangun dengan tag `no_clickhouse no_libsql no_mssql no_mysql no_sqlite3 no_vertica no_ydb`. Rilis GitHub Prometheus, Tempo, dan Loki bisa diunduh (cek SHA256) untuk menguji query dashboard; image Docker dan Grafana (dl.grafana.com) tidak.
 
 Karena itu `go.sum` dari asisten tidak dipakai: patch tidak menyertakan `go.sum`/`go.work.sum`, dan `make deps` di WSL yang membuatnya.
 

@@ -4,11 +4,13 @@ Event antar-layanan didefinisikan di `contracts/proto` dan dikirim lewat NATS Je
 
 ## Header pesan
 
-| Header         | Isi                                                                                                      |
-| -------------- | -------------------------------------------------------------------------------------------------------- |
-| `Nats-Msg-Id`  | ID deterministik untuk deduplikasi JetStream (aturannya per jenis event, lihat di bawah)                 |
-| `Content-Type` | `application/protobuf`                                                                                   |
-| `traceparent`  | W3C Trace Context. Mulai diisi saat OpenTelemetry dipasang (fase 1e); konsumen harus toleran bila kosong |
+| Header             | Isi                                                                                                                                                                                                                                               |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Nats-Msg-Id`      | ID deterministik untuk deduplikasi JetStream (aturannya per jenis event, lihat di bawah)                                                                                                                                                          |
+| `Content-Type`     | `application/protobuf`                                                                                                                                                                                                                            |
+| `traceparent`      | W3C Trace Context dari span penerbit (ADR 0015). Consumer memulai span pemrosesan sebagai anaknya; `hazard.*` membawa konteks dari pemrosesan `raw.*` penyebabnya (disimpan di `hazard.outbox.traceparent`). Boleh kosong: consumer harus toleran |
+| `tracestate`       | W3C Trace Context, bila ada                                                                                                                                                                                                                       |
+| `Siaga-Fetched-At` | Hanya `raw.*`: waktu ingest mengambil payload (RFC 3339 UTC, sama dengan `meta.fetched_at`), untuk metrik latensi pipa tanpa membuka isi pesan. Pesan dari sebelum fase 1e-2 tidak membawanya                                                     |
 
 ## Stream
 

@@ -30,11 +30,14 @@ make calibrate-dedup  # ukur ambang deduplikasi dengan katalog historis BMKG + U
 make river-snap       # pilih sel GloFAS untuk 38 titik pantau sungai (±800 lokasi Open-Meteo)
 make archive-ls       # isi arsip payload mentah per konektor; archive-verify memeriksa integritasnya
 make replay FROM=2026-09-24 TO=2026-09-25   # putar ulang arsip ke NATS, urut waktu ambil asli
+make obs-up           # Grafana + Prometheus + Tempo + Loki lokal, dashboard di http://127.0.0.1:3300
 ```
 
 OpenAQ dan NASA FIRMS butuh key gratis: isi `OPENAQ_API_KEY` (daftar di explore.openaq.org) dan `FIRMS_MAP_KEY` (firms.modaps.eosdis.nasa.gov/api/map_key) di `.env`. Tanpa key, ingest tetap jalan tanpa kedua konektor itu.
 
 Payload mentah setiap sumber diarsipkan ke Garage (bucket `siaga-arsip`, awalan `raw/`) dan bisa diputar ulang untuk uji replay atau memulihkan stream NATS (ADR 0014). Arsip lokal dari sebelum fase 1e dipindahkan dengan `make archive-upload`.
+
+ingest dan geo-processor diinstrumentasi OpenTelemetry: satu gempa bisa dilacak dalam satu trace dari polling sumber, arsip, NATS, query PostgreSQL, sampai `hazard.quake.created` terbit, dan dashboard "SIAGA — Pipa data" menampilkan keterlambatan dan galat tiap sumber, sisa kuota request, antrean NATS, latensi pipa, dan query lambat (ADR 0015). Isi `OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4318` di `.env` setelah `make obs-up`, atau arahkan ke Grafana Cloud ([docs/setup/grafana-cloud.md](docs/setup/grafana-cloud.md)).
 
 Profil full (Kubernetes lokal, sama dengan produksi): `make k3d-up && make tilt`.
 
@@ -46,7 +49,7 @@ libs/go/            Library Go bersama (platform, contracts hasil generate)
 packages/           Paket TypeScript (contracts, api-client)
 services/           Layanan: ingest (pengambil data sumber), geo-processor (wilayah, kejadian bahaya, deret waktu)
 infra/db/bootstrap  SQL awal database: ekstensi, role, schema
-deploy/             Image, Compose, k3d, manifest Kubernetes
+deploy/             Image, Compose, k3d, manifest Kubernetes, dashboard Grafana
 scripts/            Skrip pendukung
 docs/               ADR, kalibrasi, panduan setup, handoff
 ```
