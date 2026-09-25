@@ -1,0 +1,21 @@
+# Garage single-node untuk Compose lite (arsip payload mentah ingest, ADR 0014).
+# Secret (rpc_secret, admin_token, metrics_token) dan kunci S3 dibaca dari
+# environment (GARAGE_*), diisi dari .env; tidak ada rahasia di file ini.
+metadata_dir = "/var/lib/garage/meta"
+data_dir = "/var/lib/garage/data"
+# sqlite lebih tahan terhadap mati mendadak (laptop tidur, Docker Desktop
+# berhenti) daripada lmdb bawaan.
+db_engine = "sqlite"
+replication_factor = 1
+
+rpc_bind_addr = "[::]:3901"
+rpc_public_addr = "127.0.0.1:3901"
+
+[s3_api]
+s3_region = "garage"
+api_bind_addr = "[::]:3900"
+root_domain = ".s3.garage.localhost"
+
+[admin]
+# /health tanpa token; /metrics dengan GARAGE_METRICS_TOKEN (Grafana, fase 1e-2).
+api_bind_addr = "[::]:3903"

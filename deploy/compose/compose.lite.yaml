@@ -1,4 +1,5 @@
-# Profil "lite" (~2 GB RAM): data store inti untuk pengembangan harian.
+# Profil "lite" (~2 GB RAM): data store inti dan object storage untuk
+# pengembangan harian.
 # Jalankan dari root repo: make up
 name: siaga
 
@@ -43,6 +44,33 @@ services:
       interval: 5s
       retries: 20
 
+  # Object storage S3 untuk arsip payload mentah (ADR 0014). --single-node
+  # menyusun layout sendiri; --default-bucket membuat bucket dan access key
+  # dari environment bila belum ada (idempotent).
+  garage:
+    image: dxflrs/garage:v2.3.0
+    command: ["/garage", "server", "--single-node", "--default-bucket"]
+    environment:
+      GARAGE_RPC_SECRET: ${GARAGE_RPC_SECRET:?jalankan make env}
+      GARAGE_ADMIN_TOKEN: ${GARAGE_ADMIN_TOKEN:?jalankan make env}
+      GARAGE_METRICS_TOKEN: ${GARAGE_METRICS_TOKEN:?jalankan make env}
+      GARAGE_DEFAULT_ACCESS_KEY: ${ARCHIVE_S3_ACCESS_KEY_ID:?jalankan make env}
+      GARAGE_DEFAULT_SECRET_KEY: ${ARCHIVE_S3_SECRET_ACCESS_KEY:?jalankan make env}
+      GARAGE_DEFAULT_BUCKET: ${ARCHIVE_BUCKET:-siaga-arsip}
+    volumes:
+      - ./garage.toml:/etc/garage.toml:ro
+      - garagemeta:/var/lib/garage/meta
+      - garagedata:/var/lib/garage/data
+    ports:
+      - "127.0.0.1:${GARAGE_S3_PORT:-3900}:3900"
+      - "127.0.0.1:3903:3903"
+    healthcheck:
+      # Image Garage tanpa shell/curl; CLI-nya bertanya ke node lewat RPC.
+      test: ["CMD", "/garage", "status"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
   mailpit:
     image: axllent/mailpit:latest
     ports:
@@ -52,3 +80,5 @@ services:
 volumes:
   pgdata:
   natsdata:
+  garagemeta:
+  garagedata:
