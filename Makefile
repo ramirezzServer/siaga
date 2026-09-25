@@ -42,16 +42,26 @@ hooks: ## Pasang git hook (gitleaks, lint, commitlint)
 	pnpm exec lefthook install
 
 ##@ Lingkungan lokal (Compose lite)
-.PHONY: up down reset logs psql
+.PHONY: up down reset logs psql obs-up obs-down
 up: env ## Jalankan PostgreSQL, NATS, Valkey, Garage, Mailpit
 	$(COMPOSE) up -d --build --wait
 
-down: ## Hentikan layanan (data tetap)
-	$(COMPOSE) down
+down: ## Hentikan layanan, termasuk Grafana lokal (data tetap)
+	$(COMPOSE) --profile obs down
 
 reset: ## Hapus semua data lokal lalu mulai ulang dari nol
-	$(COMPOSE) down -v
+	$(COMPOSE) --profile obs down -v
 	$(MAKE) up
+
+obs-up: env ## Jalankan Grafana + Prometheus + Tempo + Loki lokal (~1 GB RAM), dashboard di http://127.0.0.1:3300
+	$(COMPOSE) --profile obs up -d --wait lgtm
+	@if [[ -z "$${OTEL_EXPORTER_OTLP_ENDPOINT:-}" ]]; then \
+	  echo "Telemetri belum dikirim: isi OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4318 di .env, lalu jalankan ulang make ingest dan make geo."; \
+	else echo "Telemetri dikirim ke $${OTEL_EXPORTER_OTLP_ENDPOINT}"; fi
+	@echo "Grafana: http://127.0.0.1:3300 (dashboard SIAGA, Pipa data)"
+
+obs-down: ## Hentikan Grafana lokal (data telemetri tetap)
+	$(COMPOSE) --profile obs stop lgtm
 
 logs: ## Ikuti log semua layanan
 	$(COMPOSE) logs -f
@@ -165,7 +175,9 @@ test-integration: ## Test integrasi (butuh `make up migrate`; paket dijalankan b
 fuzz: ## Fuzzing singkat semua target fuzz (30 detik per target)
 	@cd services/geo-processor && for t in ./internal/domain/region:FuzzParseCode ./internal/domain/region:FuzzParseLatLngPath ./internal/adapters/cahyadsn:FuzzParseDump ./internal/domain/quake:FuzzClusteringOrderIndependent ./internal/domain/quake:FuzzClusteringInvariantsUnderCrowding ./internal/domain/quake:FuzzApplyOrderIndependent ./internal/domain/quake:FuzzLevelMonotone ./internal/domain/quake:FuzzRuleMatchSymmetric ./internal/app/quakes:FuzzServiceOrderIndependent ./internal/domain/weather:FuzzDeriveOrderIndependent ./internal/app/warnings:FuzzServiceOrderIndependent ./internal/domain/series:FuzzWeatherValidate; do \
 	  go test $${t%%:*} -run='^$$' -fuzz="^$${t##*:}\$$" -fuzztime=30s || exit 1; done
-	@cd services/ingest && for t in ./internal/domain/ratelimit:FuzzWindowBound ./internal/domain/ratelimit:FuzzPriorityHeadroom ./internal/domain/schedule:FuzzNextBounds ./internal/domain/forecast:FuzzOrder ./internal/domain/warning:FuzzParseReferences ./internal/adapters/bmkg:FuzzParse ./internal/adapters/bmkg:FuzzParseCAPDocuments ./internal/adapters/bmkg:FuzzParseForecastDocument ./internal/adapters/usgs:FuzzParse ./internal/adapters/openmeteo:FuzzParse ./internal/domain/airquality:FuzzClean ./internal/adapters/firms:FuzzParseFIRMS ./internal/adapters/openaq:FuzzParseOpenAQ ./internal/domain/archivekey:FuzzParse ./internal/app/replay:FuzzRunOrdered; do \
+	@cd services/ingest && for t in ./internal/domain/ratelimit:FuzzWindowBound ./internal/domain/ratelimit:FuzzPriorityHeadroom ./internal/domain/ratelimit:FuzzAvailable ./internal/domain/schedule:FuzzNextBounds ./internal/domain/forecast:FuzzOrder ./internal/domain/warning:FuzzParseReferences ./internal/adapters/bmkg:FuzzParse ./internal/adapters/bmkg:FuzzParseCAPDocuments ./internal/adapters/bmkg:FuzzParseForecastDocument ./internal/adapters/usgs:FuzzParse ./internal/adapters/openmeteo:FuzzParse ./internal/domain/airquality:FuzzClean ./internal/adapters/firms:FuzzParseFIRMS ./internal/adapters/openaq:FuzzParseOpenAQ ./internal/domain/archivekey:FuzzParse ./internal/app/replay:FuzzRunOrdered; do \
+	  go test $${t%%:*} -run='^$$' -fuzz="^$${t##*:}\$$" -fuzztime=30s || exit 1; done
+	@cd libs/go/platform && for t in ./otelx:FuzzValidTraceParent; do \
 	  go test $${t%%:*} -run='^$$' -fuzz="^$${t##*:}\$$" -fuzztime=30s || exit 1; done
 
 check: lint test ## Semua pemeriksaan sebelum push

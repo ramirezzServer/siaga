@@ -1,0 +1,15 @@
+# Provider dashboard SIAGA untuk Grafana di container otel-lgtm (make obs-up).
+# Dashboard dibaca dari folder yang di-mount Compose; perubahan file JSON
+# terbaca ulang tiap 30 detik, perubahan dari UI tidak disimpan ke file.
+apiVersion: 1
+
+providers:
+  - name: SIAGA
+    folder: SIAGA
+    type: file
+    disableDeletion: true
+    allowUiUpdates: true
+    updateIntervalSeconds: 30
+    options:
+      path: /otel-lgtm/grafana/conf/provisioning/dashboards/siaga
+      foldersFromFilesStructure: false
