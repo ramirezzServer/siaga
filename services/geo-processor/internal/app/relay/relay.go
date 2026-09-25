@@ -16,6 +16,15 @@ import (
 // ContentType untuk semua event biner SIAGA (docs/events.md).
 const ContentType = "application/protobuf"
 
+// HeaderTraceParent adalah header konteks trace W3C (docs/events.md).
+// Relay meneruskan konteks yang tersimpan di outbox lewat header ini;
+// publisher membuat span penerbitan sebagai anaknya.
+const HeaderTraceParent = "traceparent"
+
+// Observer dipanggil setelah setiap percobaan menerbitkan satu pesan outbox
+// (err nil berarti berhasil), misal untuk metrik lama tunggu di outbox.
+type Observer func(ctx context.Context, m ports.OutboxMessage, err error)
+
 // Relay mengosongkan outbox ke publisher.
 type Relay struct {
 	outbox ports.Outbox
@@ -24,6 +33,7 @@ type Relay struct {
 	now    func() time.Time
 	batch  int
 	wake   chan struct{}
+	obs    Observer
 
 	mu    sync.Mutex
 	stats Stats
@@ -42,6 +52,12 @@ func New(outbox ports.Outbox, pub ports.Publisher, log *slog.Logger, now func() 
 	return &Relay{outbox: outbox, pub: pub, log: log, now: now, batch: max(batch, 1), wake: make(chan struct{}, 1)}
 }
 
+// Observe memasang pengamat penerbitan; nil mematikannya. Panggil sebelum Run.
+func (r *Relay) Observe(obs Observer) *Relay {
+	r.obs = obs
+	return r
+}
+
 // Wake meminta relay memeriksa outbox sekarang, tanpa menunggu interval.
 // Tidak pernah memblokir.
 func (r *Relay) Wake() {
@@ -55,7 +71,15 @@ func (r *Relay) Wake() {
 func (r *Relay) Flush(ctx context.Context) (int, error) {
 	total := 0
 	publish := func(ctx context.Context, m ports.OutboxMessage) error {
-		return r.pub.Publish(ctx, m.Subject, m.MsgID, m.Payload, map[string]string{"Content-Type": ContentType})
+		headers := map[string]string{"Content-Type": ContentType}
+		if m.TraceParent != "" {
+			headers[HeaderTraceParent] = m.TraceParent
+		}
+		err := r.pub.Publish(ctx, m.Subject, m.MsgID, m.Payload, headers)
+		if r.obs != nil {
+			r.obs(ctx, m, err)
+		}
+		return err
 	}
 	for {
 		n, err := r.outbox.Drain(ctx, r.batch, publish)

@@ -122,3 +122,46 @@ func TestRunWakesAndStops(t *testing.T) {
 	cancel()
 	<-done
 }
+
+func TestFlushForwardsTraceParentAndObserves(t *testing.T) {
+	created := time.Date(2026, 9, 25, 0, 0, 0, 0, time.UTC)
+	ob := &memOutbox{msgs: []ports.OutboxMessage{
+		{Subject: "hazard.quake.created", MsgID: "a", TraceParent: "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01", CreatedAt: created},
+		{Subject: "hazard.quake.expired", MsgID: "b"},
+		{Subject: "hazard.quake.updated", MsgID: "c"},
+	}}
+	pub := &memPub{failFor: "c"}
+	var seen []string
+	var headers []map[string]string
+	r := New(ob, recordingPub{pub, &headers}, quiet, time.Now, 10).Observe(func(_ context.Context, m ports.OutboxMessage, err error) {
+		seen = append(seen, m.MsgID+":"+map[bool]string{true: "ok", false: "gagal"}[err == nil]+":"+m.CreatedAt.Format(time.RFC3339))
+	})
+	if _, err := r.Flush(context.Background()); err == nil {
+		t.Fatal("galat broker harus dikembalikan")
+	}
+	if len(headers) != 3 || headers[0][HeaderTraceParent] != "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01" || headers[0]["Content-Type"] != ContentType {
+		t.Fatalf("header pertama %v", headers)
+	}
+	if _, ok := headers[1][HeaderTraceParent]; ok {
+		t.Fatalf("pesan tanpa traceparent tidak boleh membawa header kosong: %v", headers[1])
+	}
+	want := []string{"a:ok:2026-09-25T00:00:00Z", "b:ok:0001-01-01T00:00:00Z", "c:gagal:0001-01-01T00:00:00Z"}
+	if len(seen) != 3 || seen[0] != want[0] || seen[1] != want[1] || seen[2] != want[2] {
+		t.Fatalf("pengamat %v", seen)
+	}
+}
+
+// recordingPub menyimpan salinan header setiap percobaan terbit.
+type recordingPub struct {
+	next    *memPub
+	headers *[]map[string]string
+}
+
+func (p recordingPub) Publish(ctx context.Context, subject, msgID string, data []byte, headers map[string]string) error {
+	cp := map[string]string{}
+	for k, v := range headers {
+		cp[k] = v
+	}
+	*p.headers = append(*p.headers, cp)
+	return p.next.Publish(ctx, subject, msgID, data, headers)
+}

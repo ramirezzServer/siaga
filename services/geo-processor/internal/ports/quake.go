@@ -89,6 +89,13 @@ type OutboxMessage struct {
 	// MsgID deterministik untuk deduplikasi JetStream (Nats-Msg-Id).
 	MsgID   string
 	Payload []byte
+	// TraceParent adalah konteks trace W3C saat pesan ditulis ke outbox,
+	// diisi adapter penyimpanan dari context (kosong bila tidak ada span).
+	// Relay meneruskannya sebagai header supaya penerbitan hazard.* masuk
+	// trace yang sama dengan pesan raw.* penyebabnya.
+	TraceParent string
+	// CreatedAt adalah waktu pesan ditulis ke outbox (diisi saat dibaca).
+	CreatedAt time.Time
 }
 
 // ExpiryReason adalah alasan kejadian tidak aktif lagi.

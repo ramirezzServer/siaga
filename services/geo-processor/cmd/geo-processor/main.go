@@ -26,11 +26,13 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
+	"go.opentelemetry.io/otel"
 
 	"github.com/ramirezzServer/siaga/libs/go/contracts/streams"
 	"github.com/ramirezzServer/siaga/libs/go/platform/envx"
 	"github.com/ramirezzServer/siaga/libs/go/platform/logx"
 	"github.com/ramirezzServer/siaga/libs/go/platform/natsx"
+	"github.com/ramirezzServer/siaga/libs/go/platform/otelx"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/adapters/hazardpb"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/adapters/httpstatus"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/adapters/natsjs"
@@ -38,6 +40,7 @@ import (
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/adapters/rawquake"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/adapters/rawseries"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/adapters/rawweather"
+	"github.com/ramirezzServer/siaga/services/geo-processor/internal/adapters/telemetry"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/app/consume"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/app/quakes"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/app/relay"
@@ -50,6 +53,10 @@ import (
 )
 
 const service = "geo-processor"
+
+// version diisi saat build image (-ldflags "-X main.version=..."); dipakai
+// sebagai service.version di telemetri.
+var version = "dev"
 
 func main() {
 	if err := run(); err != nil {
@@ -118,9 +125,19 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	log := logx.New(os.Stderr, service, cfg.logLevel)
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
+	tel, err := otelx.Setup(ctx, otelx.Options{Service: service, Version: version, Log: logx.New(os.Stderr, service, cfg.logLevel)})
+	if err != nil {
+		return err
+	}
+	defer func() {
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		_ = tel.Shutdown(shutdownCtx)
+	}()
+	log := logx.New(os.Stderr, service, cfg.logLevel, tel.LogHandler())
+	log.Info("telemetri", slog.Bool("trace", tel.Enabled(otelx.Traces)), slog.Bool("metrics", tel.Enabled(otelx.Metrics)), slog.Bool("logs", tel.Enabled(otelx.Logs)))
 	return serve(ctx, cfg, log)
 }
 
@@ -129,7 +146,16 @@ func serve(ctx context.Context, cfg settings, log *slog.Logger) error {
 	ctx, stop := context.WithCancel(ctx)
 	defer stop()
 
-	pool, err := pgxpool.New(ctx, cfg.databaseURL)
+	poolCfg, err := pgxpool.ParseConfig(cfg.databaseURL)
+	if err != nil {
+		return fmt.Errorf("konfigurasi database: %w", err)
+	}
+	tracer, err := postgres.NewTracer(otel.GetTracerProvider(), otel.GetMeterProvider())
+	if err != nil {
+		return err
+	}
+	poolCfg.ConnConfig.Tracer = tracer
+	pool, err := pgxpool.NewWithConfig(ctx, poolCfg)
 	if err != nil {
 		return fmt.Errorf("konfigurasi database: %w", err)
 	}
@@ -164,7 +190,12 @@ func serve(ctx context.Context, cfg settings, log *slog.Logger) error {
 		return err
 	}
 	// Outbox dipakai bersama semua jenis bahaya.
-	outbox := relay.New(store, natsjs.NewPublisher(js, streams.Hazard.Name), log, time.Now, 100)
+	meter := otel.GetMeterProvider().Meter(telemetry.Scope)
+	outboxObs, err := telemetry.OutboxObserver(meter)
+	if err != nil {
+		return err
+	}
+	outbox := relay.New(store, natsjs.NewPublisher(js, streams.Hazard.Name), log, time.Now, 100).Observe(outboxObs)
 	quakeHandler, err := consume.New(rawquake.Decode, func(ctx context.Context, r quake.Report) (consume.Outcome, error) {
 		res, err := svc.Process(ctx, r)
 		return consume.Outcome{Changed: res.Changed, Created: res.Created, Updated: res.Updated, Ended: res.Ended}, err
@@ -216,6 +247,36 @@ func serve(ctx context.Context, cfg settings, log *slog.Logger) error {
 		{spec: natsjs.FloodOpenMeteoConsumer, handler: discharge},
 		{spec: natsjs.AirQualityOpenAQConsumer, handler: stations},
 		{spec: natsjs.FireFIRMSConsumer, handler: hotspots},
+	}
+
+	durables := make([]string, len(consumers))
+	for i, c := range consumers {
+		durables[i] = c.spec.Durable
+	}
+	if _, err := natsx.ObserveConsumers(meter, js, streams.Raw.Name, durables...); err != nil {
+		return err
+	}
+	if _, err := natsx.ObserveStreams(meter, js, streams.Raw.Name, streams.Hazard.Name, streams.DLQ.Name); err != nil {
+		return err
+	}
+	if _, err := telemetry.Observe(meter, telemetry.Sources{
+		Consumers: map[string]func() consume.Stats{
+			natsjs.QuakeConsumer.Durable:               quakeHandler.Snapshot,
+			natsjs.WeatherConsumer.Durable:             weatherHandler.Snapshot,
+			natsjs.ForecastBMKGConsumer.Durable:        forecastBMKG.Snapshot,
+			natsjs.ForecastOpenMeteoConsumer.Durable:   forecastGrid.Snapshot,
+			natsjs.AirQualityOpenMeteoConsumer.Durable: airQuality.Snapshot,
+			natsjs.FloodOpenMeteoConsumer.Durable:      discharge.Snapshot,
+			natsjs.AirQualityOpenAQConsumer.Durable:    stations.Snapshot,
+			natsjs.FireFIRMSConsumer.Durable:           hotspots.Snapshot,
+		},
+		Relay: outbox.Snapshot,
+		Backlog: func(ctx context.Context) (telemetry.Backlog, error) {
+			n, oldest, err := store.OutboxBacklog(ctx)
+			return telemetry.Backlog{Pending: n, Oldest: oldest}, err
+		},
+	}); err != nil {
+		return err
 	}
 
 	var consumersReady atomic.Int32
@@ -289,11 +350,7 @@ func serve(ctx context.Context, cfg settings, log *slog.Logger) error {
 			}
 		})
 	}
-	names := make([]string, len(consumers))
-	for i, c := range consumers {
-		names[i] = c.spec.Durable
-	}
-	log.Info("geo-processor berjalan", slog.Any("consumers", names),
+	log.Info("geo-processor berjalan", slog.Any("consumers", durables),
 		slog.String("dedup_cross_source", fmt.Sprintf("%+v", cfg.rules.CrossSource)),
 		slog.Float64("weather_min_coverage", cfg.weather.MinCoverage))
 	<-ctx.Done()

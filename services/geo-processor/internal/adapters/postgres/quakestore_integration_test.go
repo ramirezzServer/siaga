@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/adapters/hazardpb"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/adapters/postgres"
@@ -345,5 +346,70 @@ func TestRegionsWithinAndOutboxLocking(t *testing.T) {
 	}
 	if left := drain(t, store); !slices.Equal(left, []string{"hazard.quake.created"}) {
 		t.Fatalf("sisa outbox %v", left)
+	}
+}
+
+// Konteks trace ikut tersimpan di outbox (ADR 0015): dari span di ctx, atau
+// dari pesan; nilai tidak sah ditolak constraint database.
+func TestOutboxTraceParentAndBacklog(t *testing.T) {
+	p := pool(t)
+	ctx := context.Background()
+	store := postgres.NewQuakeStore(p)
+	if n, oldest, err := store.OutboxBacklog(ctx); err != nil || n != 0 || !oldest.IsZero() {
+		t.Fatalf("outbox kosong: %d %v %v", n, oldest, err)
+	}
+	const fromMsg = "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"
+	tid, _ := trace.TraceIDFromHex("0af7651916cd43dd8448eb211c80319c")
+	sid, _ := trace.SpanIDFromHex("b7ad6b7169203331")
+	spanCtx := trace.ContextWithSpanContext(ctx, trace.NewSpanContext(trace.SpanContextConfig{TraceID: tid, SpanID: sid, TraceFlags: trace.FlagsSampled}))
+	start := time.Now().Add(-time.Second)
+	err := store.InTx(spanCtx, func(tx ports.QuakeTx) error {
+		for _, m := range []ports.OutboxMessage{
+			{Subject: "hazard.quake.created", MsgID: "tp-span", Payload: []byte("1")},
+			{Subject: "hazard.quake.updated", MsgID: "tp-pesan", Payload: []byte("2"), TraceParent: fromMsg},
+			{Subject: "hazard.quake.expired", MsgID: "tp-rusak", Payload: []byte("3"), TraceParent: "rusak"},
+		} {
+			if err := tx.Enqueue(spanCtx, m); err != nil {
+				return err
+			}
+		}
+		return tx.Enqueue(ctx, ports.OutboxMessage{Subject: "hazard.quake.expired", MsgID: "tp-tanpa", Payload: []byte("4")})
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n, oldest, err := store.OutboxBacklog(ctx); err != nil || n != 4 || oldest.Before(start) {
+		t.Fatalf("antrean: %d %v %v", n, oldest, err)
+	}
+	got := map[string]string{}
+	if _, err := store.Drain(ctx, 10, func(_ context.Context, m ports.OutboxMessage) error {
+		if m.CreatedAt.Before(start) {
+			t.Errorf("%s: created_at %v", m.MsgID, m.CreatedAt)
+		}
+		got[m.MsgID] = m.TraceParent
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	want := map[string]string{
+		"tp-span":  "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01",
+		"tp-pesan": fromMsg, "tp-rusak": "", "tp-tanpa": "",
+	}
+	for id, tp := range want {
+		if got[id] != tp {
+			t.Errorf("%s: traceparent %q, ingin %q", id, got[id], tp)
+		}
+	}
+	for _, bad := range []string{
+		"00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-ff",
+		"00-00000000000000000000000000000000-00f067aa0ba902b7-01",
+		"00-4bf92f3577b34da6a3ce929d0e0e4736-0000000000000000-01",
+		"",
+	} {
+		_, err := p.Exec(ctx, `INSERT INTO hazard.outbox (subject, msg_id, payload, traceparent) VALUES ('hazard.quake.created', 'tp-db', '\x00', $1)`, bad)
+		if err == nil {
+			t.Errorf("constraint harus menolak traceparent %q", bad)
+			_, _ = p.Exec(ctx, `DELETE FROM hazard.outbox WHERE msg_id = 'tp-db'`)
+		}
 	}
 }

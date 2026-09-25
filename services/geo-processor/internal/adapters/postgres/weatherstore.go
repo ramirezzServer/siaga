@@ -370,7 +370,7 @@ func (t *weatherTx) DueForExpiry(ctx context.Context, now time.Time, limit int) 
 }
 
 func (t *weatherTx) Enqueue(ctx context.Context, msg ports.OutboxMessage) error {
-	if _, err := t.tx.Exec(ctx, weathersql.Enqueue, msg.Subject, msg.MsgID, msg.Payload); err != nil {
+	if _, err := t.tx.Exec(ctx, weathersql.Enqueue, msg.Subject, msg.MsgID, msg.Payload, traceParent(ctx, msg)); err != nil {
 		return fmt.Errorf("menulis outbox %s: %w", msg.MsgID, err)
 	}
 	return nil

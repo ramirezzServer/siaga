@@ -11,6 +11,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/ramirezzServer/siaga/services/geo-processor/internal/adapters/postgres/eventsql"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/adapters/postgres/quakesql"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/domain/hazard"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/domain/quake"
@@ -71,7 +72,7 @@ func (s *QuakeStore) Drain(ctx context.Context, limit int, publish func(context.
 	}
 	items, err := pgx.CollectRows(rows, func(r pgx.CollectableRow) (item, error) {
 		var it item
-		err := r.Scan(&it.id, &it.msg.Subject, &it.msg.MsgID, &it.msg.Payload)
+		err := r.Scan(&it.id, &it.msg.Subject, &it.msg.MsgID, &it.msg.Payload, &it.msg.TraceParent, &it.msg.CreatedAt)
 		return it, err
 	})
 	if err != nil {
@@ -94,6 +95,19 @@ func (s *QuakeStore) Drain(ctx context.Context, limit int, publish func(context.
 		return 0, fmt.Errorf("commit outbox: %w", err)
 	}
 	return len(done), pubErr
+}
+
+// OutboxBacklog mengembalikan jumlah pesan outbox yang belum terbit dan
+// waktu tulis pesan tertua (nol bila kosong), untuk metrik.
+func (s *QuakeStore) OutboxBacklog(ctx context.Context) (pending int64, oldest time.Time, err error) {
+	var first *time.Time
+	if err := s.pool.QueryRow(ctx, eventsql.OutboxBacklog).Scan(&pending, &first); err != nil {
+		return 0, time.Time{}, fmt.Errorf("membaca antrean outbox: %w", err)
+	}
+	if first != nil {
+		oldest = *first
+	}
+	return pending, oldest, nil
 }
 
 type quakeTx struct {
@@ -394,7 +408,7 @@ func scanDueEvent(r pgx.CollectableRow) (ports.StoredEvent, error) {
 }
 
 func (t *quakeTx) Enqueue(ctx context.Context, msg ports.OutboxMessage) error {
-	if _, err := t.tx.Exec(ctx, quakesql.Enqueue, msg.Subject, msg.MsgID, msg.Payload); err != nil {
+	if _, err := t.tx.Exec(ctx, quakesql.Enqueue, msg.Subject, msg.MsgID, msg.Payload, traceParent(ctx, msg)); err != nil {
 		return fmt.Errorf("menulis outbox %s: %w", msg.MsgID, err)
 	}
 	return nil

@@ -19,14 +19,18 @@ LIMIT $2
 FOR UPDATE SKIP LOCKED`
 
 // Enqueue menulis pesan ke outbox. Pesan dengan msg_id sama diabaikan.
-const Enqueue = `INSERT INTO hazard.outbox (subject, msg_id, payload) VALUES ($1, $2, $3)
+// traceparent kosong disimpan NULL.
+const Enqueue = `INSERT INTO hazard.outbox (subject, msg_id, payload, traceparent) VALUES ($1, $2, $3, NULLIF($4, ''))
 ON CONFLICT (msg_id) DO NOTHING`
 
 // OutboxBatch mengambil pesan tertua yang tidak sedang dikunci proses lain.
-const OutboxBatch = `SELECT id, subject, msg_id, payload FROM hazard.outbox
+const OutboxBatch = `SELECT id, subject, msg_id, payload, coalesce(traceparent, ''), created_at FROM hazard.outbox
 ORDER BY id
 LIMIT $1
 FOR UPDATE SKIP LOCKED`
+
+// OutboxBacklog menghitung pesan yang belum terbit dan waktu tulis tertuanya.
+const OutboxBacklog = `SELECT count(*), min(created_at) FROM hazard.outbox`
 
 // OutboxDelete menghapus pesan yang sudah terbit.
 const OutboxDelete = `DELETE FROM hazard.outbox WHERE id = ANY($1::bigint[])`

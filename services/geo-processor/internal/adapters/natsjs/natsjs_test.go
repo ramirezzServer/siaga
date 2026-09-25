@@ -12,10 +12,17 @@ import (
 
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
+	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
+	"go.opentelemetry.io/otel/sdk/metric/metricdata"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 
 	"github.com/ramirezzServer/siaga/libs/go/contracts/streams"
 	"github.com/ramirezzServer/siaga/libs/go/platform/natsx"
 	"github.com/ramirezzServer/siaga/libs/go/platform/natsx/natstest"
+	"github.com/ramirezzServer/siaga/libs/go/platform/otelx"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/app/consume"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/domain/quake"
 )
@@ -203,5 +210,142 @@ func TestHeaderValue(t *testing.T) {
 			t.Errorf("%+v", spec)
 		}
 		seen[spec.Durable] = true
+	}
+}
+
+// Trace berlanjut dari penerbit raw.* ke pemrosesan, lalu ke penerbitan
+// hazard.* lewat traceparent yang tersimpan (seperti dari outbox); histogram
+// antrean, pemrosesan, dan latensi pipa tercatat.
+func TestConsumerContinuesTraceAndRecordsLatency(t *testing.T) {
+	rec := tracetest.NewSpanRecorder()
+	reader := sdkmetric.NewManualReader()
+	prevTP, prevMP, prevProp := otel.GetTracerProvider(), otel.GetMeterProvider(), otel.GetTextMapPropagator()
+	otel.SetTracerProvider(sdktrace.NewTracerProvider(sdktrace.WithSpanProcessor(rec)))
+	otel.SetMeterProvider(sdkmetric.NewMeterProvider(sdkmetric.WithReader(reader)))
+	otel.SetTextMapPropagator(propagation.TraceContext{})
+	t.Cleanup(func() {
+		otel.SetTracerProvider(prevTP)
+		otel.SetMeterProvider(prevMP)
+		otel.SetTextMapPropagator(prevProp)
+	})
+
+	js, ctx := setup(t)
+	processed := make(chan string, 1)
+	h, err := consume.New(func(b []byte) (quake.Report, error) { return quake.Report{EventID: string(b)}, nil },
+		func(ctx context.Context, _ quake.Report) (consume.Outcome, error) {
+			processed <- otelx.TraceParent(ctx)
+			return consume.Outcome{Changed: true}, nil
+		}, nil, consume.DefaultOptions(), time.Now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	spec := QuakeConsumer
+	spec.Durable = "test-trace"
+	c, err := NewConsumer(ctx, js, spec, "geo-processor", h, quiet, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	runCtx, stop := context.WithCancel(ctx)
+	done := make(chan error, 1)
+	go func() { done <- c.Run(runCtx) }()
+
+	const upstream = "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"
+	m := nats.NewMsg("raw.quake.bmkg")
+	m.Data = []byte("g1")
+	m.Header.Set(jetstream.MsgIDHeader, "g1")
+	m.Header.Set("traceparent", upstream)
+	m.Header.Set(natsx.HeaderFetchedAt, time.Now().Add(-2*time.Second).UTC().Format(time.RFC3339Nano))
+	if _, err := js.PublishMsg(ctx, m); err != nil {
+		t.Fatal(err)
+	}
+	var inHandler string
+	select {
+	case inHandler = <-processed:
+	case <-time.After(10 * time.Second):
+		t.Fatal("pesan tidak diproses")
+	}
+	stop()
+	if err := <-done; err != nil {
+		t.Fatal(err)
+	}
+	if !strings.HasPrefix(inHandler, "00-4bf92f3577b34da6a3ce929d0e0e4736-") || inHandler == upstream {
+		t.Fatalf("handler harus berada di span anak trace penerbit, dapat %q", inHandler)
+	}
+
+	// Relay meneruskan traceparent dari outbox lewat header.
+	pub := NewPublisher(js, streams.Hazard.Name)
+	if err := pub.Publish(context.Background(), "hazard.quake.created", "g1:r1", []byte("x"), map[string]string{"traceparent": inHandler}); err != nil {
+		t.Fatal(err)
+	}
+	hz, err := js.Stream(ctx, streams.Hazard.Name)
+	if err != nil {
+		t.Fatal(err)
+	}
+	out, err := hz.GetLastMsgForSubject(ctx, "hazard.quake.created")
+	if err != nil {
+		t.Fatal(err)
+	}
+	tp := out.Header.Get("traceparent")
+	if !strings.HasPrefix(tp, "00-4bf92f3577b34da6a3ce929d0e0e4736-") || tp == inHandler {
+		t.Fatalf("hazard.* harus membawa span penerbitan baru di trace yang sama, dapat %q", tp)
+	}
+
+	var process, send sdktrace.ReadOnlySpan
+	for _, s := range rec.Ended() {
+		switch s.Name() {
+		case "process raw.quake.bmkg":
+			process = s
+		case "send hazard.quake.created":
+			send = s
+		}
+	}
+	if process == nil || send == nil {
+		t.Fatalf("span %v", rec.Ended())
+	}
+	if process.Parent().SpanID().String() != "00f067aa0ba902b7" || !process.Parent().IsRemote() {
+		t.Errorf("parent span pemrosesan %v", process.Parent())
+	}
+	if send.Parent().SpanID().String() != inHandler[36:52] {
+		t.Errorf("parent span penerbitan %v, ingin %s", send.Parent().SpanID(), inHandler[36:52])
+	}
+
+	var rm metricdata.ResourceMetrics
+	if err := reader.Collect(ctx, &rm); err != nil {
+		t.Fatal(err)
+	}
+	counts := map[string]uint64{}
+	var pipelineSum float64
+	for _, sm := range rm.ScopeMetrics {
+		for _, mt := range sm.Metrics {
+			if hist, ok := mt.Data.(metricdata.Histogram[float64]); ok {
+				for _, dp := range hist.DataPoints {
+					counts[mt.Name] += dp.Count
+					if mt.Name == "siaga.pipeline.latency" {
+						pipelineSum += dp.Sum
+					}
+				}
+			}
+		}
+	}
+	if counts["messaging.process.duration"] != 1 || counts["siaga.geo.queue.duration"] != 1 || counts["siaga.pipeline.latency"] != 1 {
+		t.Fatalf("histogram %v", counts)
+	}
+	if pipelineSum < 2 || pipelineSum > 30 {
+		t.Errorf("latensi pipa %.1f detik, ingin sekitar 2", pipelineSum)
+	}
+}
+
+func TestFetchedAtHeader(t *testing.T) {
+	h := nats.Header{}
+	if _, ok := fetchedAt(h); ok {
+		t.Error("tanpa header")
+	}
+	h.Set(natsx.HeaderFetchedAt, "kemarin")
+	if _, ok := fetchedAt(h); ok {
+		t.Error("header rusak harus diabaikan")
+	}
+	h.Set(natsx.HeaderFetchedAt, "2026-09-25T01:02:03.5Z")
+	if at, ok := fetchedAt(h); !ok || !at.Equal(time.Date(2026, 9, 25, 1, 2, 3, 500_000_000, time.UTC)) {
+		t.Errorf("%v %v", at, ok)
 	}
 }
