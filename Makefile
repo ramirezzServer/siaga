@@ -17,8 +17,10 @@ GEO_DATABASE_URL ?= postgres://siaga_geo:$(SIAGA_GEO_PASSWORD)@localhost:$(POSTG
 # Resep yang memakai URL berisi password diawali @ supaya make tidak mencetaknya;
 # gantinya dicetak versi tersamar ini.
 GEO_DATABASE_URL_SAFE = postgres://siaga_geo:***@localhost:$(POSTGRES_PORT)/$(POSTGRES_DB)
-# Arsip payload mentah ingest (juga bahan uji replay).
-INGEST_ARCHIVE_DIR ?= $(CURDIR)/.cache/ingest-archive
+# Arsip payload mentah ingest di Garage (ADR 0014), dan folder lokal untuk
+# rekaman sampel (ingest-record) serta arsip fase 1a–1d sebelum Garage.
+INGEST_ARCHIVE_URL ?= s3://$(or $(ARCHIVE_BUCKET),siaga-arsip)/raw?endpoint=http://127.0.0.1:$(or $(GARAGE_S3_PORT),3900)
+LOCAL_ARCHIVE_DIR ?= $(CURDIR)/.cache/ingest-archive
 
 .PHONY: help
 help: ## Tampilkan daftar perintah
@@ -29,7 +31,7 @@ help: ## Tampilkan daftar perintah
 doctor: ## Cek semua prasyarat terpasang
 	@scripts/doctor.sh
 
-env: ## Buat .env dengan password acak (sekali saja)
+env: ## Buat .env dengan rahasia acak, atau tambahkan variabel baru ke .env lama
 	@scripts/make-env.sh
 
 deps: ## Unduh dependensi Go dan Node, kunci versinya (go.sum, pnpm-lock.yaml)
@@ -41,7 +43,7 @@ hooks: ## Pasang git hook (gitleaks, lint, commitlint)
 
 ##@ Lingkungan lokal (Compose lite)
 .PHONY: up down reset logs psql
-up: env ## Jalankan PostgreSQL, NATS, Valkey, Mailpit
+up: env ## Jalankan PostgreSQL, NATS, Valkey, Garage, Mailpit
 	$(COMPOSE) up -d --build --wait
 
 down: ## Hentikan layanan (data tetap)
@@ -92,13 +94,29 @@ grid-list: regions-fetch ## Bangun ulang simpul grid 0,25° Open-Meteo ingest (P
 	  -grid-out ../ingest/internal/adapters/sitelist/data/grid025_$(PROVINCE).txt
 
 ##@ Pipa data
-.PHONY: ingest ingest-record geo calibrate-dedup river-snap
-ingest: ## Jalankan ingest (butuh `make up`); status di http://127.0.0.1:8081/status
-	cd services/ingest && INGEST_ARCHIVE_DIR="$(INGEST_ARCHIVE_DIR)" go run ./cmd/ingest
+.PHONY: ingest ingest-record geo calibrate-dedup river-snap archive-ls archive-verify archive-upload replay
+ingest: ## Jalankan ingest (butuh `make up`); arsip ke Garage, status di http://127.0.0.1:8081/status
+	cd services/ingest && INGEST_ARCHIVE_URL="$(INGEST_ARCHIVE_URL)" go run ./cmd/ingest
 
-ingest-record: ## Rekam payload semua sumber sekali ke arsip, tanpa NATS
-	cd services/ingest && INGEST_ARCHIVE_DIR="$(INGEST_ARCHIVE_DIR)" go run ./cmd/ingest -once -publish=false
-	@echo "Arsip: $(INGEST_ARCHIVE_DIR)"
+ingest-record: ## Rekam payload semua sumber sekali ke folder lokal, tanpa NATS
+	cd services/ingest && INGEST_ARCHIVE_URL="$(LOCAL_ARCHIVE_DIR)" go run ./cmd/ingest -once -publish=false
+	@echo "Arsip: $(LOCAL_ARCHIVE_DIR)"
+
+archive-ls: ## Ringkasan arsip Garage per konektor (PREFIX=bmkg-autogempa/2026/09/)
+	@cd services/ingest && INGEST_ARCHIVE_URL="$(INGEST_ARCHIVE_URL)" go run ./cmd/archive ls -prefix "$(PREFIX)"
+
+archive-verify: ## Periksa setiap objek arsip: gzip utuh dan SHA-256 cocok dengan kunci
+	@cd services/ingest && INGEST_ARCHIVE_URL="$(INGEST_ARCHIVE_URL)" go run ./cmd/archive verify -prefix "$(PREFIX)"
+
+archive-upload: ## Salin arsip lokal (.cache/ingest-archive) ke Garage; aman diulang
+	@if [[ -d "$(LOCAL_ARCHIVE_DIR)" ]]; then \
+	  cd services/ingest && INGEST_ARCHIVE_URL="$(INGEST_ARCHIVE_URL)" go run ./cmd/archive cp -from "$(LOCAL_ARCHIVE_DIR)"; \
+	else echo "Tidak ada arsip lokal di $(LOCAL_ARCHIVE_DIR)"; fi
+
+# Contoh: make replay FROM=2026-09-24 TO=2026-09-25 CONNECTORS=bmkg-autogempa,usgs-2.5-day SPEED=60
+replay: ## Putar ulang arsip Garage ke NATS (FROM, TO, CONNECTORS, SPEED; ARGS=-publish=false untuk cek saja)
+	@cd services/ingest && INGEST_ARCHIVE_URL="$(INGEST_ARCHIVE_URL)" go run ./cmd/replay \
+	  -from "$(FROM)" -to "$(TO)" -connectors "$(CONNECTORS)" -speed "$(or $(SPEED),0)" $(ARGS)
 
 geo: ## Jalankan geo-processor (butuh `make up seed`); status di http://127.0.0.1:8082/status
 	@echo "geo-processor ($(GEO_DATABASE_URL_SAFE))"
@@ -141,11 +159,13 @@ test-go:
 test-integration: ## Test integrasi (butuh `make up migrate`; paket dijalankan berurutan karena berbagi database)
 	@echo "test integrasi geo-processor ($(GEO_DATABASE_URL_SAFE))"
 	@cd services/geo-processor && SIAGA_TEST_DATABASE_URL="$(GEO_DATABASE_URL)" go test -race -count=1 -p 1 -tags integration ./...
+	@echo "test integrasi ingest (Garage http://127.0.0.1:$(or $(GARAGE_S3_PORT),3900))"
+	@cd services/ingest && SIAGA_TEST_S3_ENDPOINT="http://127.0.0.1:$(or $(GARAGE_S3_PORT),3900)" go test -race -count=1 -tags integration ./internal/adapters/s3archive/
 
 fuzz: ## Fuzzing singkat semua target fuzz (30 detik per target)
 	@cd services/geo-processor && for t in ./internal/domain/region:FuzzParseCode ./internal/domain/region:FuzzParseLatLngPath ./internal/adapters/cahyadsn:FuzzParseDump ./internal/domain/quake:FuzzClusteringOrderIndependent ./internal/domain/quake:FuzzClusteringInvariantsUnderCrowding ./internal/domain/quake:FuzzApplyOrderIndependent ./internal/domain/quake:FuzzLevelMonotone ./internal/domain/quake:FuzzRuleMatchSymmetric ./internal/app/quakes:FuzzServiceOrderIndependent ./internal/domain/weather:FuzzDeriveOrderIndependent ./internal/app/warnings:FuzzServiceOrderIndependent ./internal/domain/series:FuzzWeatherValidate; do \
 	  go test $${t%%:*} -run='^$$' -fuzz="^$${t##*:}\$$" -fuzztime=30s || exit 1; done
-	@cd services/ingest && for t in ./internal/domain/ratelimit:FuzzWindowBound ./internal/domain/ratelimit:FuzzPriorityHeadroom ./internal/domain/schedule:FuzzNextBounds ./internal/domain/forecast:FuzzOrder ./internal/domain/warning:FuzzParseReferences ./internal/adapters/bmkg:FuzzParse ./internal/adapters/bmkg:FuzzParseCAPDocuments ./internal/adapters/bmkg:FuzzParseForecastDocument ./internal/adapters/usgs:FuzzParse ./internal/adapters/openmeteo:FuzzParse ./internal/domain/airquality:FuzzClean ./internal/adapters/firms:FuzzParseFIRMS ./internal/adapters/openaq:FuzzParseOpenAQ; do \
+	@cd services/ingest && for t in ./internal/domain/ratelimit:FuzzWindowBound ./internal/domain/ratelimit:FuzzPriorityHeadroom ./internal/domain/schedule:FuzzNextBounds ./internal/domain/forecast:FuzzOrder ./internal/domain/warning:FuzzParseReferences ./internal/adapters/bmkg:FuzzParse ./internal/adapters/bmkg:FuzzParseCAPDocuments ./internal/adapters/bmkg:FuzzParseForecastDocument ./internal/adapters/usgs:FuzzParse ./internal/adapters/openmeteo:FuzzParse ./internal/domain/airquality:FuzzClean ./internal/adapters/firms:FuzzParseFIRMS ./internal/adapters/openaq:FuzzParseOpenAQ ./internal/domain/archivekey:FuzzParse ./internal/app/replay:FuzzRunOrdered; do \
 	  go test $${t%%:*} -run='^$$' -fuzz="^$${t##*:}\$$" -fuzztime=30s || exit 1; done
 
 check: lint test ## Semua pemeriksaan sebelum push

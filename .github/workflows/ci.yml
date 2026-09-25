@@ -109,6 +109,8 @@ jobs:
           fz ./internal/domain/airquality FuzzClean
           fz ./internal/adapters/firms FuzzParseFIRMS
           fz ./internal/adapters/openaq FuzzParseOpenAQ
+          fz ./internal/domain/archivekey FuzzParse
+          fz ./internal/app/replay FuzzRunOrdered
 
   node:
     name: TypeScript + kontrak
@@ -211,6 +213,45 @@ jobs:
           severity: CRITICAL
           ignore-unfixed: true
           exit-code: "1"
+
+  archive:
+    name: Garage (arsip S3)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.work
+          cache-dependency-path: "**/go.sum"
+      - name: Jalankan Garage single-node
+        run: |
+          key="GK$(openssl rand -hex 12)"
+          secret="$(openssl rand -hex 32)"
+          echo "::add-mask::$secret"
+          {
+            echo "ARCHIVE_S3_ACCESS_KEY_ID=$key"
+            echo "ARCHIVE_S3_SECRET_ACCESS_KEY=$secret"
+          } >> "$GITHUB_ENV"
+          docker run -d --name garage -p 3900:3900 \
+            -v "$PWD/deploy/compose/garage.toml:/etc/garage.toml:ro" \
+            -e GARAGE_RPC_SECRET="$(openssl rand -hex 32)" \
+            -e GARAGE_ADMIN_TOKEN="$(openssl rand -hex 24)" \
+            -e GARAGE_METRICS_TOKEN="$(openssl rand -hex 24)" \
+            -e GARAGE_DEFAULT_ACCESS_KEY="$key" -e GARAGE_DEFAULT_SECRET_KEY="$secret" \
+            -e GARAGE_DEFAULT_BUCKET=siaga-arsip \
+            "$(awk '/image: dxflrs\/garage/ {print $2}' deploy/compose/compose.lite.yaml)" \
+            /garage server --single-node --default-bucket
+          for i in $(seq 30); do docker exec garage /garage status && break; sleep 2; done
+          docker exec garage /garage bucket info siaga-arsip
+      - name: Test integrasi arsip
+        working-directory: services/ingest
+        env:
+          SIAGA_TEST_S3_ENDPOINT: http://127.0.0.1:3900
+          ARCHIVE_BUCKET: siaga-arsip
+        run: go test -race -count=1 -tags integration ./internal/adapters/s3archive/
+      - name: Log Garage bila gagal
+        if: failure()
+        run: docker logs garage
 
   commits:
     name: Format pesan commit
