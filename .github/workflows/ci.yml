@@ -98,6 +98,7 @@ jobs:
           cd ../ingest
           fz ./internal/domain/ratelimit FuzzWindowBound
           fz ./internal/domain/ratelimit FuzzPriorityHeadroom
+          fz ./internal/domain/ratelimit FuzzAvailable
           fz ./internal/domain/schedule FuzzNextBounds
           fz ./internal/domain/forecast FuzzOrder
           fz ./internal/domain/warning FuzzParseReferences
@@ -111,6 +112,8 @@ jobs:
           fz ./internal/adapters/openaq FuzzParseOpenAQ
           fz ./internal/domain/archivekey FuzzParse
           fz ./internal/app/replay FuzzRunOrdered
+          cd ../../libs/go/platform
+          fz ./otelx FuzzValidTraceParent
 
   node:
     name: TypeScript + kontrak
