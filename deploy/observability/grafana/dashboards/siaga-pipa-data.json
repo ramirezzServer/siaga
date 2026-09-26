@@ -64,6 +64,26 @@
         "current": {},
         "options": [],
         "refresh": 1
+      },
+      {
+        "type": "constant",
+        "name": "ekspor_metrik",
+        "label": "Jeda ekspor metrik (detik)",
+        "description": "OTEL_METRIC_EXPORT_INTERVAL layanan dalam detik (bawaan SDK 60). Dipakai panel keterlambatan sumber untuk mengenali metrik yang berhenti datang.",
+        "query": "60",
+        "hide": 2,
+        "skipUrlSync": true,
+        "current": {
+          "text": "60",
+          "value": "60"
+        },
+        "options": [
+          {
+            "selected": true,
+            "text": "60",
+            "value": "60"
+          }
+        ]
       }
     ]
   },
@@ -84,7 +104,7 @@
     {
       "type": "stat",
       "title": "Sumber tepat waktu",
-      "description": "Bagian konektor dan sapuan yang sukses terakhir kurang dari 3× intervalnya. Konektor yang belum pernah sukses dihitung terlambat.",
+      "description": "Bagian konektor dan sapuan yang keterlambatannya kurang dari 3× interval (lihat panel Keterlambatan sumber). Konektor yang belum pernah sukses dihitung terlambat. Penyebutnya konektor yang terlihat dalam 1 jam terakhir, jadi bila ingest mati panel ini turun ke 0% setelah ±5 menit, bukan kosong.",
       "datasource": {
         "type": "prometheus",
         "uid": "${prom}"
@@ -95,7 +115,7 @@
             "type": "prometheus",
             "uid": "${prom}"
           },
-          "expr": "(count((time() - max by (connector) (siaga_ingest_source_last_success_seconds)) < 3 * max by (connector) (siaga_ingest_source_interval_seconds)) or vector(0)) / count(max by (connector) (siaga_ingest_source_interval_seconds))",
+          "expr": "(count(max by (connector) (timestamp(siaga_ingest_source_last_success_seconds) - siaga_ingest_source_last_success_seconds + clamp_min(time() - timestamp(siaga_ingest_source_last_success_seconds) - $ekspor_metrik, 0)) < 3 * max by (connector) (siaga_ingest_source_interval_seconds)) or vector(0)) / count(max by (connector) (last_over_time(siaga_ingest_source_interval_seconds[1h])))",
           "legendFormat": "__auto",
           "refId": "A",
           "range": false,
@@ -493,7 +513,7 @@
     {
       "type": "bargauge",
       "title": "Keterlambatan sumber",
-      "description": "Umur data dibagi interval polling: 1 = tepat jadwal, di atas 3 = terlambat. Sapuan prakiraan memakai waktu selesai sapuan terakhir.",
+      "description": "Umur data dibagi interval polling: 0–1 = sehat, di atas 3 = terlambat. Umur diukur saat metrik dikumpulkan (timestamp sampel dikurangi waktu sukses terakhir), jadi jeda ekspor metrik (OTEL_METRIC_EXPORT_INTERVAL) dan pengiriman ke Grafana tidak ikut terhitung. Bila metrik berhenti datang lebih lama dari jeda ekspor, kelebihannya ditambahkan sehingga nilai tetap naik saat ingest mati. Sapuan prakiraan memakai waktu selesai sapuan terakhir.",
       "datasource": {
         "type": "prometheus",
         "uid": "${prom}"
@@ -504,7 +524,7 @@
             "type": "prometheus",
             "uid": "${prom}"
           },
-          "expr": "(time() - max by (connector) (siaga_ingest_source_last_success_seconds)) / max by (connector) (siaga_ingest_source_interval_seconds)",
+          "expr": "max by (connector) (timestamp(siaga_ingest_source_last_success_seconds) - siaga_ingest_source_last_success_seconds + clamp_min(time() - timestamp(siaga_ingest_source_last_success_seconds) - $ekspor_metrik, 0)) / max by (connector) (siaga_ingest_source_interval_seconds)",
           "legendFormat": "{{connector}}",
           "refId": "A",
           "range": false,
