@@ -2,9 +2,39 @@
 
 Dokumen ini adalah titik lanjut untuk sesi kerja berikutnya, termasuk chat baru dengan asisten AI. Perbarui setiap akhir sesi.
 
-## Status: Fase 1e-2a selesai di workspace asisten, menunggu verifikasi di WSL (2026-09-25)
+## Status: Fase 1e-2b-1 selesai di workspace asisten, menunggu verifikasi di WSL (2026-09-26)
 
-Fase 0 sampai 1e-1 ter-commit (1e-1 di `2da995a`). Fase 1e dipecah: **1e-1** arsip Garage + replay, **1e-2a** OpenTelemetry + dashboard (bagian ini), **1e-2b** deploy (Dockerfile, manifest, collector, SOPS, retensi dan backup arsip), **1e-3** backfill + kalibrasi (lihat Berikutnya).
+Fase 0 sampai 1e-2a ter-commit (1e-2a di `b55b2bf`). Fase 1e dipecah: **1e-1** arsip Garage + replay, **1e-2a** OpenTelemetry + dashboard, **1e-2b** deploy, **1e-3** backfill + kalibrasi (lihat Berikutnya). 1e-2b dipecah lagi: **1e-2b-1** image + CI + manifest pipa data (bagian ini), **1e-2b-2** OTel Collector, Garage di cluster, Secret SOPS, **1e-2b-3** retensi dan backup arsip.
+
+### Fase 1e-2b-1: image, job CI, dan manifest Kubernetes pipa data
+
+| Bagian    | Isi                                                                                                                                                                                                                                                                                       | Terverifikasi di workspace asisten                                                                                                                                                         |
+| --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Dashboard | Panel "Keterlambatan sumber" dan "Sumber tepat waktu" mengukur umur data saat metrik dikumpulkan (`timestamp(x) - x`) plus kelebihan bila metrik berhenti datang; variabel tersembunyi `ekspor_metrik` = 60                                                                               | Prometheus 3.14 dengan data sintetis (kumpul tiap 60 dtk): autogempa sehat maks 0,13× (lama 2,1×), usgs gagal tetap naik, ingest mati → panel naik lalu "tepat waktu" 0% (lama kosong)     |
+| Image     | `deploy/images/go/Dockerfile` (satu untuk semua layanan Go, `--target ingest`/`geo-processor`), cross-compile amd64/arm64, distroless static nonroot, `main.version` = commit, goose + `/migrations` di image geo-processor; `scripts/image-smoke.sh`, `make images`, `make images-smoke` | hadolint bersih. **Belum pernah di-build**: registry Docker dan daemon Docker tidak ada di workspace; build pertama di WSL (`make images-smoke`) dan CI                                    |
+| CI        | Job `images` (matrix: build amd64, uji asap, Trivy CRITICAL/HIGH; di `main`: push multi-arch ke GHCR, SBOM + provenance, cosign keyless) dan `manifests` (kustomize + kubeconform + Trivy misconfig overlay prod)                                                                         | actionlint 1.7.12 bersih; checksum rilis kustomize 5.7.1 dan kubeconform 0.7.0 dicek                                                                                                       |
+| Manifest  | `deploy/k8s/apps/ingest`, `apps/geo-processor` (Deployment, Service, NetworkPolicy, Job migrasi `geo-processor-migrate`), overlay `local` (Tilt) dan `prod` (image GHCR); Tilt membangun kedua image; `dev-secrets.sh` membuat Secret `siaga-ingest` dari `.env`                          | kustomize 5.7.1 build kedua overlay; kubeconform strict K8s 1.33 (16 + 9 resource valid); Trivy 0.74 config overlay prod tanpa CRITICAL/HIGH; `dev-secrets.sh` diuji dengan kubectl tiruan |
+| Repo      | ADR 0016 (termasuk alasan Kustomize, bukan Helm chart per layanan), README                                                                                                                                                                                                                | —                                                                                                                                                                                          |
+
+### Verifikasi yang perlu dijalankan di WSL (1e-2b-1)
+
+```bash
+bash "/mnt/c/KULIAH/PROJECT CODE/siaga-titipan/terapkan-fase-1e-2b-1.sh"   # check, images-smoke, k8s-check, commit
+git push                   # job CI images + manifests; di main: push image ke GHCR
+```
+
+Setelah CI hijau di `main`: buka github.com/ramirezzServer?tab=packages, pastikan `siaga-ingest` dan `siaga-geo-processor` publik (Package settings → Change visibility), lalu cek tanda tangan: `cosign verify ghcr.io/ramirezzserver/siaga-ingest:main --certificate-identity-regexp 'https://github.com/ramirezzServer/siaga/.*' --certificate-oidc-issuer https://token.actions.githubusercontent.com`.
+
+Opsional, profil full (belum pernah dicoba): `make k3d-up && make tilt`; resource `geo-processor-migrate` harus selesai, lalu `geo-processor` Ready (Secret DB dari `dev-secrets.sh`, NATS dari chart). `ingest` dinyalakan manual dari dashboard Tilt; tanpa Garage di cluster ia tidak mengarsipkan payload.
+
+Dashboard: salin ulang `deploy/observability/grafana/dashboards/siaga-pipa-data.json` ke Grafana Cloud (Import → Overwrite). Grafana lokal membacanya otomatis.
+
+### Temuan yang perlu ditindaklanjuti (1e-2b-1)
+
+- **Helm chart per layanan diganti Kustomize** (ADR 0016 butir 6); dokumen arsitektur perlu diselaraskan saat diperbarui.
+- NetworkPolicy baru membatasi ingest dan geo-processor; default deny seluruh namespace menunggu policy NATS, Garage, dan Collector (1e-2b-2). Probe kubelet diasumsikan lolos NetworkPolicy k3s (kube-router mengizinkan lalu lintas dari node); pastikan saat profil full dicoba.
+- Image dasar belum dipin digest; Renovate akan mengusulkan setelah GitHub App dipasang (utang lama).
+- Import wilayah di cluster masih lewat port-forward dari laptop (`regions-import` di Tilt). Untuk produksi perlu Job yang mengunduh data batas wilayah (fase 2).
 
 ### Fase 1e-2a: OpenTelemetry dan dashboard pipa data
 
@@ -179,7 +209,7 @@ Kontrak `siaga.raw.v1`, stream `RAW`/`HAZARD`, layanan ingest dengan konektor BM
 ## Utang kecil yang diketahui
 
 - Compose lite memakai `nats:2.11-alpine`, sedangkan test memakai server 2.15 dalam proses. Replay 1c dan 1d-1 sudah dijalankan dengan binary `nats-server` 2.11.9 tanpa masalah; naikkan image saat Renovate aktif.
-- ingest dan geo-processor belum punya Dockerfile dan manifest Kubernetes; dijalankan lewat `make ingest` dan `make geo`. Garage dan Grafana lokal juga baru ada di Compose lite. Semuanya masuk fase 1e-2b.
+- Garage dan Grafana lokal baru ada di Compose lite; Garage dan OTel Collector di cluster masuk 1e-2b-2.
 - `/status` geo-processor menampilkan ambang dengan durasi dalam nanodetik (JSON bawaan `time.Duration`). Kosmetik; rapikan saat dashboard Grafana dibuat.
 - Renovate sudah dikonfigurasi (`renovate.json`) tetapi GitHub App Renovate belum dipasang di repo.
 - Runner `ubuntu-latest` pindah ke Ubuntu 26 mulai 2026-10-19. Pantau run CI pertama setelah tanggal itu.
@@ -196,8 +226,10 @@ Target demo fase 1: dashboard Grafana berisi data live semua sumber.
 - [x] **1d-1** Open-Meteo (cuaca grid 0,25°, kualitas udara CAMS, debit GloFAS 38 titik) dan schema `ts` (`site`, `series`, hypertable `weather_forecast`, `aq_forecast`, `river_discharge`), consumer `raw.forecast.bmkg` → `ts.weather_forecast` (ADR 0011–0012).
 - [x] **1d-2** OpenAQ v3 (stasiun dalam kotak Jawa Barat tiap 15 menit, `X-API-Key`) → `raw.aq.openaq` → `ts.aq_observation`; NASA FIRMS (VIIRS/MODIS NRT, satu kotak tiap 30 menit, MAP_KEY) → `raw.fire.firms` → `ts.hotspot`; key opsional di `.env`, disamarkan di galat dan log (ADR 0013). Menunggu rekaman asli.
 - [x] **1e-1** Arsip payload mentah ke Garage (Compose lite, adapter S3, `INGEST_ARCHIVE_URL`), perintah `archive` (ls, verify, cp) dan `replay` dari arsip ke NATS urut waktu ambil (ADR 0014). Menunggu verifikasi di WSL.
-- [x] **1e-2a** OpenTelemetry di ingest dan geo-processor (trace lewat header `traceparent` NATS dan kolom outbox, metrik sumber/kuota/antrean/latensi/query, log OTLP), Grafana lokal `make obs-up` dan dashboard pipa data, panduan Grafana Cloud (ADR 0015). Menunggu verifikasi di WSL.
-- [ ] **1e-2b** Dockerfile ingest dan geo-processor (`-ldflags -X main.version`), manifest Kubernetes ingest, geo-processor, Garage, dan OTel Collector (ke Grafana Cloud, plus metrik server NATS dan Garage); key OpenAQ/FIRMS, kredensial arsip, dan token Grafana Cloud lewat Secret SOPS; retensi arsip (lifecycle Garage, setelah seminggu data) dan backup Garage ke Oracle Object Storage.
+- [x] **1e-2a** OpenTelemetry di ingest dan geo-processor (trace lewat header `traceparent` NATS dan kolom outbox, metrik sumber/kuota/antrean/latensi/query, log OTLP), Grafana lokal `make obs-up` dan dashboard pipa data, panduan Grafana Cloud (ADR 0015). Terverifikasi di WSL; dashboard jalan di Grafana Cloud.
+- [x] **1e-2b-1** Image ingest dan geo-processor (satu Dockerfile, amd64 + arm64, distroless nonroot), job CI `images` (uji asap, Trivy, push GHCR + SBOM + cosign di `main`) dan `manifests`, manifest Kustomize ingest + geo-processor + Job migrasi dengan overlay local/prod, panel keterlambatan dashboard tanpa jeda ekspor (ADR 0016). Menunggu verifikasi di WSL.
+- [ ] **1e-2b-2** OTel Collector di cluster (ke Grafana Cloud, plus metrik server NATS dan Garage), Garage di cluster, key OpenAQ/FIRMS + kredensial arsip + token Grafana Cloud lewat Secret SOPS (age), NetworkPolicy default deny namespace.
+- [ ] **1e-2b-3** (setelah ±2026-10-02, seminggu data arsip) retensi arsip (lifecycle Garage) dan backup Garage ke Oracle Object Storage.
 - [ ] **1e-3** Backfill dan kalibrasi: reanalisis GloFAS (`consolidated_v4`, ±3.900 panggilan) → ambang persentil banjir → `hazard.flood.*` (setelah 17 titik sungai bertanda diperiksa manual); arsip FIRMS standar (SP) → ambang titik api → `hazard.fire.*`; backfill jam OpenAQ yang terlewat (`/v3/sensors/{id}/hours`); set berlabel T4 dan kalibrasi radius dirasakan dari arsip gempa; replay CAP/prakiraan/OpenAQ (metadata request di objek arsip).
 
 Titik pantau sungai (38 titik GloFAS + 7 sub-DAS indeks hujan) dan aturan tingkat peringatan ada di PRD, bagian Sungai yang dipantau dan Aturan bisnis.
@@ -219,6 +251,8 @@ Workspace cloud asisten tidak bisa menjangkau `proxy.golang.org`, `go.dev`, atau
 - Menjalankan skrip pihak ketiga yang diunduh (misal `extract_tsv.py` repo-gempa) ditolak kebijakan workspace; pakai data yang sudah jadi.
 
 - Sesi 1e-1: membangun Go dari source sempat ditolak pemeriksa keamanan workspace dan baru jalan setelah pengguna mengizinkan eksplisit. golangci-lint butuh mirror GitHub untuk semua dependensi vanity; `codeberg.org` (go-errorlint v1.9.0, garif) diblokir, jadi dipakai mirror GitHub v1.8.0/v0.1.0 dengan nama modul diganti, dan `decorder` (GitLab) dibuang. Registry Docker juga diblokir, jadi Garage asli tidak bisa dijalankan di workspace; uji S3 memakai server tiruan (`s3archive/s3test`).
+
+- Sesi 1e-2b-1: workspace punya klien Docker tanpa daemon, dan registry Docker/GHCR tetap tidak terjangkau, jadi image tidak bisa di-build di sana. Rilis GitHub bisa diunduh: kustomize, kubeconform, Trivy 0.74 (misconfig memakai check bawaan), actionlint, hadolint, Prometheus 3.14. `get.helm.sh` tidak terjangkau (salah satu alasan Kustomize). Query dashboard diuji dengan `promtool tsdb create-blocks-from openmetrics` lalu query instan pada waktu tertentu.
 
 - Sesi 1e-2a: pemeriksa keamanan workspace kembali menolak `GOSUMDB=off` sampai pengguna mengizinkan. Mirror GitHub tambahan: `open-telemetry/opentelemetry-go` (v1.46.0, semua submodul), `opentelemetry-go-contrib` (tag v1.46.0 untuk `bridges/otelslog` v0.20.1 dan `instrumentation/runtime` v0.71.0), `opentelemetry-proto-go` (`otlp/v1.11.0`), `opentelemetry-go-instrumentation` (`sdk/v1.2.1`), `grpc/grpc-go` v1.83.2, `googleapis/go-genproto` (sparse `googleapis/api` dan `googleapis/rpc`), `uber-go/multierr` v1.11.0 (untuk goose). Modul non-GitHub yang dibawa `go.mod` grpc (cloud.google.com/…, dll.) cukup `go.mod` kosong. goose dibangun dengan tag `no_clickhouse no_libsql no_mssql no_mysql no_sqlite3 no_vertica no_ydb`. Rilis GitHub Prometheus, Tempo, dan Loki bisa diunduh (cek SHA256) untuk menguji query dashboard; image Docker dan Grafana (dl.grafana.com) tidak.
 

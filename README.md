@@ -2,7 +2,7 @@
 
 Platform ketahanan wilayah Jawa Barat: peringatan dini bencana (gempa, cuaca ekstrem, banjir, titik api) dan pemantauan serta prediksi kualitas udara (NAPAS) dalam satu peta real-time. Proyek portofolio independen, bukan layanan resmi BMKG, BNPB, atau BPBD. Selaras dengan SDGs 3, 11, dan 13.
 
-> Status: **Fase 1 (pipa data), irisan 1d-2**. Belum ada aplikasi yang bisa dibuka di browser. Yang sudah jalan: ingest menarik data gempa BMKG dan USGS, peringatan dini cuaca BMKG (CAP), prakiraan cuaca BMKG per kelurahan/desa Jawa Barat, prakiraan cuaca dan kualitas udara (CAMS) per simpul grid 0,25° dan debit 38 titik pantau sungai (GloFAS) dari Open-Meteo, nilai sensor stasiun kualitas udara OpenAQ, dan titik panas satelit NASA FIRMS, lalu menerbitkannya ke NATS JetStream. geo-processor menggabungkan laporan gempa kedua sumber menjadi satu kejadian (deduplikasi terkalibrasi), menyusun rantai pesan CAP menjadi satu kejadian cuaca, memperkirakan kelurahan/desa terdampak, menerbitkan `hazard.quake.*` serta `hazard.weather.*`, dan menyimpan semua prakiraan, nilai sensor, dan titik panas ke hypertable TimescaleDB schema `ts`.
+> Status: **Fase 1 (pipa data), irisan 1e-2b**. Belum ada aplikasi yang bisa dibuka di browser. Yang sudah jalan: ingest menarik data gempa BMKG dan USGS, peringatan dini cuaca BMKG (CAP), prakiraan cuaca BMKG per kelurahan/desa Jawa Barat, prakiraan cuaca dan kualitas udara (CAMS) per simpul grid 0,25° dan debit 38 titik pantau sungai (GloFAS) dari Open-Meteo, nilai sensor stasiun kualitas udara OpenAQ, dan titik panas satelit NASA FIRMS, lalu menerbitkannya ke NATS JetStream. geo-processor menggabungkan laporan gempa kedua sumber menjadi satu kejadian (deduplikasi terkalibrasi), menyusun rantai pesan CAP menjadi satu kejadian cuaca, memperkirakan kelurahan/desa terdampak, menerbitkan `hazard.quake.*` serta `hazard.weather.*`, dan menyimpan semua prakiraan, nilai sensor, dan titik panas ke hypertable TimescaleDB schema `ts`.
 
 ## Dokumen
 
@@ -31,6 +31,8 @@ make river-snap       # pilih sel GloFAS untuk 38 titik pantau sungai (±800 lok
 make archive-ls       # isi arsip payload mentah per konektor; archive-verify memeriksa integritasnya
 make replay FROM=2026-09-24 TO=2026-09-25   # putar ulang arsip ke NATS, urut waktu ambil asli
 make obs-up           # Grafana + Prometheus + Tempo + Loki lokal, dashboard di http://127.0.0.1:3300
+make images-smoke     # build image ingest + geo-processor dan uji asap (sama dengan CI)
+make k8s-check        # render manifest Kubernetes lokal + prod dan validasi skemanya
 ```
 
 OpenAQ dan NASA FIRMS butuh key gratis: isi `OPENAQ_API_KEY` (daftar di explore.openaq.org) dan `FIRMS_MAP_KEY` (firms.modaps.eosdis.nasa.gov/api/map_key) di `.env`. Tanpa key, ingest tetap jalan tanpa kedua konektor itu.
@@ -39,7 +41,7 @@ Payload mentah setiap sumber diarsipkan ke Garage (bucket `siaga-arsip`, awalan 
 
 ingest dan geo-processor diinstrumentasi OpenTelemetry: satu gempa bisa dilacak dalam satu trace dari polling sumber, arsip, NATS, query PostgreSQL, sampai `hazard.quake.created` terbit, dan dashboard "SIAGA — Pipa data" menampilkan keterlambatan dan galat tiap sumber, sisa kuota request, antrean NATS, latensi pipa, dan query lambat (ADR 0015). Isi `OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4318` di `.env` setelah `make obs-up`, atau arahkan ke Grafana Cloud ([docs/setup/grafana-cloud.md](docs/setup/grafana-cloud.md)).
 
-Profil full (Kubernetes lokal, sama dengan produksi): `make k3d-up && make tilt`.
+Profil full (Kubernetes lokal, sama dengan produksi): `make k3d-up && make tilt`. Image layanan Go (amd64 + arm64, distroless, non-root) dibangun CI dan di `main` didorong ke `ghcr.io/ramirezzserver/siaga-<layanan>` dengan SBOM dan tanda tangan cosign; manifest Kustomize ada di `deploy/k8s` (ADR 0016).
 
 ## Struktur
 
