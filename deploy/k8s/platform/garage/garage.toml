@@ -1,0 +1,24 @@
+# Garage satu node di cluster (arsip payload mentah ingest, ADR 0014 dan 0017).
+# Sama dengan deploy/compose/garage.toml kecuali bagian yang ditandai. Secret
+# (rpc_secret, admin_token, metrics_token) dan access key S3 dibaca dari
+# environment (GARAGE_*) yang diisi Secret siaga-garage; tidak ada rahasia di sini.
+metadata_dir = "/var/lib/garage/meta"
+data_dir = "/var/lib/garage/data"
+db_engine = "sqlite"
+replication_factor = 1
+# Payload arsip sudah gzip; kompresi zstd bawaan hanya membuang CPU.
+compression_level = "none"
+# Buffer untuk mengirim blok ke node lain (bawaan 256 MiB); satu node tidak butuh.
+block_ram_buffer_max = "32MiB"
+
+rpc_bind_addr = "[::]:3901"
+rpc_public_addr = "127.0.0.1:3901"
+
+[s3_api]
+s3_region = "garage"
+api_bind_addr = "[::]:3900"
+root_domain = ".s3.garage.localhost"
+
+[admin]
+# /health tanpa token (probe); /metrics dengan GARAGE_METRICS_TOKEN (OTel Collector).
+api_bind_addr = "[::]:3903"

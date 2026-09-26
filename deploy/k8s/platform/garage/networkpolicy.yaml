@@ -1,0 +1,26 @@
+# Garage menerima S3 hanya dari ingest dan admin API (/metrics) hanya dari OTel
+# Collector. Tanpa egress: satu node tidak bicara dengan node lain. Backup ke
+# Oracle Object Storage (fase 1e-2b-3) menambah egress sendiri.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: garage
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: garage
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: ingest
+      ports:
+        - { port: 3900, protocol: TCP }
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: otel-collector
+      ports:
+        - { port: 3903, protocol: TCP }
+  egress: []

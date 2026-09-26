@@ -1,0 +1,12 @@
+# NetworkPolicy tingkat namespace (ADR 0017): default deny untuk semua pod,
+# DNS untuk semua pod, dan policy komponen platform yang tidak dipasang lewat
+# Kustomize (NATS dan CloudNativePG lewat Helm/operator). Policy layanan dan
+# Garage/Collector ada di folder masing-masing.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: siaga
+resources:
+  - default-deny.yaml
+  - allow-dns.yaml
+  - nats.yaml
+  - siaga-db.yaml

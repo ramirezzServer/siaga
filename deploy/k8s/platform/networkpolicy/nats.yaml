@@ -1,0 +1,55 @@
+# NATS (chart nats/nats; label chart: name=nats, component=nats untuk server,
+# component=nats-box untuk pod alat). Klien 4222 hanya layanan yang memang
+# memakai bus dan nats-box; sidecar exporter 7777 hanya untuk OTel Collector.
+# Tanpa egress: satu server, cluster/leafnode/gateway mati.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: nats
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: nats
+      app.kubernetes.io/component: nats
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - podSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values: [ingest, geo-processor]
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: nats
+              app.kubernetes.io/component: nats-box
+      ports:
+        - { port: 4222, protocol: TCP }
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: otel-collector
+      ports:
+        - { port: 7777, protocol: TCP }
+  egress: []
+---
+# nats-box (kubectl exec untuk memeriksa stream) hanya boleh ke server NATS.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: nats-box
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: nats
+      app.kubernetes.io/component: nats-box
+  policyTypes: [Ingress, Egress]
+  ingress: []
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: nats
+              app.kubernetes.io/component: nats
+      ports:
+        - { port: 4222, protocol: TCP }

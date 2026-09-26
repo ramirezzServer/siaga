@@ -77,6 +77,8 @@ services:
   # `make obs-up` (profil obs). ingest dan geo-processor mengirim OTLP/HTTP ke
   # 127.0.0.1:4318 bila OTEL_EXPORTER_OTLP_ENDPOINT diisi di .env. Grafana di
   # http://127.0.0.1:3300 (login anonim sebagai admin; hanya dari laptop).
+  # OTLP_BIND=0.0.0.0 di .env membuka port OTLP untuk OTel Collector di cluster
+  # k3d (host.k3d.internal); Grafana tetap hanya di 127.0.0.1.
   lgtm:
     image: grafana/otel-lgtm:0.34.0
     profiles: ["obs"]
@@ -86,7 +88,7 @@ services:
       GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /otel-lgtm/grafana/conf/provisioning/dashboards/siaga/siaga-pipa-data.json
     ports:
       - "127.0.0.1:3300:3000"
-      - "127.0.0.1:4318:4318"
+      - "${OTLP_BIND:-127.0.0.1}:4318:4318"
     volumes:
       - lgtmdata:/data
       - ../observability/grafana/provisioning/siaga-dashboards.yaml:/otel-lgtm/grafana/conf/provisioning/dashboards/siaga.yaml:ro

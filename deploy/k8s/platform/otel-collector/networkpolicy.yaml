@@ -1,22 +1,22 @@
-# ingest hanya boleh: menerima request status dari namespace siaga; keluar ke
-# NATS, Garage, OTel Collector, dan sumber data publik di internet (HTTP/HTTPS,
-# bukan alamat privat). DNS diizinkan untuk semua pod oleh policy allow-dns
-# (deploy/k8s/platform/networkpolicy); selain itu namespace default deny.
+# Collector menerima OTLP dari pod mana pun di namespace siaga (semua layanan
+# mengirim telemetri) dan keluar hanya ke: sidecar exporter NATS, admin API
+# Garage, dan tujuan OTLP di internet (HTTPS, bukan alamat privat). Overlay
+# lokal menambah policy untuk Grafana lokal di laptop (otel-collector-lokal).
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: ingest
+  name: otel-collector
 spec:
   podSelector:
     matchLabels:
-      app.kubernetes.io/name: ingest
+      app.kubernetes.io/name: otel-collector
   policyTypes: [Ingress, Egress]
   ingress:
     - from:
         - podSelector: {}
       ports:
-        - port: 8081
-          protocol: TCP
+        - { port: 4317, protocol: TCP }
+        - { port: 4318, protocol: TCP }
   egress:
     - to:
         - podSelector:
@@ -24,23 +24,16 @@ spec:
               app.kubernetes.io/name: nats
               app.kubernetes.io/component: nats
       ports:
-        - { port: 4222, protocol: TCP }
+        - { port: 7777, protocol: TCP }
     - to:
         - podSelector:
             matchLabels:
               app.kubernetes.io/name: garage
       ports:
-        - { port: 3900, protocol: TCP }
-    - to:
-        - podSelector:
-            matchLabels:
-              app.kubernetes.io/name: otel-collector
-      ports:
-        - { port: 4318, protocol: TCP }
+        - { port: 3903, protocol: TCP }
     - to:
         - ipBlock:
             cidr: 0.0.0.0/0
             except: [10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 100.64.0.0/10, 169.254.0.0/16]
       ports:
         - { port: 443, protocol: TCP }
-        - { port: 80, protocol: TCP }

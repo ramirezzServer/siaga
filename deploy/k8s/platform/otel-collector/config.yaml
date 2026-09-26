@@ -1,0 +1,115 @@
+# OTel Collector SIAGA (distribusi otelcol-k8s), ADR 0017.
+#
+# Layanan mengirim OTLP/HTTP ke otel-collector:4318 tanpa token; hanya
+# Collector yang memegang kredensial Grafana Cloud (Secret siaga-otel-collector).
+# Metrik server NATS, Garage, dan Collector sendiri di-scrape tiap 60 detik
+# (sama dengan OTEL_METRIC_EXPORT_INTERVAL layanan) lalu ikut dikirim.
+#
+# Environment:
+#   OTLP_UPSTREAM_ENDPOINT        endpoint OTLP/HTTP tujuan, misal
+#                                 https://otlp-gateway-<region>.grafana.net/otlp
+#   OTLP_UPSTREAM_AUTHORIZATION   nilai header Authorization ("Basic <base64>");
+#                                 kosong untuk tujuan tanpa auth (Grafana lokal)
+#   GARAGE_METRICS_TOKEN          bearer token /metrics Garage
+#   SIAGA_ENV                     deployment.environment.name untuk metrik scrape
+
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: 0.0.0.0:4318
+      grpc:
+        endpoint: 0.0.0.0:4317
+  prometheus:
+    config:
+      global:
+        scrape_interval: 60s
+        scrape_timeout: 10s
+      scrape_configs:
+        # Sidecar prometheus-nats-exporter dari chart NATS (promExporter).
+        # Hanya metrik tingkat server; isi stream dan antrean consumer sudah
+        # dikirim geo-processor (natsx). Membatasi seri aktif free tier.
+        - job_name: nats
+          static_configs:
+            - targets: [nats-0.nats-headless:7777]
+          metric_relabel_configs:
+            - source_labels: [__name__]
+              regex: nats_varz_(connections|subscriptions|mem|cpu|in_msgs|out_msgs|in_bytes|out_bytes|slow_consumers)|nats_varz_jetstream_stats_(storage|memory|api_total|api_errors)|nats_server_total_(streams|consumers|messages|message_bytes)
+              action: keep
+        - job_name: garage
+          authorization:
+            credentials: ${env:GARAGE_METRICS_TOKEN}
+          static_configs:
+            - targets: [garage:3903]
+        # Metrik internal Collector (diterima, ditolak, gagal kirim, antrean).
+        - job_name: otel-collector
+          static_configs:
+            - targets: [127.0.0.1:8888]
+          metric_relabel_configs:
+            - source_labels: [__name__]
+              regex: otelcol_.*
+              action: keep
+
+processors:
+  memory_limiter:
+    check_interval: 1s
+    limit_percentage: 75
+    spike_limit_percentage: 20
+  # Layanan sudah mengisi deployment.environment.name sendiri (otelx);
+  # insert hanya mengisi yang belum punya, yaitu hasil scrape.
+  resource:
+    attributes:
+      - key: deployment.environment.name
+        value: ${env:SIAGA_ENV}
+        action: insert
+      - key: service.namespace
+        value: siaga
+        action: insert
+  batch:
+    send_batch_size: 2048
+    timeout: 5s
+
+exporters:
+  otlp_http/upstream:
+    endpoint: ${env:OTLP_UPSTREAM_ENDPOINT}
+    headers:
+      Authorization: ${env:OTLP_UPSTREAM_AUTHORIZATION}
+    compression: gzip
+    retry_on_failure:
+      enabled: true
+      max_elapsed_time: 10m
+    sending_queue:
+      enabled: true
+      queue_size: 500
+
+service:
+  extensions: [health_check]
+  telemetry:
+    logs:
+      level: info
+      encoding: json
+    metrics:
+      level: basic
+      readers:
+        - pull:
+            exporter:
+              prometheus:
+                host: 127.0.0.1
+                port: 8888
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, resource, batch]
+      exporters: [otlp_http/upstream]
+    metrics:
+      receivers: [otlp, prometheus]
+      processors: [memory_limiter, resource, batch]
+      exporters: [otlp_http/upstream]
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, resource, batch]
+      exporters: [otlp_http/upstream]

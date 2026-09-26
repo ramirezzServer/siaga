@@ -1,4 +1,4 @@
-# Nilai Helm chart nats/nats untuk lokal: satu node, JetStream dengan penyimpanan file.
+# Nilai Helm chart nats/nats: satu node, JetStream dengan penyimpanan file.
 config:
   cluster:
     enabled: false
@@ -7,5 +7,10 @@ config:
     fileStore:
       pvc:
         size: 2Gi
+# Sidecar prometheus-nats-exporter (port 7777, prefix nats_) yang di-scrape
+# OTel Collector (ADR 0017). Pod label chart: app.kubernetes.io/name=nats,
+# component=nats (server) atau nats-box; NetworkPolicy memakainya.
+promExporter:
+  enabled: true
 natsBox:
   enabled: true

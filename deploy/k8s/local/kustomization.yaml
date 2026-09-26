@@ -7,6 +7,10 @@ resources:
   - ../base/postgres-cluster.yaml
   - ../base/valkey.yaml
   - ../base/mailpit.yaml
+  - ../platform/networkpolicy
+  - ../platform/garage
+  - ../platform/otel-collector
+  - otel-collector-lokal.yaml
   - ../apps/ingest
   - ../apps/geo-processor
 configMapGenerator:

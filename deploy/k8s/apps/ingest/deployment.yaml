@@ -35,13 +35,19 @@ spec:
           envFrom:
             - configMapRef:
                 name: siaga-ingest-env
-            # OPENAQ_API_KEY, FIRMS_MAP_KEY, ARCHIVE_S3_ACCESS_KEY_ID,
-            # ARCHIVE_S3_SECRET_ACCESS_KEY. Opsional: tanpa key, konektor
+            # OPENAQ_API_KEY dan FIRMS_MAP_KEY. Opsional: tanpa key, konektor
             # OpenAQ/FIRMS tidak dijalankan.
             - secretRef:
                 name: siaga-ingest
                 optional: true
           env:
+            # Access key bucket arsip, dibuat Garage dari Secret yang sama.
+            - name: ARCHIVE_S3_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef: { name: siaga-garage, key: GARAGE_DEFAULT_ACCESS_KEY }
+            - name: ARCHIVE_S3_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef: { name: siaga-garage, key: GARAGE_DEFAULT_SECRET_KEY }
             - name: POD_NAME
               valueFrom: { fieldRef: { fieldPath: metadata.name } }
             - name: POD_NAMESPACE

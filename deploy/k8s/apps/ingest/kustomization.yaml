@@ -1,6 +1,7 @@
 # ingest: polling sumber data bahaya → raw.* di NATS JetStream (ADR 0006, 0016).
 # Konfigurasi non-rahasia di ConfigMap siaga-ingest-env (overlay menimpanya
-# dengan behavior: merge); key sumber dan kredensial arsip di Secret siaga-ingest.
+# dengan behavior: merge); key sumber di Secret siaga-ingest, access key arsip
+# di Secret siaga-garage (satu sumber untuk Garage dan ingest).
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: siaga
@@ -23,7 +24,7 @@ configMapGenerator:
       - NATS_URL=nats://nats:4222
       - INGEST_HTTP_ADDR=0.0.0.0:8081
       - LOG_LEVEL=info
-      # Garage di cluster menyusul (fase 1e-2b-2); kosong = payload tidak diarsipkan.
-      - INGEST_ARCHIVE_URL=
-      # OTel Collector di cluster menyusul (fase 1e-2b-2); kosong = telemetri mati.
-      - OTEL_EXPORTER_OTLP_ENDPOINT=
+      # Garage di cluster (deploy/k8s/platform/garage), awalan sama dengan Compose.
+      - INGEST_ARCHIVE_URL=s3://siaga-arsip/raw?endpoint=http://garage:3900
+      # OTel Collector di cluster; token Grafana Cloud hanya dipegang Collector.
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318

@@ -1,0 +1,54 @@
+# PostgreSQL CloudNativePG (semua pod cluster siaga-db: instance dan Job
+# initdb/join). Masuk: 5432 dari geo-processor dan Job migrasinya; 5432 dan
+# 8000 (status instance manager) dari operator di namespace cnpg-system dan
+# dari sesama instance (replika nanti). Keluar: sesama instance dan API
+# server Kubernetes (instance manager membaca Cluster dan Secret lewat API).
+# API server k3s mendengar di IP node port 6443; kube-router mengevaluasi
+# policy setelah DNAT Service kubernetes (443 → 6443). 443 ikut diizinkan
+# untuk CNI yang mengevaluasi sebelum DNAT. Tujuan dibatasi ke IP privat.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: siaga-db
+spec:
+  podSelector:
+    matchLabels:
+      cnpg.io/cluster: siaga-db
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - podSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values: [geo-processor, geo-processor-migrate]
+      ports:
+        - { port: 5432, protocol: TCP }
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: cnpg-system
+        - podSelector:
+            matchLabels:
+              cnpg.io/cluster: siaga-db
+      ports:
+        - { port: 5432, protocol: TCP }
+        - { port: 8000, protocol: TCP }
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              cnpg.io/cluster: siaga-db
+      ports:
+        - { port: 5432, protocol: TCP }
+        - { port: 8000, protocol: TCP }
+    - to:
+        - ipBlock:
+            cidr: 10.0.0.0/8
+        - ipBlock:
+            cidr: 172.16.0.0/12
+        - ipBlock:
+            cidr: 192.168.0.0/16
+      ports:
+        - { port: 6443, protocol: TCP }
+        - { port: 443, protocol: TCP }

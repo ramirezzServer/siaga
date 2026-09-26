@@ -1,0 +1,21 @@
+# Hanya lokal: Collector boleh mengirim ke Grafana lokal di laptop
+# (make obs-up, host.k3d.internal:4318), yang beralamat IP privat.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: otel-collector-lokal
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: otel-collector
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 10.0.0.0/8
+        - ipBlock:
+            cidr: 172.16.0.0/12
+        - ipBlock:
+            cidr: 192.168.0.0/16
+      ports:
+        - { port: 4318, protocol: TCP }

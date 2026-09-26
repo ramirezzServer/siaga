@@ -28,4 +28,4 @@ configMapGenerator:
       - DB_PORT=5432
       - DB_NAME=siaga
       - DB_SSLMODE=require
-      - OTEL_EXPORTER_OTLP_ENDPOINT=
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318

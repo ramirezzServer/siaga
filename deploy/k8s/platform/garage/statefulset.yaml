@@ -1,0 +1,104 @@
+# Garage satu node. --single-node menyusun layout sendiri saat pertama jalan;
+# --default-bucket membuat bucket GARAGE_DEFAULT_BUCKET dan access key dari
+# Secret siaga-garage bila belum ada (idempotent, sama dengan Compose lite).
+# Node ID dan layout tersimpan di volume meta, jadi pod bisa dijadwalkan ulang.
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: garage
+spec:
+  serviceName: garage
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: garage
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: garage
+    spec:
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: garage
+          image: dxflrs/garage:v2.3.0
+          command: [/garage]
+          args: [server, --single-node, --default-bucket]
+          ports:
+            - name: s3
+              containerPort: 3900
+            - name: admin
+              containerPort: 3903
+          envFrom:
+            - configMapRef:
+                name: siaga-garage-env
+            # GARAGE_RPC_SECRET, GARAGE_ADMIN_TOKEN, GARAGE_METRICS_TOKEN,
+            # GARAGE_DEFAULT_ACCESS_KEY, GARAGE_DEFAULT_SECRET_KEY.
+            - secretRef:
+                name: siaga-garage
+          resources:
+            requests: { cpu: 50m, memory: 64Mi }
+            limits: { memory: 384Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          # /health bernilai 200 bila layout lengkap dan semua partisi punya quorum.
+          startupProbe:
+            httpGet: { path: /health, port: admin }
+            periodSeconds: 2
+            failureThreshold: 60
+          readinessProbe:
+            httpGet: { path: /health, port: admin }
+            periodSeconds: 10
+            timeoutSeconds: 3
+          # Liveness cukup port terbuka: /health bisa 503 sesaat (misal disk
+          # penuh) dan restart tidak memperbaikinya.
+          livenessProbe:
+            tcpSocket: { port: admin }
+            periodSeconds: 20
+            timeoutSeconds: 3
+          volumeMounts:
+            - name: config
+              mountPath: /etc/garage.toml
+              subPath: garage.toml
+              readOnly: true
+            - name: meta
+              mountPath: /var/lib/garage/meta
+            - name: data
+              mountPath: /var/lib/garage/data
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: config
+          configMap:
+            name: siaga-garage-config
+        - name: tmp
+          emptyDir:
+            sizeLimit: 16Mi
+  volumeClaimTemplates:
+    - metadata:
+        name: meta
+      spec:
+        accessModes: [ReadWriteOnce]
+        resources:
+          requests:
+            storage: 1Gi
+    - metadata:
+        name: data
+      spec:
+        accessModes: [ReadWriteOnce]
+        resources:
+          requests:
+            storage: 10Gi

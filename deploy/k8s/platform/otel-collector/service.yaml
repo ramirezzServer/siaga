@@ -1,0 +1,16 @@
+# Tujuan OTLP semua layanan (OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4318).
+apiVersion: v1
+kind: Service
+metadata:
+  name: otel-collector
+spec:
+  selector:
+    app.kubernetes.io/name: otel-collector
+  ports:
+    - name: otlp-grpc
+      port: 4317
+      targetPort: otlp-grpc
+      appProtocol: grpc
+    - name: otlp-http
+      port: 4318
+      targetPort: otlp-http
