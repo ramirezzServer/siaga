@@ -383,12 +383,22 @@ jobs:
           tar -xzf "kustomize_v${KUSTOMIZE_VERSION}_linux_amd64.tar.gz" -C bin kustomize
           tar -xzf kubeconform-linux-amd64.tar.gz -C bin kubeconform
           echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
+      # Tanpa kunci age: hanya memastikan tidak ada nilai plaintext yang ikut ter-commit.
+      - name: Secret SOPS terenkripsi
+        run: scripts/sops-check.sh
+      - name: Validasi config OTel Collector
+        run: |
+          image=$(grep -oE 'otel/opentelemetry-collector-k8s:[0-9.]+' deploy/k8s/platform/otel-collector/deployment.yaml)
+          docker run --rm -v "$PWD/deploy/k8s/platform/otel-collector:/conf:ro" \
+            -e OTLP_UPSTREAM_ENDPOINT=https://contoh.invalid/otlp -e GARAGE_METRICS_TOKEN=uji -e SIAGA_ENV=ci \
+            "$image" validate --config=/conf/config.yaml
       - name: Render dan validasi overlay
         run: |
           mkdir -p rendered
           for o in local prod; do
             kustomize build --load-restrictor LoadRestrictionsNone "deploy/k8s/$o" > "rendered/$o.yaml"
-            # CRD CloudNativePG (Cluster) tidak ada di skema bawaan.
+            # CRD CloudNativePG (Cluster) dan sops-secrets-operator (SopsSecret)
+            # tidak ada di skema bawaan.
             kubeconform -strict -summary -ignore-missing-schemas -kubernetes-version 1.33.0 "rendered/$o.yaml"
           done
       # Hanya overlay prod: overlay lokal membawa Mailpit (alat dev, image
