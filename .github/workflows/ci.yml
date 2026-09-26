@@ -256,6 +256,153 @@ jobs:
         if: failure()
         run: docker logs garage
 
+  images:
+    name: Image layanan Go
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # Push ke GHCR dan tanda tangan cosign keyless (OIDC), hanya di push ke main.
+      packages: write
+      id-token: write
+    env:
+      PUSH: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+      REGISTRY: ghcr.io/ramirezzserver
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: ingest
+            binaries: ingest archive replay
+          - service: geo-processor
+            binaries: geo-processor import-regions
+    steps:
+      - uses: actions/checkout@v5
+      - uses: docker/setup-buildx-action@v3
+      - name: Versi
+        run: echo "VERSION=$(git rev-parse --short=12 HEAD)" >> "$GITHUB_ENV"
+      # Build amd64 dulu dan muat ke Docker lokal untuk uji asap dan Trivy;
+      # build multi-arch di bawah memakai ulang cache yang sama.
+      - name: Build (amd64, lokal)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: deploy/images/go/Dockerfile
+          target: ${{ matrix.service }}
+          build-args: |
+            SERVICE=${{ matrix.service }}
+            BINARIES=${{ matrix.binaries }}
+            VERSION=${{ env.VERSION }}
+          platforms: linux/amd64
+          load: true
+          tags: siaga-${{ matrix.service }}:ci
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,scope=${{ matrix.service }},mode=max
+      - name: Uji asap
+        run: |
+          case "${{ matrix.service }}" in
+            ingest) scripts/image-smoke.sh --ingest siaga-ingest:ci ;;
+            geo-processor) scripts/image-smoke.sh --geo siaga-geo-processor:ci ;;
+          esac
+      - name: Pindai kerentanan image
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        env:
+          TRIVY_IGNOREFILE: .trivyignore.yaml
+        with:
+          image-ref: siaga-${{ matrix.service }}:ci
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: "1"
+      - name: Tag image
+        id: meta
+        if: env.PUSH == 'true'
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/siaga-${{ matrix.service }}
+          tags: |
+            type=sha,prefix=sha-,format=long
+            type=raw,value=main
+      - name: Login GHCR
+        if: env.PUSH == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      # Cross-compile di Dockerfile, jadi arm64 (VM Oracle) tidak butuh QEMU.
+      - name: Build dan push (amd64 + arm64)
+        id: push
+        if: env.PUSH == 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: deploy/images/go/Dockerfile
+          target: ${{ matrix.service }}
+          build-args: |
+            SERVICE=${{ matrix.service }}
+            BINARIES=${{ matrix.binaries }}
+            VERSION=${{ env.VERSION }}
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          sbom: true
+          provenance: mode=max
+          cache-from: type=gha,scope=${{ matrix.service }}
+      - uses: sigstore/cosign-installer@v3
+        if: env.PUSH == 'true'
+      - name: Tanda tangan image (cosign keyless)
+        if: env.PUSH == 'true'
+        env:
+          DIGEST: ${{ steps.push.outputs.digest }}
+          IMAGE: ${{ env.REGISTRY }}/siaga-${{ matrix.service }}
+        run: |
+          cosign sign --yes "${IMAGE}@${DIGEST}"
+          echo "### siaga-${{ matrix.service }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "\`${IMAGE}@${DIGEST}\`" >> "$GITHUB_STEP_SUMMARY"
+
+  manifests:
+    name: Manifest Kubernetes
+    runs-on: ubuntu-latest
+    env:
+      KUSTOMIZE_VERSION: 5.7.1
+      KUBECONFORM_VERSION: 0.7.0
+    steps:
+      - uses: actions/checkout@v5
+      - name: Pasang kustomize dan kubeconform
+        run: |
+          cd "$RUNNER_TEMP"
+          k="https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv${KUSTOMIZE_VERSION}"
+          curl -sSfLO "$k/kustomize_v${KUSTOMIZE_VERSION}_linux_amd64.tar.gz"
+          curl -sSfLO "$k/checksums.txt"
+          grep " kustomize_v${KUSTOMIZE_VERSION}_linux_amd64.tar.gz$" checksums.txt | sha256sum -c -
+          c="https://github.com/yannh/kubeconform/releases/download/v${KUBECONFORM_VERSION}"
+          curl -sSfLO "$c/kubeconform-linux-amd64.tar.gz"
+          curl -sSfL -o kc-checksums.txt "$c/CHECKSUMS"
+          grep " kubeconform-linux-amd64.tar.gz$" kc-checksums.txt | sha256sum -c -
+          mkdir -p bin
+          tar -xzf "kustomize_v${KUSTOMIZE_VERSION}_linux_amd64.tar.gz" -C bin kustomize
+          tar -xzf kubeconform-linux-amd64.tar.gz -C bin kubeconform
+          echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
+      - name: Render dan validasi overlay
+        run: |
+          mkdir -p rendered
+          for o in local prod; do
+            kustomize build --load-restrictor LoadRestrictionsNone "deploy/k8s/$o" > "rendered/$o.yaml"
+            # CRD CloudNativePG (Cluster) tidak ada di skema bawaan.
+            kubeconform -strict -summary -ignore-missing-schemas -kubernetes-version 1.33.0 "rendered/$o.yaml"
+          done
+      # Hanya overlay prod: overlay lokal membawa Mailpit (alat dev, image
+      # pihak ketiga yang jalan sebagai root) yang memang tidak ke produksi.
+      - name: Pindai konfigurasi produksi (Trivy misconfig)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        env:
+          TRIVY_IGNOREFILE: .trivyignore.yaml
+        with:
+          scan-type: config
+          scan-ref: rendered/prod.yaml
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+
   commits:
     name: Format pesan commit
     if: github.event_name == 'pull_request'
