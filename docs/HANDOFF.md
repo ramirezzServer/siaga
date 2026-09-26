@@ -2,9 +2,40 @@
 
 Dokumen ini adalah titik lanjut untuk sesi kerja berikutnya, termasuk chat baru dengan asisten AI. Perbarui setiap akhir sesi.
 
-## Status: Fase 1e-2b-1 selesai di workspace asisten, menunggu verifikasi di WSL (2026-09-26)
+## Status: Fase 1e-2b-2 selesai di workspace asisten, menunggu verifikasi di WSL (2026-09-26)
 
-Fase 0 sampai 1e-2a ter-commit (1e-2a di `b55b2bf`). Fase 1e dipecah: **1e-1** arsip Garage + replay, **1e-2a** OpenTelemetry + dashboard, **1e-2b** deploy, **1e-3** backfill + kalibrasi (lihat Berikutnya). 1e-2b dipecah lagi: **1e-2b-1** image + CI + manifest pipa data (bagian ini), **1e-2b-2** OTel Collector, Garage di cluster, Secret SOPS, **1e-2b-3** retensi dan backup arsip.
+Fase 0 sampai 1e-2b-1 ter-commit (1e-2b-1 di `e4b4e1c`, fix grpc `043bccb`). Fase 1e dipecah: **1e-1** arsip Garage + replay, **1e-2a** OpenTelemetry + dashboard, **1e-2b** deploy, **1e-3** backfill + kalibrasi (lihat Berikutnya). 1e-2b dipecah lagi: **1e-2b-1** image + CI + manifest pipa data, **1e-2b-2** Garage dan OTel Collector di cluster, Secret SOPS, default deny (bagian ini), **1e-2b-3** retensi dan backup arsip.
+
+### Fase 1e-2b-2: Garage, OTel Collector, secret SOPS, dan default deny
+
+| Bagian         | Isi                                                                                                                                                                                                                                                                                                              | Terverifikasi di workspace asisten                                                                                                                                                                                                                                                |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Garage         | `deploy/k8s/platform/garage`: StatefulSet satu node (`dxflrs/garage:v2.3.0`, `--single-node --default-bucket`), UID 65532, rootfs read-only, PVC meta 1 Gi + data 10 Gi, probe `/health`; ingest mengarsipkan ke `s3://siaga-arsip/raw?endpoint=http://garage:3900` dengan access key dari Secret `siaga-garage` | Kunci config (`compression_level = "none"`, `block_ram_buffer_max`) dan env `GARAGE_*` dicek di source v2.3.0 (mirror GitHub). **Belum pernah jalan di cluster**: image Garage tidak bisa ditarik di workspace                                                                    |
+| OTel Collector | `deploy/k8s/platform/otel-collector`: `otelcol-k8s` 0.161.0, OTLP masuk dari layanan, scrape sidecar exporter NATS (`promExporter` di `nats-values.yaml`), `/metrics` Garage, dan metrik internal; kirim ke Grafana Cloud dengan kredensial dari Secret `siaga-otel-collector`                                   | Binary rilis 0.161.0 dengan config asli: `validate`, lalu end-to-end dengan nats-server 2.15.0 + prometheus-nats-exporter 0.20.2 + Garage tiruan (format `/metrics` dari dokumentasi v2.3.0) → pengganti Grafana Cloud (cek header auth) → Prometheus 3.15 OTLP; 56 seri platform |
+| Secret SOPS    | `.sops.yaml` (recipient diisi otomatis, indentasi 2), `deploy/k8s/prod/secrets.enc.yaml` (`SopsSecret`, dibuat `make secrets-prod`), `make secrets-grafana`/`secrets-edit`/`secrets-check`, `scripts/sops-check.sh` di `k8s-check` dan CI; `dev-secrets.sh` membuat Secret dengan nama/key sama untuk k3d        | sops 3.13.3 + age 1.3.2: buat, jalankan ulang (tidak berubah), rotasi Grafana, round-trip dekripsi; `sops-check` menolak file plaintext dan campuran; gitleaks 8.30.1 bersih pada file terenkripsi; `dev-secrets.sh` diuji dengan kubectl tiruan                                  |
+| NetworkPolicy  | `deploy/k8s/platform/networkpolicy`: `default-deny` + `allow-dns` untuk semua pod, policy NATS/nats-box dan CloudNativePG; policy Garage, Collector, ingest (diketatkan ke NATS/Garage/Collector/internet), geo-processor (PostgreSQL/NATS/Collector); overlay lokal `otel-collector-lokal`                      | Label pod chart NATS dicek di chart 2.15.0. **Belum pernah diterapkan di k3s**                                                                                                                                                                                                    |
+| Integrasi      | Tilt (`dev-secrets`, `garage` port-forward 13900, `otel-collector`), `make otelcol-check`, job CI `manifests` (sops-check, validasi config Collector), baris dashboard "Platform di cluster" (6 panel), `OTLP_BIND` untuk Grafana lokal dari k3d, ADR 0017, panduan secret dan Grafana Cloud                     | kustomize 5.7.1 + kubeconform strict (32 dan 25 resource valid); Trivy 0.74 overlay prod tanpa CRITICAL/HIGH; actionlint bersih; semua query panel baru mengembalikan data di Prometheus uji; Prettier bersih                                                                     |
+
+### Verifikasi yang perlu dijalankan di WSL (1e-2b-2)
+
+```bash
+bash "/mnt/c/KULIAH/PROJECT CODE/siaga-titipan/terapkan-fase-1e-2b-2.sh"
+# pasang sops bila belum (docs/setup/secrets.md), lalu skrip: patch → make secrets-prod
+# (tanya kredensial Grafana Cloud produksi) → secrets-check, k8s-check, check → commit
+git push
+```
+
+Setelah CI hijau: salin ulang dashboard ke Grafana Cloud (Import → Overwrite). Cabut token Grafana Cloud lama yang sempat terlihat bila `make secrets-prod` dipakai untuk membuat token baru, dan pertimbangkan juga mengganti token laptop di `.env`.
+
+Opsional, profil full (belum pernah dicoba): `make k3d-up && make tilt`. Yang perlu diperhatikan: `garage` Ready, `otel-collector` Ready dan lognya tanpa galat ekspor, `geo-processor-migrate` selesai (bukti CloudNativePG lolos default deny), lalu nyalakan `ingest` manual dan pastikan log start `arsip payload aktif`. Setelah ±2 menit panel "Platform di cluster" terisi.
+
+### Temuan yang perlu ditindaklanjuti (1e-2b-2)
+
+- **sops-secrets-operator, kunci age cluster, CloudNativePG, NATS, dan Argo CD di produksi** dipasang saat bootstrap fase 2 (`sops updatekeys` setelah kunci cluster ditambahkan ke `.sops.yaml`).
+- Lokal tetap memakai `dev-secrets.sh`, bukan SOPS dengan kunci lokal seperti di dokumen arsitektur (ADR 0017 butir 9).
+- Default deny: setiap layanan baru wajib membawa NetworkPolicy dan ditambahkan ke daftar klien NATS/PostgreSQL/Garage. CloudNativePG di balik default deny paling berisiko; bila `siaga-db` tidak Ready setelah Tilt, cek dulu dengan `kubectl -n siaga delete networkpolicy siaga-db default-deny` lalu laporkan.
+- Nama metrik counter Garage di Grafana Cloud diasumsikan `api_s3_request_counter_total` dan `block_bytes_written_total` (hasil terjemahan OTLP→Prometheus yang diuji dengan Prometheus 3.15); bila panel Garage kosong padahal target hidup, cek nama di Explore.
+- Chart NATS di Tilt belum dipin versinya.
 
 ### Fase 1e-2b-1: image, job CI, dan manifest Kubernetes pipa data
 
@@ -209,7 +240,6 @@ Kontrak `siaga.raw.v1`, stream `RAW`/`HAZARD`, layanan ingest dengan konektor BM
 ## Utang kecil yang diketahui
 
 - Compose lite memakai `nats:2.11-alpine`, sedangkan test memakai server 2.15 dalam proses. Replay 1c dan 1d-1 sudah dijalankan dengan binary `nats-server` 2.11.9 tanpa masalah; naikkan image saat Renovate aktif.
-- Garage dan Grafana lokal baru ada di Compose lite; Garage dan OTel Collector di cluster masuk 1e-2b-2.
 - `/status` geo-processor menampilkan ambang dengan durasi dalam nanodetik (JSON bawaan `time.Duration`). Kosmetik; rapikan saat dashboard Grafana dibuat.
 - Renovate sudah dikonfigurasi (`renovate.json`) tetapi GitHub App Renovate belum dipasang di repo.
 - Runner `ubuntu-latest` pindah ke Ubuntu 26 mulai 2026-10-19. Pantau run CI pertama setelah tanggal itu.
@@ -227,8 +257,8 @@ Target demo fase 1: dashboard Grafana berisi data live semua sumber.
 - [x] **1d-2** OpenAQ v3 (stasiun dalam kotak Jawa Barat tiap 15 menit, `X-API-Key`) → `raw.aq.openaq` → `ts.aq_observation`; NASA FIRMS (VIIRS/MODIS NRT, satu kotak tiap 30 menit, MAP_KEY) → `raw.fire.firms` → `ts.hotspot`; key opsional di `.env`, disamarkan di galat dan log (ADR 0013). Menunggu rekaman asli.
 - [x] **1e-1** Arsip payload mentah ke Garage (Compose lite, adapter S3, `INGEST_ARCHIVE_URL`), perintah `archive` (ls, verify, cp) dan `replay` dari arsip ke NATS urut waktu ambil (ADR 0014). Menunggu verifikasi di WSL.
 - [x] **1e-2a** OpenTelemetry di ingest dan geo-processor (trace lewat header `traceparent` NATS dan kolom outbox, metrik sumber/kuota/antrean/latensi/query, log OTLP), Grafana lokal `make obs-up` dan dashboard pipa data, panduan Grafana Cloud (ADR 0015). Terverifikasi di WSL; dashboard jalan di Grafana Cloud.
-- [x] **1e-2b-1** Image ingest dan geo-processor (satu Dockerfile, amd64 + arm64, distroless nonroot), job CI `images` (uji asap, Trivy, push GHCR + SBOM + cosign di `main`) dan `manifests`, manifest Kustomize ingest + geo-processor + Job migrasi dengan overlay local/prod, panel keterlambatan dashboard tanpa jeda ekspor (ADR 0016). Menunggu verifikasi di WSL.
-- [ ] **1e-2b-2** OTel Collector di cluster (ke Grafana Cloud, plus metrik server NATS dan Garage), Garage di cluster, key OpenAQ/FIRMS + kredensial arsip + token Grafana Cloud lewat Secret SOPS (age), NetworkPolicy default deny namespace.
+- [x] **1e-2b-1** Image ingest dan geo-processor (satu Dockerfile, amd64 + arm64, distroless nonroot), job CI `images` (uji asap, Trivy, push GHCR + SBOM + cosign di `main`) dan `manifests`, manifest Kustomize ingest + geo-processor + Job migrasi dengan overlay local/prod, panel keterlambatan dashboard tanpa jeda ekspor (ADR 0016). Terverifikasi di WSL; CI hijau dan paket GHCR publik.
+- [x] **1e-2b-2** Garage satu node di cluster (ingest mengarsipkan langsung), OTel Collector `otelcol-k8s` (satu-satunya pemegang token Grafana Cloud, scrape metrik NATS dan Garage), secret produksi dalam satu `SopsSecret` terenkripsi age (`make secrets-prod`, sops-secrets-operator di fase 2), NetworkPolicy default deny namespace, baris dashboard platform (ADR 0017). Menunggu verifikasi di WSL.
 - [ ] **1e-2b-3** (setelah ±2026-10-02, seminggu data arsip) retensi arsip (lifecycle Garage) dan backup Garage ke Oracle Object Storage.
 - [ ] **1e-3** Backfill dan kalibrasi: reanalisis GloFAS (`consolidated_v4`, ±3.900 panggilan) → ambang persentil banjir → `hazard.flood.*` (setelah 17 titik sungai bertanda diperiksa manual); arsip FIRMS standar (SP) → ambang titik api → `hazard.fire.*`; backfill jam OpenAQ yang terlewat (`/v3/sensors/{id}/hours`); set berlabel T4 dan kalibrasi radius dirasakan dari arsip gempa; replay CAP/prakiraan/OpenAQ (metadata request di objek arsip).
 
@@ -251,6 +281,8 @@ Workspace cloud asisten tidak bisa menjangkau `proxy.golang.org`, `go.dev`, atau
 - Menjalankan skrip pihak ketiga yang diunduh (misal `extract_tsv.py` repo-gempa) ditolak kebijakan workspace; pakai data yang sudah jadi.
 
 - Sesi 1e-1: membangun Go dari source sempat ditolak pemeriksa keamanan workspace dan baru jalan setelah pengguna mengizinkan eksplisit. golangci-lint butuh mirror GitHub untuk semua dependensi vanity; `codeberg.org` (go-errorlint v1.9.0, garif) diblokir, jadi dipakai mirror GitHub v1.8.0/v0.1.0 dengan nama modul diganti, dan `decorder` (GitLab) dibuang. Registry Docker juga diblokir, jadi Garage asli tidak bisa dijalankan di workspace; uji S3 memakai server tiruan (`s3archive/s3test`).
+
+- Sesi 1e-2b-2: rilis GitHub yang bisa diunduh dan dipakai menguji: otelcol-k8s (checksum per file `<nama>.sha256`, bukan file checksums gabungan), nats-server, prometheus-nats-exporter (`checksums.txt`, arsip `linux-x86_64`), sops, age, gitleaks. Garage tidak punya binary di GitHub (rilis di `garagehq.deuxfleurs.fr`, tidak terjangkau); source-nya ada di mirror `deuxfleurs-org/garage`. Repo Helm `isindir.github.io` tidak terjangkau, tetapi repo GitHub operator bisa di-clone. Uji Collector memakai `/etc/hosts` untuk nama Service (`garage`, `nats-0.nats-headless`).
 
 - Sesi 1e-2b-1: workspace punya klien Docker tanpa daemon, dan registry Docker/GHCR tetap tidak terjangkau, jadi image tidak bisa di-build di sana. Rilis GitHub bisa diunduh: kustomize, kubeconform, Trivy 0.74 (misconfig memakai check bawaan), actionlint, hadolint, Prometheus 3.14. `get.helm.sh` tidak terjangkau (salah satu alasan Kustomize). Query dashboard diuji dengan `promtool tsdb create-blocks-from openmetrics` lalu query instan pada waktu tertentu.
 

@@ -60,6 +60,8 @@ curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
 curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 curl -fsSL https://raw.githubusercontent.com/tilt-dev/tilt/master/scripts/install.sh | bash
 sudo snap install kubectl --classic || echo "pasang kubectl manual: https://kubernetes.io/docs/tasks/tools/"
+
+# Secret produksi: sops (age sudah dari apt di atas); langkah dengan checksum di docs/setup/secrets.md
 ```
 
 ## 5. Jalankan

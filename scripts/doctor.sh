@@ -38,7 +38,7 @@ check helm     "helm version --short" "https://helm.sh/docs/intro/install/" 0
 check tilt     "tilt version" "https://docs.tilt.dev/install.html" 0
 
 echo "Secret produksi:"
-check sops     "sops --version" "https://github.com/getsops/sops/releases" 0
+check sops     "sops --version" "docs/setup/secrets.md (rilis GitHub, >= 3.9)" 0
 check age      "age --version" "sudo apt install age" 0
 
 echo

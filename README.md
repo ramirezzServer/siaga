@@ -32,7 +32,7 @@ make archive-ls       # isi arsip payload mentah per konektor; archive-verify me
 make replay FROM=2026-09-24 TO=2026-09-25   # putar ulang arsip ke NATS, urut waktu ambil asli
 make obs-up           # Grafana + Prometheus + Tempo + Loki lokal, dashboard di http://127.0.0.1:3300
 make images-smoke     # build image ingest + geo-processor dan uji asap (sama dengan CI)
-make k8s-check        # render manifest Kubernetes lokal + prod dan validasi skemanya
+make k8s-check        # render manifest Kubernetes lokal + prod, validasi skema, config Collector, dan enkripsi secret
 ```
 
 OpenAQ dan NASA FIRMS butuh key gratis: isi `OPENAQ_API_KEY` (daftar di explore.openaq.org) dan `FIRMS_MAP_KEY` (firms.modaps.eosdis.nasa.gov/api/map_key) di `.env`. Tanpa key, ingest tetap jalan tanpa kedua konektor itu.
@@ -41,7 +41,7 @@ Payload mentah setiap sumber diarsipkan ke Garage (bucket `siaga-arsip`, awalan 
 
 ingest dan geo-processor diinstrumentasi OpenTelemetry: satu gempa bisa dilacak dalam satu trace dari polling sumber, arsip, NATS, query PostgreSQL, sampai `hazard.quake.created` terbit, dan dashboard "SIAGA — Pipa data" menampilkan keterlambatan dan galat tiap sumber, sisa kuota request, antrean NATS, latensi pipa, dan query lambat (ADR 0015). Isi `OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4318` di `.env` setelah `make obs-up`, atau arahkan ke Grafana Cloud ([docs/setup/grafana-cloud.md](docs/setup/grafana-cloud.md)).
 
-Profil full (Kubernetes lokal, sama dengan produksi): `make k3d-up && make tilt`. Image layanan Go (amd64 + arm64, distroless, non-root) dibangun CI dan di `main` didorong ke `ghcr.io/ramirezzserver/siaga-<layanan>` dengan SBOM dan tanda tangan cosign; manifest Kustomize ada di `deploy/k8s` (ADR 0016).
+Profil full (Kubernetes lokal, sama dengan produksi): `make k3d-up && make tilt`. Image layanan Go (amd64 + arm64, distroless, non-root) dibangun CI dan di `main` didorong ke `ghcr.io/ramirezzserver/siaga-<layanan>` dengan SBOM dan tanda tangan cosign; manifest Kustomize ada di `deploy/k8s` (ADR 0016). Di cluster, ingest mengarsipkan ke Garage, semua telemetri lewat OTel Collector (satu-satunya pemegang token Grafana Cloud, sekaligus pengumpul metrik NATS dan Garage), seluruh namespace default deny dengan izin jaringan eksplisit per komponen, dan secret produksi disimpan terenkripsi SOPS + age di repo (`make secrets-prod`, ADR 0017, [docs/setup/secrets.md](docs/setup/secrets.md)).
 
 ## Struktur
 
