@@ -11,6 +11,8 @@ IMAGE_TAG            ?= dev
 INGEST_BINARIES      := ingest archive replay
 GEO_BINARIES         := geo-processor import-regions
 KUBECONFORM_IMAGE    := ghcr.io/yannh/kubeconform:v0.7.0
+# Image OTel Collector diambil dari manifest supaya validasi memakai versi yang sama.
+OTELCOL_IMAGE        := $(shell grep -oE 'otel/opentelemetry-collector-k8s:[0-9.]+' deploy/k8s/platform/otel-collector/deployment.yaml)
 PROVINCE    ?= 32
 
 # DATABASE_URL untuk role siaga_geo, dibangun dari .env.
@@ -188,7 +190,7 @@ fuzz: ## Fuzzing singkat semua target fuzz (30 detik per target)
 check: lint test ## Semua pemeriksaan sebelum push
 
 ##@ Image dan manifest
-.PHONY: images images-smoke k8s-check
+.PHONY: images images-smoke k8s-check otelcol-check
 images: ## Build image ingest dan geo-processor untuk arsitektur mesin ini (IMAGE_TAG=dev)
 	docker buildx build -f deploy/images/go/Dockerfile --target ingest --load \
 	  --build-arg SERVICE=ingest --build-arg BINARIES="$(INGEST_BINARIES)" \
@@ -201,12 +203,32 @@ images: ## Build image ingest dan geo-processor untuk arsitektur mesin ini (IMAG
 images-smoke: images ## Uji asap image: binary jalan, user nonroot, folder migrasi lengkap
 	scripts/image-smoke.sh --ingest siaga-ingest:$(IMAGE_TAG) --geo siaga-geo-processor:$(IMAGE_TAG)
 
-k8s-check: ## Render overlay Kubernetes lokal dan prod lalu validasi skemanya (kubeconform)
+k8s-check: secrets-check otelcol-check ## Render overlay Kubernetes lokal dan prod lalu validasi skemanya (kubeconform)
+	@test -f deploy/k8s/prod/secrets.enc.yaml || { echo "deploy/k8s/prod/secrets.enc.yaml belum ada: jalankan make secrets-prod"; exit 1; }
 	@for o in local prod; do \
 	  echo "overlay $$o"; \
 	  kubectl kustomize --load-restrictor LoadRestrictionsNone deploy/k8s/$$o \
 	    | docker run --rm -i $(KUBECONFORM_IMAGE) -strict -summary -ignore-missing-schemas -kubernetes-version 1.33.0 -; \
 	done
+
+otelcol-check: ## Validasi config OTel Collector dengan image yang dipakai cluster
+	@docker run --rm -v "$(CURDIR)/deploy/k8s/platform/otel-collector:/conf:ro" \
+	  -e OTLP_UPSTREAM_ENDPOINT=https://contoh.invalid/otlp -e GARAGE_METRICS_TOKEN=uji -e SIAGA_ENV=uji \
+	  "$(OTELCOL_IMAGE)" validate --config=/conf/config.yaml && echo "config OTel Collector valid ($(OTELCOL_IMAGE))"
+
+##@ Secret produksi (SOPS + age)
+.PHONY: secrets-prod secrets-grafana secrets-edit secrets-check
+secrets-prod: ## Buat/lengkapi secret produksi terenkripsi (kunci age, password acak, token Grafana Cloud)
+	@scripts/prod-secrets.sh
+
+secrets-grafana: ## Ganti kredensial Grafana Cloud di secret produksi (rotasi token)
+	@scripts/prod-secrets.sh --grafana
+
+secrets-edit: ## Buka secret produksi di editor lewat sops (tersimpan terenkripsi lagi)
+	sops edit deploy/k8s/prod/secrets.enc.yaml
+
+secrets-check: ## Pastikan semua file *.enc.yaml benar-benar terenkripsi (tanpa kunci)
+	@scripts/sops-check.sh
 
 ##@ Kubernetes lokal (k3d + Tilt, profil full)
 .PHONY: k3d-up k3d-down tilt

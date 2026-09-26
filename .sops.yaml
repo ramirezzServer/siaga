@@ -1,7 +1,12 @@
-# Secret produksi dienkripsi dengan age sebelum di-commit.
-# Ganti recipient di bawah dengan public key hasil `age-keygen` (lihat docs/setup/secrets.md).
-# Private key TIDAK PERNAH di-commit.
+# Secret produksi dienkripsi dengan age sebelum di-commit (ADR 0017). Recipient
+# diisi `make secrets-prod` dari kunci age pribadi (~/.config/sops/age/keys.txt);
+# kunci age cluster ditambahkan saat bootstrap produksi (fase 2) lalu
+# `sops updatekeys`. Private key TIDAK PERNAH di-commit.
 creation_rules:
   - path_regex: deploy/k8s/prod/.*\.enc\.ya?ml$
     encrypted_regex: ^(data|stringData)$
-    age: age1replace0with0your0public0key0000000000000000000000000000000
+    age: age1zm7j84cz6ep8k5d9xzclcw462aasq80xyx539g2vt9nc64ym3svsktqg5c
+# Indentasi sama dengan Prettier supaya hook pre-commit tidak menolak file terenkripsi.
+stores:
+  yaml:
+    indent: 2
