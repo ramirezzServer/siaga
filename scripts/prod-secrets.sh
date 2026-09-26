@@ -94,14 +94,19 @@ report = []
 
 
 def tty_input(prompt, secret=False):
+    # stdin skrip ini adalah heredoc, jadi pertanyaan dibaca langsung dari
+    # terminal. /dev/tty dibuka terpisah untuk baca dan tulis: mode "r+" gagal
+    # karena terminal tidak bisa di-seek.
     try:
-        with open("/dev/tty", "r+") as tty:
-            if secret:
-                return getpass.getpass(prompt, stream=tty).strip()
-            tty.write(prompt)
-            tty.flush()
-            return tty.readline().strip()
+        if secret:
+            with open("/dev/tty", "w") as out:
+                return getpass.getpass(prompt, stream=out).strip()
+        with open("/dev/tty", "w") as out, open("/dev/tty") as inp:
+            out.write(prompt)
+            out.flush()
+            return inp.readline().strip()
     except OSError:
+        print("peringatan: terminal tidak tersedia untuk bertanya", file=sys.stderr)
         return ""  # tanpa terminal (CI, pipa): dianggap dilewati
 
 
