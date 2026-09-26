@@ -1,0 +1,26 @@
+# Manifest produksi (k3s di VM ARM Oracle Always Free). Baru berisi layanan
+# pipa data; platform (CloudNativePG, NATS, Garage, OTel Collector) dan
+# Secret SOPS menyusul di fase 1e-2b-2, bootstrap cluster di fase 2.
+# Tag image diganti pipeline CD (fase 2) dengan tag sha-<commit> dari job CI images.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: siaga
+resources:
+  - ../apps/ingest
+  - ../apps/geo-processor
+images:
+  - name: siaga-ingest
+    newName: ghcr.io/ramirezzserver/siaga-ingest
+    newTag: main
+  - name: siaga-geo-processor
+    newName: ghcr.io/ramirezzserver/siaga-geo-processor
+    newTag: main
+configMapGenerator:
+  - name: siaga-ingest-env
+    behavior: merge
+    literals:
+      - SIAGA_ENV=produksi
+  - name: siaga-geo-env
+    behavior: merge
+    literals:
+      - SIAGA_ENV=produksi

@@ -1,0 +1,29 @@
+# ingest: polling sumber data bahaya → raw.* di NATS JetStream (ADR 0006, 0016).
+# Konfigurasi non-rahasia di ConfigMap siaga-ingest-env (overlay menimpanya
+# dengan behavior: merge); key sumber dan kredensial arsip di Secret siaga-ingest.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: siaga
+labels:
+  - pairs:
+      app.kubernetes.io/name: ingest
+      app.kubernetes.io/part-of: siaga
+      app.kubernetes.io/component: pipa-data
+    # Selector ditulis eksplisit di tiap manifest: includeSelectors juga akan
+    # mengisi podSelector kosong di NetworkPolicy dan mengubah artinya.
+    includeSelectors: false
+    includeTemplates: true
+resources:
+  - deployment.yaml
+  - service.yaml
+  - networkpolicy.yaml
+configMapGenerator:
+  - name: siaga-ingest-env
+    literals:
+      - NATS_URL=nats://nats:4222
+      - INGEST_HTTP_ADDR=0.0.0.0:8081
+      - LOG_LEVEL=info
+      # Garage di cluster menyusul (fase 1e-2b-2); kosong = payload tidak diarsipkan.
+      - INGEST_ARCHIVE_URL=
+      # OTel Collector di cluster menyusul (fase 1e-2b-2); kosong = telemetri mati.
+      - OTEL_EXPORTER_OTLP_ENDPOINT=

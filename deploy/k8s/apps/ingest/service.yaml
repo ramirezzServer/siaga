@@ -1,0 +1,12 @@
+# Endpoint status (/healthz, /readyz, /status); tidak diekspos ke luar cluster.
+apiVersion: v1
+kind: Service
+metadata:
+  name: ingest
+spec:
+  selector:
+    app.kubernetes.io/name: ingest
+  ports:
+    - name: http-status
+      port: 8081
+      targetPort: http-status

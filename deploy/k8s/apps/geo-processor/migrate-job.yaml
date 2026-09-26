@@ -1,0 +1,59 @@
+# Migrasi schema geo-processor (goose, tabel ref.goose_db_version) sebelum
+# Deployment diperbarui. Argo CD menjalankannya sebagai hook PreSync; Tilt
+# menjalankannya sebagai resource tersendiri. Job tidak bisa diubah setelah
+# dibuat, jadi hook menghapus Job lama dulu (BeforeHookCreation).
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: geo-processor-migrate
+  annotations:
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+spec:
+  backoffLimit: 3
+  activeDeadlineSeconds: 600
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: geo-processor-migrate
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: goose
+          image: siaga-geo-processor
+          command: [/usr/local/bin/goose]
+          # Koneksi lewat GOOSE_DRIVER/GOOSE_DBSTRING, bukan argumen, supaya
+          # password tidak muncul di daftar proses.
+          args: [-dir=/migrations, -table=ref.goose_db_version, up]
+          envFrom:
+            - configMapRef:
+                name: siaga-geo-env
+          env:
+            - name: DB_USER
+              valueFrom: { secretKeyRef: { name: siaga-db-geo, key: username } }
+            - name: DB_PASSWORD
+              valueFrom: { secretKeyRef: { name: siaga-db-geo, key: password } }
+            # Password acak hex (dev-secrets.sh, SOPS), jadi aman tanpa URL-encode.
+            - name: DATABASE_URL
+              value: postgres://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=$(DB_SSLMODE)
+            - name: GOOSE_DRIVER
+              value: postgres
+            - name: GOOSE_DBSTRING
+              value: $(DATABASE_URL)
+          resources:
+            requests: { cpu: 50m, memory: 32Mi }
+            limits: { memory: 128Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]

@@ -7,11 +7,21 @@ resources:
   - ../base/postgres-cluster.yaml
   - ../base/valkey.yaml
   - ../base/mailpit.yaml
+  - ../apps/ingest
+  - ../apps/geo-processor
 configMapGenerator:
   - name: siaga-db-bootstrap
     files:
       - ../../../infra/db/bootstrap/001_extensions.sql
       - ../../../infra/db/bootstrap/002_roles.sql
       - ../../../infra/db/bootstrap/003_schemas.sql
+  - name: siaga-ingest-env
+    behavior: merge
+    literals:
+      - SIAGA_ENV=lokal
+  - name: siaga-geo-env
+    behavior: merge
+    literals:
+      - SIAGA_ENV=lokal
 generatorOptions:
   disableNameSuffixHash: true

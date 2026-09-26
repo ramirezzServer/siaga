@@ -1,0 +1,83 @@
+# Satu replika (consumer durable JetStream bisa diskalakan nanti, tapi relay
+# outbox dan putaran kedaluwarsa belum dirancang untuk banyak instance).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: geo-processor
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: geo-processor
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: geo-processor
+    spec:
+      terminationGracePeriodSeconds: 30
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: geo-processor
+          image: siaga-geo-processor
+          ports:
+            - name: http-status
+              containerPort: 8082
+          envFrom:
+            - configMapRef:
+                name: siaga-geo-env
+          env:
+            - name: DB_USER
+              valueFrom: { secretKeyRef: { name: siaga-db-geo, key: username } }
+            - name: DB_PASSWORD
+              valueFrom: { secretKeyRef: { name: siaga-db-geo, key: password } }
+            # Password acak hex (dev-secrets.sh, SOPS), jadi aman tanpa URL-encode.
+            - name: DATABASE_URL
+              value: postgres://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=$(DB_SSLMODE)
+            - name: POD_NAME
+              valueFrom: { fieldRef: { fieldPath: metadata.name } }
+            - name: POD_NAMESPACE
+              valueFrom: { fieldRef: { fieldPath: metadata.namespace } }
+            - name: NODE_NAME
+              valueFrom: { fieldRef: { fieldPath: spec.nodeName } }
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: k8s.namespace.name=$(POD_NAMESPACE),k8s.pod.name=$(POD_NAME),k8s.node.name=$(NODE_NAME)
+            - name: GOMEMLIMIT
+              valueFrom:
+                resourceFieldRef: { resource: limits.memory }
+          resources:
+            requests: { cpu: 50m, memory: 64Mi }
+            limits: { memory: 256Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          startupProbe:
+            httpGet: { path: /healthz, port: http-status }
+            periodSeconds: 2
+            failureThreshold: 30
+          livenessProbe:
+            httpGet: { path: /healthz, port: http-status }
+            periodSeconds: 20
+            timeoutSeconds: 3
+          readinessProbe:
+            httpGet: { path: /readyz, port: http-status }
+            periodSeconds: 10
+            timeoutSeconds: 3
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 64Mi

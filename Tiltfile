@@ -48,18 +48,47 @@ local_resource(
     labels=["data"],
 )
 
-# Migrasi dan import wilayah, dijalankan ulang tiap migrasi atau importer berubah.
-local_resource(
-    "migrate",
-    cmd="cd services/geo-processor && go tool goose -dir migrations -table ref.goose_db_version postgres \"$(../../scripts/k8s-db-url.sh geo)\" up",
-    deps=["services/geo-processor/migrations"],
-    resource_deps=["db-port-forward"],
-    labels=["data"],
+# Image layanan Go (deploy/images/go/Dockerfile, sama dengan job CI images).
+docker_build(
+    "siaga-geo-processor",
+    ".",
+    dockerfile="deploy/images/go/Dockerfile",
+    target="geo-processor",
+    build_args={"SERVICE": "geo-processor", "BINARIES": "geo-processor import-regions", "VERSION": "tilt"},
+    only=["libs/go", "services/geo-processor"],
+)
+docker_build(
+    "siaga-ingest",
+    ".",
+    dockerfile="deploy/images/go/Dockerfile",
+    target="ingest",
+    build_args={"SERVICE": "ingest", "BINARIES": "ingest archive replay", "VERSION": "tilt"},
+    only=["libs/go", "services/ingest"],
+)
+
+# Migrasi sebagai Job (sama dengan produksi, hook PreSync Argo CD), lalu import
+# wilayah lewat port-forward karena data batas wilayah diunduh di laptop.
+k8s_resource("geo-processor-migrate", resource_deps=["siaga-db", "db-secrets"], labels=["pipa-data"])
+k8s_resource(
+    "geo-processor",
+    resource_deps=["geo-processor-migrate", "nats"],
+    port_forwards=["18082:8082"],
+    labels=["pipa-data"],
+)
+# ingest tidak otomatis jalan: bila `make ingest` (Compose) juga hidup, kuota
+# sumber terpakai dua kali. Nyalakan dari dashboard Tilt bila perlu.
+k8s_resource(
+    "ingest",
+    resource_deps=["nats", "db-secrets"],
+    port_forwards=["18081:8081"],
+    auto_init=False,
+    trigger_mode=TRIGGER_MODE_MANUAL,
+    labels=["pipa-data"],
 )
 local_resource(
     "regions-import",
     cmd="scripts/fetch-region-data.sh 32 && cd services/geo-processor && DATABASE_URL=\"$(../../scripts/k8s-db-url.sh geo)\" go run ./cmd/import-regions -source ../../.cache/wilayah_boundaries/db -province 32",
     deps=["services/geo-processor/internal", "services/geo-processor/cmd"],
-    resource_deps=["migrate"],
+    resource_deps=["geo-processor-migrate", "db-port-forward"],
     labels=["data"],
 )

@@ -1,0 +1,31 @@
+# geo-processor: raw.* → kejadian bahaya (hazard.*) dan deret waktu (ts.*),
+# ditambah Job migrasi goose yang jalan sebelum Deployment (ADR 0016).
+# Password role siaga_geo dari Secret siaga-db-geo (dibuat dev-secrets.sh di
+# lokal, SOPS di produksi) yang juga dipakai CloudNativePG untuk role-nya.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: siaga
+labels:
+  - pairs:
+      app.kubernetes.io/part-of: siaga
+      app.kubernetes.io/component: pipa-data
+    # Selector ditulis eksplisit di tiap manifest (lihat apps/ingest).
+    includeSelectors: false
+    includeTemplates: true
+resources:
+  - migrate-job.yaml
+  - deployment.yaml
+  - service.yaml
+  - networkpolicy.yaml
+configMapGenerator:
+  - name: siaga-geo-env
+    literals:
+      - NATS_URL=nats://nats:4222
+      - GEO_HTTP_ADDR=0.0.0.0:8082
+      - LOG_LEVEL=info
+      # Service read-write CloudNativePG; produksi bisa diarahkan ke Pooler.
+      - DB_HOST=siaga-db-rw
+      - DB_PORT=5432
+      - DB_NAME=siaga
+      - DB_SSLMODE=require
+      - OTEL_EXPORTER_OTLP_ENDPOINT=

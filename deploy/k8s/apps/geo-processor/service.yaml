@@ -1,0 +1,12 @@
+# Endpoint status (/healthz, /readyz, /status); tidak diekspos ke luar cluster.
+apiVersion: v1
+kind: Service
+metadata:
+  name: geo-processor
+spec:
+  selector:
+    app.kubernetes.io/name: geo-processor
+  ports:
+    - name: http-status
+      port: 8082
+      targetPort: http-status
