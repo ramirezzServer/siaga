@@ -6,6 +6,11 @@ SHELL := bash
 
 COMPOSE     := docker compose -f deploy/compose/compose.lite.yaml --env-file .env
 GO_MODULES  := libs/go/platform libs/go/contracts services/geo-processor services/ingest
+# Image layanan Go (deploy/images/go/Dockerfile): binary per layanan, sama dengan job CI images.
+IMAGE_TAG            ?= dev
+INGEST_BINARIES      := ingest archive replay
+GEO_BINARIES         := geo-processor import-regions
+KUBECONFORM_IMAGE    := ghcr.io/yannh/kubeconform:v0.7.0
 PROVINCE    ?= 32
 
 # DATABASE_URL untuk role siaga_geo, dibangun dari .env.
@@ -181,6 +186,27 @@ fuzz: ## Fuzzing singkat semua target fuzz (30 detik per target)
 	  go test $${t%%:*} -run='^$$' -fuzz="^$${t##*:}\$$" -fuzztime=30s || exit 1; done
 
 check: lint test ## Semua pemeriksaan sebelum push
+
+##@ Image dan manifest
+.PHONY: images images-smoke k8s-check
+images: ## Build image ingest dan geo-processor untuk arsitektur mesin ini (IMAGE_TAG=dev)
+	docker buildx build -f deploy/images/go/Dockerfile --target ingest --load \
+	  --build-arg SERVICE=ingest --build-arg BINARIES="$(INGEST_BINARIES)" \
+	  --build-arg VERSION="$$(git describe --always --dirty)" -t siaga-ingest:$(IMAGE_TAG) .
+	docker buildx build -f deploy/images/go/Dockerfile --target geo-processor --load \
+	  --build-arg SERVICE=geo-processor --build-arg BINARIES="$(GEO_BINARIES)" \
+	  --build-arg VERSION="$$(git describe --always --dirty)" -t siaga-geo-processor:$(IMAGE_TAG) .
+	@docker image ls --format '{{.Repository}}:{{.Tag}}  {{.Size}}' | grep -E '^siaga-(ingest|geo-processor):$(IMAGE_TAG) '
+
+images-smoke: images ## Uji asap image: binary jalan, user nonroot, folder migrasi lengkap
+	scripts/image-smoke.sh --ingest siaga-ingest:$(IMAGE_TAG) --geo siaga-geo-processor:$(IMAGE_TAG)
+
+k8s-check: ## Render overlay Kubernetes lokal dan prod lalu validasi skemanya (kubeconform)
+	@for o in local prod; do \
+	  echo "overlay $$o"; \
+	  kubectl kustomize --load-restrictor LoadRestrictionsNone deploy/k8s/$$o \
+	    | docker run --rm -i $(KUBECONFORM_IMAGE) -strict -summary -ignore-missing-schemas -kubernetes-version 1.33.0 -; \
+	done
 
 ##@ Kubernetes lokal (k3d + Tilt, profil full)
 .PHONY: k3d-up k3d-down tilt
