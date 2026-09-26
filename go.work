@@ -8,3 +8,8 @@ use (
 	./services/geo-processor
 	./services/ingest
 )
+
+// Modul genproto lama (2020) masih berisi googleapis/rpc dan bentrok dengan
+// modul googleapis/rpc terpisah di workspace mode (ambiguous import); versi
+// barunya sudah tidak berisi paket itu. Build image memakai GOWORK=off.
+replace google.golang.org/genproto => google.golang.org/genproto v0.0.0-20260921155816-b14227669459
