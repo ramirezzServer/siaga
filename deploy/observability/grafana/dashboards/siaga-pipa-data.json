@@ -2446,7 +2446,7 @@
     {
       "type": "stat",
       "title": "Target scrape",
-      "description": "Hasil scrape OTel Collector di cluster (ADR 0017): sidecar exporter NATS, admin API Garage, dan metrik internal Collector. Kosong di Compose lite (tanpa Collector).",
+      "description": "Hasil scrape OTel Collector di cluster (ADR 0017): sidecar exporter NATS, admin API Garage, dan metrik internal Collector. Merah hanya bila target tercatat mati (up = 0); tanpa data (misal Compose lite tanpa Collector atau cluster belum jalan) panel tetap netral.",
       "datasource": {
         "type": "prometheus",
         "uid": "${prom}"
@@ -2476,12 +2476,8 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "red",
+                "color": "#808080",
                 "value": null
-              },
-              {
-                "color": "green",
-                "value": 1
               }
             ]
           },
@@ -2491,10 +2487,12 @@
               "options": {
                 "0": {
                   "text": "mati",
+                  "color": "red",
                   "index": 0
                 },
                 "1": {
                   "text": "hidup",
+                  "color": "green",
                   "index": 1
                 }
               }
