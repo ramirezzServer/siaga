@@ -8,7 +8,7 @@ COMPOSE     := docker compose -f deploy/compose/compose.lite.yaml --env-file .en
 GO_MODULES  := libs/go/platform libs/go/contracts services/geo-processor services/ingest
 # Image layanan Go (deploy/images/go/Dockerfile): binary per layanan, sama dengan job CI images.
 IMAGE_TAG            ?= dev
-INGEST_BINARIES      := ingest archive replay
+INGEST_BINARIES      := ingest archive replay backfill
 GEO_BINARIES         := geo-processor import-regions
 KUBECONFORM_IMAGE    := ghcr.io/yannh/kubeconform:v0.7.0
 # Image OTel Collector diambil dari manifest supaya validasi memakai versi yang sama.
@@ -111,7 +111,7 @@ grid-list: regions-fetch ## Bangun ulang simpul grid 0,25° Open-Meteo ingest (P
 	  -grid-out ../ingest/internal/adapters/sitelist/data/grid025_$(PROVINCE).txt
 
 ##@ Pipa data
-.PHONY: ingest ingest-record geo calibrate-dedup river-snap archive-ls archive-verify archive-upload replay
+.PHONY: ingest ingest-record geo calibrate-dedup river-snap archive-ls archive-verify archive-upload replay backfill-openaq
 ingest: ## Jalankan ingest (butuh `make up`); arsip ke Garage, status di http://127.0.0.1:8081/status
 	cd services/ingest && INGEST_ARCHIVE_URL="$(INGEST_ARCHIVE_URL)" go run ./cmd/ingest
 
@@ -135,13 +135,18 @@ replay: ## Putar ulang arsip Garage ke NATS (FROM, TO, CONNECTORS, SPEED; ARGS=-
 	@cd services/ingest && INGEST_ARCHIVE_URL="$(INGEST_ARCHIVE_URL)" go run ./cmd/replay \
 	  -from "$(FROM)" -to "$(TO)" -connectors "$(CONNECTORS)" -speed "$(or $(SPEED),0)" $(ARGS)
 
+backfill-openaq: ## Isi ulang nilai stasiun OpenAQ yang terlewat, maks ±7 hari (FROM wajib, TO, STATIONS; ARGS=-publish=false)
+	@cd services/ingest && INGEST_ARCHIVE_URL="$(INGEST_ARCHIVE_URL)" go run ./cmd/backfill openaq \
+	  -from "$(FROM)" -to "$(TO)" -stations "$(STATIONS)" $(ARGS)
+
 geo: ## Jalankan geo-processor (butuh `make up seed`); status di http://127.0.0.1:8082/status
 	@echo "geo-processor ($(GEO_DATABASE_URL_SAFE))"
 	@cd services/geo-processor && DATABASE_URL="$(GEO_DATABASE_URL)" go run ./cmd/geo-processor
 
-river-snap: ## Pilih sel GloFAS untuk titik pantau sungai (±2 menit, ±800 lokasi Open-Meteo)
+river-snap: ## Pilih sel GloFAS untuk titik pantau sungai (±2 menit, ±800 lokasi Open-Meteo); peta cek di .cache/titik-sungai.geojson
 	go run ./services/ingest/cmd/river-snap -src docs/calibration/titik-sungai-32.csv \
-	  -out services/ingest/internal/adapters/sitelist/data/rivers_32.csv -report docs/calibration/titik-sungai.md
+	  -out services/ingest/internal/adapters/sitelist/data/rivers_32.csv -report docs/calibration/titik-sungai.md \
+	  -geojson .cache/titik-sungai.geojson
 	pnpm exec prettier --write --log-level warn docs/calibration/titik-sungai.md
 
 CALIBRATION_DIR ?= $(CURDIR)/.cache/calibration

@@ -35,6 +35,7 @@ if [[ -n "$ingest" ]]; then
   expect "ingest -h"                 '-once'        "$ingest" /usr/local/bin/ingest -h
   expect "archive tanpa subperintah" 'verify'       "$ingest" /usr/local/bin/archive
   expect "replay -h"                 '-connectors'  "$ingest" /usr/local/bin/replay -h
+  expect "backfill openaq -h"        '-stations'    "$ingest" /usr/local/bin/backfill openaq -h
 fi
 if [[ -n "$geo" ]]; then
   expect "geo-processor tanpa env"   'DATABASE_URL' "$geo"    /usr/local/bin/geo-processor

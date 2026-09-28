@@ -272,7 +272,7 @@ jobs:
       matrix:
         include:
           - service: ingest
-            binaries: ingest archive replay
+            binaries: ingest archive replay backfill
           - service: geo-processor
             binaries: geo-processor import-regions
     steps:

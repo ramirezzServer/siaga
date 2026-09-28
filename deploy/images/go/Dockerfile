@@ -3,7 +3,7 @@
 # layanan; layanan dan binary dipilih lewat build arg. Lihat docs/adr/0016.
 #
 #   docker buildx build -f deploy/images/go/Dockerfile --target ingest \
-#     --build-arg SERVICE=ingest --build-arg BINARIES="ingest archive replay" \
+#     --build-arg SERVICE=ingest --build-arg BINARIES="ingest archive replay backfill" \
 #     --build-arg VERSION=$(git describe --always --dirty) -t siaga-ingest .
 #
 # Biasanya lewat `make images` (arsitektur mesin sendiri) atau job CI `images`.

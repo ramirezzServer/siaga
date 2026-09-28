@@ -69,7 +69,7 @@ docker_build(
     ".",
     dockerfile="deploy/images/go/Dockerfile",
     target="ingest",
-    build_args={"SERVICE": "ingest", "BINARIES": "ingest archive replay", "VERSION": "tilt"},
+    build_args={"SERVICE": "ingest", "BINARIES": "ingest archive replay backfill", "VERSION": "tilt"},
     only=["libs/go", "services/ingest"],
 )
 
