@@ -99,6 +99,49 @@ func TestRunWritesSitesAndReport(t *testing.T) {
 	if !strings.Contains(report.String(), "| Hulu (`citarum-a`) | Citarum |") || !strings.Contains(report.String(), "`manual`") {
 		t.Fatal(report.String())
 	}
+
+	// Peta pemeriksaan: kandidat unik per titik, tepat satu sel terpilih.
+	choices[0].Candidates = append(choices[0].Candidates, choices[0].Candidates[0])
+	var geo bytes.Buffer
+	if err := WriteGeoJSON(&geo, choices); err != nil {
+		t.Fatal(err)
+	}
+	var fc struct {
+		Type     string `json:"type"`
+		Features []struct {
+			Geometry struct {
+				Type string `json:"type"`
+			} `json:"geometry"`
+			Properties map[string]any `json:"properties"`
+		} `json:"features"`
+	}
+	if err := json.Unmarshal(geo.Bytes(), &fc); err != nil || fc.Type != "FeatureCollection" {
+		t.Fatalf("%v\n%s", err, geo.String())
+	}
+	count := map[string]int{}
+	for _, f := range fc.Features {
+		p := f.Properties
+		key := p["titik"].(string) + "/" + p["jenis"].(string)
+		count[key]++
+		if p["terpilih"] == true {
+			count[p["titik"].(string)+"/terpilih"]++
+			if p["stroke"] != colorChosen || f.Geometry.Type != "Polygon" {
+				t.Fatalf("%+v", f)
+			}
+		}
+	}
+	want := map[string]int{
+		"citarum-a/kandidat": 9, "citarum-a/perkiraan": 1, "citarum-a/geser": 1, "citarum-a/terpilih": 1,
+		"citarum-b/kandidat": 1, "citarum-b/perkiraan": 1, "citarum-b/geser": 1, "citarum-b/terpilih": 1,
+	}
+	for k, v := range want {
+		if count[k] != v {
+			t.Errorf("%s: %d, ingin %d", k, count[k], v)
+		}
+	}
+	if len(count) != len(want) {
+		t.Errorf("%v", count)
+	}
 }
 
 func TestRunBatchesAndPaces(t *testing.T) {

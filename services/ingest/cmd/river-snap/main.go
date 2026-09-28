@@ -44,6 +44,7 @@ func run() error {
 	src := flag.String("src", "docs/calibration/titik-sungai-32.csv", "daftar titik berkoordinat perkiraan")
 	out := flag.String("out", "services/ingest/internal/adapters/sitelist/data/rivers_32.csv", "daftar titik untuk ingest")
 	report := flag.String("report", "docs/calibration/titik-sungai.md", "laporan kalibrasi (Markdown)")
+	geo := flag.String("geojson", "", "peta pemeriksaan GeoJSON untuk geojson.io (kosong = tidak ditulis)")
 	endpoint := flag.String("url", envOr("OPENMETEO_FLOOD_URL", openmeteo.DefaultFloodURL), "endpoint Flood API")
 	flag.Parse()
 
@@ -82,6 +83,19 @@ func run() error {
 	}
 	if err := riversnap.WriteReport(&rep, filepath.ToSlash(*src), time.Now(), choices); err != nil {
 		return err
+	}
+	if *geo != "" {
+		var g bytes.Buffer
+		if err := riversnap.WriteGeoJSON(&g, choices); err != nil {
+			return err
+		}
+		if err := os.MkdirAll(filepath.Dir(*geo), 0o750); err != nil {
+			return err
+		}
+		if err := os.WriteFile(*geo, g.Bytes(), 0o600); err != nil {
+			return err
+		}
+		fmt.Fprintf(os.Stderr, "peta pemeriksaan: %s (buka di https://geojson.io)\n", *geo)
 	}
 	if err := os.WriteFile(*out, sites.Bytes(), 0o600); err != nil {
 		return err

@@ -103,6 +103,9 @@ type Choice struct {
 	Mean       float64
 	DistanceKm float64
 	Flags      []Flag
+	// Candidates adalah sel berdebit di dalam radius pencarian, untuk peta
+	// pemeriksaan manual.
+	Candidates []Candidate
 }
 
 // Suspect melaporkan apakah pilihan perlu diperiksa manual.
@@ -141,7 +144,7 @@ func Choose(st Station, cands []Candidate) (Choice, error) {
 	if best == nil {
 		return Choice{}, fmt.Errorf("%w: %s", ErrNoCandidate, st.ID)
 	}
-	ch := Choice{Station: st, Cell: best.Cell, Mean: best.Mean, DistanceKm: km(st.Approx, best.Cell)}
+	ch := Choice{Station: st, Cell: best.Cell, Mean: best.Mean, DistanceKm: km(st.Approx, best.Cell), Candidates: inside}
 	switch {
 	case st.Radius == 0:
 		ch.Flags = append(ch.Flags, FlagPinned)
