@@ -27,9 +27,10 @@ make ingest           # tarik BMKG, USGS, Open-Meteo, OpenAQ, FIRMS ke NATS, ars
 make geo              # gempa + cuaca → hazard.*, deret waktu → ts.* (status: :8082/status)
 make check            # lint + test
 make calibrate-dedup  # ukur ambang deduplikasi dengan katalog historis BMKG + USGS
-make river-snap       # pilih sel GloFAS untuk 38 titik pantau sungai (±800 lokasi Open-Meteo)
+make river-snap       # pilih sel GloFAS untuk 38 titik pantau sungai (±800 lokasi Open-Meteo), peta cek .cache/titik-sungai.geojson
 make archive-ls       # isi arsip payload mentah per konektor; archive-verify memeriksa integritasnya
 make replay FROM=2026-09-24 TO=2026-09-25   # putar ulang arsip ke NATS, urut waktu ambil asli
+make backfill-openaq FROM=2026-09-26 TO=2026-09-27   # isi ulang jam OpenAQ yang terlewat (maks ±7 hari)
 make obs-up           # Grafana + Prometheus + Tempo + Loki lokal, dashboard di http://127.0.0.1:3300
 make images-smoke     # build image ingest + geo-processor dan uji asap (sama dengan CI)
 make k8s-check        # render manifest Kubernetes lokal + prod, validasi skema, config Collector, dan enkripsi secret
@@ -37,7 +38,7 @@ make k8s-check        # render manifest Kubernetes lokal + prod, validasi skema,
 
 OpenAQ dan NASA FIRMS butuh key gratis: isi `OPENAQ_API_KEY` (daftar di explore.openaq.org) dan `FIRMS_MAP_KEY` (firms.modaps.eosdis.nasa.gov/api/map_key) di `.env`. Tanpa key, ingest tetap jalan tanpa kedua konektor itu.
 
-Payload mentah setiap sumber diarsipkan ke Garage (bucket `siaga-arsip`, awalan `raw/`) dan bisa diputar ulang untuk uji replay atau memulihkan stream NATS (ADR 0014). Arsip lokal dari sebelum fase 1e dipindahkan dengan `make archive-upload`.
+Payload mentah setiap sumber diarsipkan ke Garage (bucket `siaga-arsip`, awalan `raw/`) dan bisa diputar ulang untuk uji replay atau memulihkan stream NATS (ADR 0014; prakiraan BMKG dan OpenAQ sejak ADR 0018). Arsip lokal dari sebelum fase 1e dipindahkan dengan `make archive-upload`. Jam OpenAQ yang terlewat saat ingest mati diisi ulang dengan `make backfill-openaq` (ADR 0018).
 
 ingest dan geo-processor diinstrumentasi OpenTelemetry: satu gempa bisa dilacak dalam satu trace dari polling sumber, arsip, NATS, query PostgreSQL, sampai `hazard.quake.created` terbit, dan dashboard "SIAGA — Pipa data" menampilkan keterlambatan dan galat tiap sumber, sisa kuota request, antrean NATS, latensi pipa, dan query lambat (ADR 0015). Isi `OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4318` di `.env` setelah `make obs-up`, atau arahkan ke Grafana Cloud ([docs/setup/grafana-cloud.md](docs/setup/grafana-cloud.md)).
 
