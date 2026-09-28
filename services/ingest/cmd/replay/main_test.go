@@ -48,6 +48,14 @@ func archiveFixtures(t *testing.T) string {
 		{"bmkg-gempaterkini", "json", "bmkg/testdata/gempaterkini.json", 40 * time.Second},
 		{"bmkg-gempadirasakan", "json", "bmkg/testdata/gempadirasakan.json", time.Minute},
 		{"firms-viirs-snpp-nrt", "csv", "firms/testdata/jabar-VIIRS_SNPP_NRT-2026-09-24.csv", 14 * time.Hour},
+		// Sapuan prakiraan: satu desa per payload, kode dibaca dari isinya.
+		{"bmkg-prakiraan", "json", "bmkg/testdata/prakiraan-32.73.01.1001.json", 4*time.Hour + 21*time.Minute},
+		{"bmkg-prakiraan", "json", "bmkg/testdata/prakiraan-32.04.05.2001.json", 4*time.Hour + 21*time.Minute + time.Second},
+		{"bmkg-prakiraan", "json", "bmkg/testdata/prakiraan-32.18.01.2001.json", 4*time.Hour + 21*time.Minute + 2*time.Second},
+		// OpenAQ: daftar lokasi lalu nilai terbaru dua stasiun (satu basi semua).
+		{"openaq-stasiun", "json", "openaq/testdata/locations-2026-09-24.json", 14*time.Hour + 3*time.Minute + 20*time.Second},
+		{"openaq-stasiun-latest", "json", "openaq/testdata/latest-6539694-2026-09-24.json", 14*time.Hour + 3*time.Minute + 21*time.Second},
+		{"openaq-stasiun-latest", "json", "openaq/testdata/latest-1563313-2026-09-24.json", 14*time.Hour + 3*time.Minute + 22*time.Second},
 	} {
 		body, err := os.ReadFile(filepath.Join("..", "..", "internal", "adapters", f.file))
 		if err != nil {
@@ -76,8 +84,20 @@ func TestReplayToJetStream(t *testing.T) {
 		t.Fatal(err, out.String())
 	}
 	tot := rep.Totals()
-	if tot.Payloads != 5 || tot.Corrupt != 0 || tot.ParseErrors != 0 || tot.Published == 0 {
+	if tot.Payloads != 11 || tot.Corrupt != 0 || tot.ParseErrors != 0 || tot.Rejected != 0 || tot.Published == 0 {
 		t.Fatalf("%+v", tot)
+	}
+	for _, f := range rep.Feeds {
+		switch f.Connector {
+		case "bmkg-prakiraan":
+			if f.Payloads != 3 || f.Published != 3 {
+				t.Fatalf("%+v", f)
+			}
+		case "openaq-stasiun":
+			if f.Payloads != 3 || f.Published != 1 {
+				t.Fatalf("%+v", f)
+			}
+		}
 	}
 
 	nc, err := nats.Connect(url)
@@ -101,7 +121,7 @@ func TestReplayToJetStream(t *testing.T) {
 		t.Fatalf("stream %d pesan, laporan %d", info.State.Msgs, tot.Published)
 	}
 	for subj := range info.State.Subjects {
-		if !strings.HasPrefix(subj, "raw.quake.") && subj != "raw.fire.firms" {
+		if !strings.HasPrefix(subj, "raw.quake.") && subj != "raw.fire.firms" && subj != "raw.forecast.bmkg" && subj != "raw.aq.openaq" {
 			t.Fatalf("subjek tak terduga %s", subj)
 		}
 	}
@@ -136,7 +156,7 @@ func TestReplayRangeAndStrict(t *testing.T) {
 	dir := archiveFixtures(t)
 	env := lookup(map[string]string{"INGEST_ARCHIVE_DIR": dir})
 	var out bytes.Buffer
-	// Hanya titik panas (diambil 17.00 UTC = 24.00 WIB), tanpa NATS.
+	// Hanya titik panas (diambil 17.00 UTC = 24.00 WIB) dan OpenAQ (17.03 UTC), tanpa NATS.
 	err := run(t.Context(), []string{"-publish=false", "-json", "-from", "2026-09-24T12:00:00Z", "-to", "2026-09-25T12:00:00+07:00"}, env, &out, io.Discard)
 	if err != nil {
 		t.Fatal(err)
@@ -145,7 +165,7 @@ func TestReplayRangeAndStrict(t *testing.T) {
 	if err := json.Unmarshal(out.Bytes(), &rep); err != nil {
 		t.Fatal(err)
 	}
-	if tot := rep.Totals(); tot.Payloads != 1 || tot.Events == 0 {
+	if tot := rep.Totals(); tot.Payloads != 4 || tot.Events == 0 {
 		t.Fatalf("%+v", tot)
 	}
 	// Objek rusak: tanpa -strict hanya dilaporkan, dengan -strict gagal.
@@ -173,7 +193,7 @@ func TestReplayFlags(t *testing.T) {
 	if err := run(t.Context(), []string{"-list"}, lookup(nil), &out, io.Discard); err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{"bmkg-autogempa", "usgs-2.5-day", "openmeteo-sungai", "firms-modis-nrt"} {
+	for _, want := range []string{"bmkg-autogempa", "usgs-2.5-day", "openmeteo-sungai", "firms-modis-nrt", "bmkg-prakiraan", "openaq-stasiun"} {
 		if !strings.Contains(out.String(), want+"\n") {
 			t.Errorf("-list tanpa %s:\n%s", want, out.String())
 		}

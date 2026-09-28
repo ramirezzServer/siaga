@@ -120,3 +120,42 @@ func FuzzParseForecastDocument(f *testing.F) {
 		}
 	})
 }
+
+func TestForecastReplay(t *testing.T) {
+	src := NewForecastSource(DefaultForecastURL)
+	r := src.Replay()
+	if r.Name() != "bmkg-prakiraan" || !r.Partial() {
+		t.Fatal(r.Name(), r.Partial())
+	}
+	for _, code := range []string{"32.73.01.1001", "32.04.05.2001", "32.18.01.2001"} {
+		body := fixture(t, "prakiraan-"+code+".json")
+		evs, rej, err := r.Parse(body, forecastFetchedAt)
+		if err != nil || len(rej) != 0 || len(evs) != 1 {
+			t.Fatalf("%s: %v %v %v", code, evs, rej, err)
+		}
+		// Isi sama persis dengan hasil sapuan, jadi ID pesan juga sama.
+		live, err := src.Parse(code, body, forecastFetchedAt)
+		if err != nil {
+			t.Fatal(err)
+		}
+		a, _ := evs[0].Content()
+		b, _ := live.Content()
+		if evs[0].Key() != code || string(a) != string(b) {
+			t.Fatalf("%s: replay berbeda dari sapuan", code)
+		}
+	}
+	for name, body := range map[string]string{
+		"404":        string(fixture(t, "prakiraan-404.json")),
+		"bukan json": "<html>",
+		"tanpa adm4": `{"lokasi":{"desa":"X"},"data":[{"lokasi":{"desa":"X"},"cuaca":[]}]}`,
+	} {
+		if _, _, err := r.Parse([]byte(body), forecastFetchedAt); !errors.Is(err, ErrStructure) {
+			t.Errorf("%s: %v", name, err)
+		}
+	}
+	// Kode terbaca tetapi isinya tidak valid: galat membawa kode desa.
+	if _, _, err := r.Parse([]byte(`{"lokasi":{"adm4":"32.73.01.1001"},"data":[]}`), forecastFetchedAt); err == nil ||
+		!strings.Contains(err.Error(), "32.73.01.1001") {
+		t.Fatal(err)
+	}
+}

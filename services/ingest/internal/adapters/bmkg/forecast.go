@@ -193,3 +193,51 @@ func (d forecastStepDoc) toStep() (forecast.Step, time.Time, error) {
 func sortSteps(steps []forecast.Step) {
 	slices.SortStableFunc(steps, func(a, b forecast.Step) int { return a.ValidTime.Compare(b.ValidTime) })
 }
+
+// ForecastReplay memutar ulang payload sapuan prakiraan dari arsip
+// (dipenuhi replay.PartialFeed). Kode desa yang diminta tidak ada di kunci
+// arsip, jadi dibaca dari lokasi di payload; sapuan hanya mengarsipkan
+// payload yang lolos pemeriksaan wilayah, sehingga kode itu sama dengan yang
+// diminta.
+type ForecastReplay struct {
+	src *ForecastSource
+}
+
+// Replay mengembalikan pembaca arsip sapuan s.
+func (s *ForecastSource) Replay() ForecastReplay { return ForecastReplay{src: s} }
+
+// Name sama dengan konektor sapuan, supaya ID pesan sama dengan saat sapuan.
+func (r ForecastReplay) Name() string { return r.src.Name() }
+
+// Partial selalu true: satu payload hanya satu desa.
+func (ForecastReplay) Partial() bool { return true }
+
+// Parse membaca satu payload prakiraan dari arsip.
+func (r ForecastReplay) Parse(body []byte, fetchedAt time.Time) ([]ports.Event, []ports.Rejection, error) {
+	code, err := forecastCode(body)
+	if err != nil {
+		return nil, nil, err
+	}
+	ev, err := r.src.Parse(code, body, fetchedAt)
+	if err != nil {
+		return nil, nil, fmt.Errorf("prakiraan %s: %w", code, err)
+	}
+	return []ports.Event{ev}, nil, nil
+}
+
+// forecastCode membaca kode adm4 dari payload dengan aturan yang sama seperti
+// parseForecast (lokasi di data, atau lokasi di akar).
+func forecastCode(body []byte) (string, error) {
+	var doc forecastDoc
+	if err := json.Unmarshal(body, &doc); err != nil {
+		return "", fmt.Errorf("%w: prakiraan: %w", ErrStructure, err)
+	}
+	loc := doc.Lokasi
+	if len(doc.Data) == 1 && doc.Data[0].Lokasi != nil {
+		loc = doc.Data[0].Lokasi
+	}
+	if loc == nil || loc.ADM4.String() == "" {
+		return "", fmt.Errorf("%w: prakiraan tanpa kode adm4", ErrStructure)
+	}
+	return loc.ADM4.String(), nil
+}

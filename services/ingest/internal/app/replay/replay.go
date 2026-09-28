@@ -25,12 +25,55 @@ import (
 )
 
 // Feed adalah konektor yang satu payload-nya cukup untuk menghasilkan event,
-// tanpa konteks request (dipenuhi semua ports.Connector). Use case dengan
-// request per item (CAP, sapuan prakiraan, stasiun OpenAQ) belum bisa
-// diputar ulang karena konteks itu tidak ada di kunci arsip (ADR 0014).
+// tanpa konteks request (dipenuhi semua ports.Connector). Payload dibaca dari
+// awalan arsip bernama sama dengan feed.
 type Feed interface {
 	Name() string
 	Parse(body []byte, fetchedAt time.Time) ([]ports.Event, []ports.Rejection, error)
+}
+
+// MultiFeed adalah feed yang payload-nya tersimpan di beberapa awalan arsip,
+// misal daftar stasiun OpenAQ (openaq-stasiun) dan nilai terbaru per stasiun
+// (openaq-stasiun-latest). Payload semua awalan diputar urut waktu ambil
+// lewat ParseFrom, jadi feed bisa menyimpan konteks dari payload sebelumnya
+// (daftar stasiun terakhir). Name tetap dipakai di FetchMeta dan ID pesan,
+// sama dengan saat polling langsung.
+type MultiFeed interface {
+	Feed
+	// Archives adalah nama konektor di kunci arsip, minimal satu.
+	Archives() []string
+	// ParseFrom membaca payload dari awalan archive.
+	ParseFrom(archive string, body []byte, fetchedAt time.Time) ([]ports.Event, []ports.Rejection, error)
+}
+
+// PartialFeed dipenuhi feed yang satu payload-nya hanya memuat sebagian
+// record, misal satu desa per payload sapuan prakiraan atau satu stasiun per
+// payload nilai terbaru. Record yang tidak ada di payload tidak dilupakan,
+// sehingga isi yang sama tidak terbit ulang (sama dengan use case sweep dan
+// stations yang mengingat isi terakhir per kode).
+type PartialFeed interface {
+	Feed
+	Partial() bool
+}
+
+// archives mengembalikan awalan arsip f.
+func archives(f Feed) []string {
+	if m, ok := f.(MultiFeed); ok {
+		return m.Archives()
+	}
+	return []string{f.Name()}
+}
+
+func partial(f Feed) bool {
+	p, ok := f.(PartialFeed)
+	return ok && p.Partial()
+}
+
+func parse(f Feed, archive string, body []byte, at time.Time) ([]ports.Event, []ports.Rejection, error) {
+	if m, ok := f.(MultiFeed); ok {
+		return m.ParseFrom(archive, body, at)
+	}
+	return f.Parse(body, at)
 }
 
 // Options mengatur Run.
@@ -113,11 +156,19 @@ func New(archive ports.ArchiveReader, pub ports.Publisher, clock ports.Clock) *R
 // ErrOptions menandai opsi yang tidak masuk akal.
 var ErrOptions = errors.New("opsi replay tidak valid")
 
-// head adalah objek berikutnya dari satu feed.
+// stream adalah satu awalan arsip milik satu feed.
+type stream struct {
+	feed    int
+	archive string
+	next    func() (ports.ArchiveObject, error, bool)
+}
+
+// head adalah objek berikutnya dari satu stream.
 type head struct {
-	feed int
-	key  archivekey.Key
-	obj  ports.ArchiveObject
+	feed    int
+	archive string
+	key     archivekey.Key
+	obj     ports.ArchiveObject
 }
 
 // Run memutar semua payload feeds di rentang waktu opts. Payload yang rusak
@@ -131,45 +182,48 @@ func (r *Replayer) Run(ctx context.Context, feeds []Feed, opts Options) (Report,
 	if opts.MaxPayload == 0 {
 		opts.MaxPayload = emit.DefaultMaxPayload
 	}
-	nexts := make([]func() (ports.ArchiveObject, error, bool), len(feeds))
+	var streams []stream
 	seen := make([]map[string]string, len(feeds))
 	for i, f := range feeds {
 		rep.Feeds[i].Connector = f.Name()
 		seen[i] = map[string]string{}
-		startAfter := ""
-		if !opts.From.IsZero() {
-			startAfter = archivekey.Lower(f.Name(), opts.From)
+		for _, a := range archives(f) {
+			startAfter := ""
+			if !opts.From.IsZero() {
+				startAfter = archivekey.Lower(a, opts.From)
+			}
+			next, stop := iter.Pull2(r.archive.List(ctx, a+"/", startAfter))
+			defer stop()
+			streams = append(streams, stream{feed: i, archive: a, next: next})
 		}
-		next, stop := iter.Pull2(r.archive.List(ctx, f.Name()+"/", startAfter))
-		defer stop()
-		nexts[i] = next
 	}
-	heads := make([]*head, len(feeds))
+	heads := make([]*head, len(streams))
 	advance := func(i int) error {
 		heads[i] = nil
+		s := streams[i]
 		for {
-			obj, err, ok := nexts[i]()
+			obj, err, ok := s.next()
 			switch {
 			case !ok:
 				return nil
 			case err != nil:
-				return fmt.Errorf("mendaftar arsip %s: %w", feeds[i].Name(), err)
+				return fmt.Errorf("mendaftar arsip %s: %w", s.archive, err)
 			}
-			if !opts.To.IsZero() && obj.Key >= archivekey.Lower(feeds[i].Name(), opts.To) {
+			if !opts.To.IsZero() && obj.Key >= archivekey.Lower(s.archive, opts.To) {
 				return nil
 			}
 			k, err := archivekey.Parse(obj.Key)
-			if err != nil || k.Connector != feeds[i].Name() {
+			if err != nil || k.Connector != s.archive {
 				// Objek asing di bawah awalan konektor (bukan hasil emit.Archive).
-				rep.Feeds[i].Corrupt++
-				rep.Feeds[i].sample(fmt.Errorf("%w: kunci %s", emit.ErrCorrupt, obj.Key))
+				rep.Feeds[s.feed].Corrupt++
+				rep.Feeds[s.feed].sample(fmt.Errorf("%w: kunci %s", emit.ErrCorrupt, obj.Key))
 				continue
 			}
-			heads[i] = &head{feed: i, key: k, obj: obj}
+			heads[i] = &head{feed: s.feed, archive: s.archive, key: k, obj: obj}
 			return nil
 		}
 	}
-	for i := range feeds {
+	for i := range streams {
 		if err := advance(i); err != nil {
 			return rep, err
 		}
@@ -177,10 +231,11 @@ func (r *Replayer) Run(ctx context.Context, feeds []Feed, opts Options) (Report,
 
 	var t0, w0 time.Time
 	for {
-		h := earliest(heads)
-		if h == nil {
+		i := earliest(heads)
+		if i < 0 {
 			return rep, nil
 		}
+		h := heads[i]
 		if opts.Speed > 0 {
 			if t0.IsZero() {
 				t0, w0 = h.key.FetchedAt, r.clock.Now()
@@ -198,7 +253,7 @@ func (r *Replayer) Run(ctx context.Context, feeds []Feed, opts Options) (Report,
 		if opts.Progress != nil {
 			opts.Progress(rep.Feeds[h.feed])
 		}
-		if err := advance(h.feed); err != nil {
+		if err := advance(i); err != nil {
 			return rep, err
 		}
 	}
@@ -209,14 +264,26 @@ func validate(feeds []Feed, opts Options) error {
 	if len(feeds) == 0 {
 		errs = append(errs, errors.New("tidak ada feed"))
 	}
-	names := map[string]bool{}
+	names, owners := map[string]bool{}, map[string]string{}
 	for _, f := range feeds {
 		if names[f.Name()] {
 			errs = append(errs, fmt.Errorf("feed %s ganda", f.Name()))
 		}
 		names[f.Name()] = true
-		if strings.Contains(f.Name(), "/") {
-			errs = append(errs, fmt.Errorf("nama feed %q memuat /", f.Name()))
+		as := archives(f)
+		if len(as) == 0 {
+			errs = append(errs, fmt.Errorf("feed %s tanpa awalan arsip", f.Name()))
+		}
+		for _, a := range as {
+			if a == "" || strings.Contains(a, "/") {
+				errs = append(errs, fmt.Errorf("awalan arsip %q feed %s kosong atau memuat /", a, f.Name()))
+			}
+			if o, dup := owners[a]; dup && o != f.Name() {
+				errs = append(errs, fmt.Errorf("awalan arsip %s dipakai feed %s dan %s", a, o, f.Name()))
+			} else if dup {
+				errs = append(errs, fmt.Errorf("awalan arsip %s ganda di feed %s", a, f.Name()))
+			}
+			owners[a] = f.Name()
 		}
 	}
 	if !opts.From.IsZero() && !opts.To.IsZero() && !opts.From.Before(opts.To) {
@@ -234,25 +301,33 @@ func validate(feeds []Feed, opts Options) error {
 	return nil
 }
 
-// earliest memilih objek dengan waktu ambil paling awal; seri diputus nama
-// konektor lalu kunci supaya urutan replay deterministik.
-func earliest(heads []*head) *head {
-	var best *head
-	for _, h := range heads {
+// earliest memilih indeks objek dengan waktu ambil paling awal (-1 bila
+// semua habis); seri diputus nama konektor arsip lalu kunci supaya urutan
+// replay deterministik.
+func earliest(heads []*head) int {
+	best := -1
+	for i, h := range heads {
 		if h == nil {
 			continue
 		}
-		if best == nil || h.key.FetchedAt.Before(best.key.FetchedAt) ||
-			h.key.FetchedAt.Equal(best.key.FetchedAt) && (h.key.Connector < best.key.Connector ||
-				h.key.Connector == best.key.Connector && h.obj.Key < best.obj.Key) {
-			best = h
+		if best < 0 {
+			best = i
+			continue
+		}
+		b := heads[best]
+		if h.key.FetchedAt.Before(b.key.FetchedAt) ||
+			h.key.FetchedAt.Equal(b.key.FetchedAt) && (h.key.Connector < b.key.Connector ||
+				h.key.Connector == b.key.Connector && h.obj.Key < b.obj.Key) {
+			best = i
 		}
 	}
 	return best
 }
 
 // play memutar satu payload dengan aturan yang sama seperti poll: hanya
-// record yang isinya berubah sejak payload sebelumnya yang diterbitkan.
+// record yang isinya berubah sejak payload sebelumnya yang diterbitkan. Untuk
+// PartialFeed, pembanding adalah isi terakhir per record dari semua payload
+// sebelumnya.
 func (r *Replayer) play(ctx context.Context, f Feed, h *head, seen map[string]string, rep *FeedReport, maxPayload int64) error {
 	rep.Payloads++
 	if rep.First.IsZero() {
@@ -269,7 +344,7 @@ func (r *Replayer) play(ctx context.Context, f Feed, h *head, seen map[string]st
 		rep.sample(err)
 		return nil
 	}
-	events, rejections, err := f.Parse(body, k.FetchedAt)
+	events, rejections, err := parse(f, h.archive, body, k.FetchedAt)
 	if err != nil {
 		rep.ParseErrors++
 		rep.sample(fmt.Errorf("%s: %w", h.obj.Key, err))
@@ -301,7 +376,9 @@ func (r *Replayer) play(ctx context.Context, f Feed, h *head, seen map[string]st
 			rep.Published++
 		}
 	}
-	clear(seen)
+	if !partial(f) {
+		clear(seen)
+	}
 	for k, v := range current {
 		seen[k] = v
 	}

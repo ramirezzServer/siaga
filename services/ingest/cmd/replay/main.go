@@ -37,11 +37,13 @@ import (
 	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/firms"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/jspub"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/nopub"
+	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/openaq"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/openmeteo"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/sitelist"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/sysclock"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/usgs"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/app/replay"
+	"github.com/ramirezzServer/siaga/services/ingest/internal/app/stations"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/domain/series"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/ports"
 )
@@ -151,12 +153,15 @@ func split(v string) []string {
 
 // feeds adalah semua konektor yang payload arsipnya bisa diputar ulang.
 // URL endpoint tidak dipakai (replay tidak mengambil apa pun dari sumber).
+// CAP BMKG belum: dokumen per bahasa perlu dipasangkan dengan entri RSS-nya.
 func feeds(provinces []string) ([]replay.Feed, error) {
 	var out []replay.Feed
 	for _, c := range bmkg.NewQuakeConnectors(bmkg.DefaultTEWSBaseURL) {
 		out = append(out, c)
 	}
-	out = append(out, usgs.NewSummaryConnector(usgs.DefaultSummaryURL))
+	out = append(out, usgs.NewSummaryConnector(usgs.DefaultSummaryURL),
+		bmkg.NewForecastSource(bmkg.DefaultForecastURL).Replay(),
+		openaq.NewReplayFeed(stations.DefaultOptions().MaxAge))
 	if len(provinces) > 0 {
 		var grid, rivers []series.Site
 		for _, p := range provinces {

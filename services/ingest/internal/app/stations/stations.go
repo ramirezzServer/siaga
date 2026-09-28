@@ -215,28 +215,11 @@ func (p *Poller) station(ctx context.Context, st Station, s *state, res *poll.Re
 	// Setelah ini laporan dianggap selesai apa pun hasilnya: payload yang
 	// rusak tidak akan membaik dengan diulang sebelum sumber melapor lagi.
 	s.done = st.LastReport
-	raw, err := p.src.ParseDetail(st, resp.Body)
-	if err != nil {
-		p.reject(res, ports.Rejection{Key: st.ID, Reason: err})
-		return nil
+	ev, rejected := Observe(p.src, st, resp.Body, fetchedAt, p.opts.MaxAge)
+	for _, r := range rejected {
+		p.reject(res, r)
 	}
-	readings, dropped := airquality.Clean(raw, fetchedAt, p.opts.MaxAge)
-	for _, d := range dropped {
-		if !errors.Is(d, airquality.ErrStale) {
-			p.reject(res, ports.Rejection{Key: st.ID, Reason: d})
-		}
-	}
-	if len(readings) == 0 {
-		return nil
-	}
-	obs := airquality.Observation{Station: st.Station, Readings: readings}
-	if err := obs.Validate(fetchedAt, p.opts.MaxAge); err != nil {
-		p.reject(res, ports.Rejection{Key: st.ID, Reason: err})
-		return nil
-	}
-	ev, err := p.src.Event(obs)
-	if err != nil {
-		p.reject(res, ports.Rejection{Key: st.ID, Reason: err})
+	if ev == nil {
 		return nil
 	}
 	content, contentSum, err := emit.Content(ev)
@@ -260,6 +243,37 @@ func (p *Poller) station(ctx context.Context, st Station, s *state, res *poll.Re
 	}
 	s.published = contentSum
 	return nil
+}
+
+// Observe membaca payload nilai terbaru satu stasiun menjadi event: parse,
+// buang nilai rusak atau basi (lebih tua dari maxAge terhadap fetchedAt),
+// lalu validasi. Event nil bila tidak ada nilai yang tersisa. Nilai basi
+// tidak dilaporkan sebagai penolakan (sensor yang berhenti tetap muncul di
+// daftar nilai terbaru). Dipakai polling dan replay dari arsip.
+func Observe(src Source, st Station, body []byte, fetchedAt time.Time, maxAge time.Duration) (ports.Event, []ports.Rejection) {
+	var rejected []ports.Rejection
+	raw, err := src.ParseDetail(st, body)
+	if err != nil {
+		return nil, append(rejected, ports.Rejection{Key: st.ID, Reason: err})
+	}
+	readings, dropped := airquality.Clean(raw, fetchedAt, maxAge)
+	for _, d := range dropped {
+		if !errors.Is(d, airquality.ErrStale) {
+			rejected = append(rejected, ports.Rejection{Key: st.ID, Reason: d})
+		}
+	}
+	if len(readings) == 0 {
+		return nil, rejected
+	}
+	obs := airquality.Observation{Station: st.Station, Readings: readings}
+	if err := obs.Validate(fetchedAt, maxAge); err != nil {
+		return nil, append(rejected, ports.Rejection{Key: st.ID, Reason: err})
+	}
+	ev, err := src.Event(obs)
+	if err != nil {
+		return nil, append(rejected, ports.Rejection{Key: st.ID, Reason: err})
+	}
+	return ev, rejected
 }
 
 func (p *Poller) reject(res *poll.Result, r ports.Rejection) {

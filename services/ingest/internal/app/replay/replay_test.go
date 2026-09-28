@@ -306,6 +306,90 @@ func TestRunErrors(t *testing.T) {
 	}
 }
 
+// multi membaca dua awalan: "<nama>-daftar" berisi konteks (misal "x"),
+// "<nama>-nilai" berisi "kunci=isi;..." yang diterbitkan dengan konteks
+// terakhir. Nilai sebelum ada konteks ditolak. Payload nilai parsial.
+type multi struct {
+	name    string
+	context string
+	calls   []string
+}
+
+func (m *multi) Name() string       { return m.name }
+func (m *multi) Archives() []string { return []string{m.name + "-daftar", m.name + "-nilai"} }
+func (m *multi) Partial() bool      { return true }
+func (m *multi) Parse(b []byte, at time.Time) ([]ports.Event, []ports.Rejection, error) {
+	return m.ParseFrom(m.name+"-nilai", b, at)
+}
+
+func (m *multi) ParseFrom(archive string, b []byte, at time.Time) ([]ports.Event, []ports.Rejection, error) {
+	m.calls = append(m.calls, archive+":"+string(b))
+	if archive == m.name+"-daftar" {
+		m.context = string(b)
+		return nil, nil, nil
+	}
+	if m.context == "" {
+		return nil, []ports.Rejection{{Key: string(b), Reason: errors.New("tanpa konteks")}}, nil
+	}
+	evs, rej, err := feed{m.name}.Parse(b, at)
+	for i, e := range evs {
+		ev := e.(event)
+		ev.val = m.context + ":" + ev.val
+		evs[i] = ev
+	}
+	return evs, rej, err
+}
+
+func TestRunMultiArchivePartial(t *testing.T) {
+	a := &memArchive{objs: map[string][]byte{}}
+	put(t, a, "st-nilai", t0, "s1=1")
+	put(t, a, "st-daftar", t0.Add(time.Second), "D1")
+	k := put(t, a, "st-nilai", t0.Add(2*time.Second), "s1=1")
+	put(t, a, "st-nilai", t0.Add(3*time.Second), "s2=5")
+	put(t, a, "st-nilai", t0.Add(4*time.Second), "s1=1") // s1 sama: parsial, tidak terbit ulang
+	put(t, a, "st-daftar", t0.Add(5*time.Second), "D2")
+	put(t, a, "st-nilai", t0.Add(6*time.Second), "s2=5") // konteks baru mengubah isi
+	put(t, a, "st", t0, "bukan-milik-feed=1")            // awalan nama feed tidak dibaca
+	m := &multi{name: "st"}
+	pub := &publisher{}
+	rep, err := New(a, pub, &clock{now: t0}).Run(t.Context(), []Feed{m}, Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got []string
+	for _, msg := range pub.msgs {
+		got = append(got, strings.SplitN(string(msg.Data), "|", 2)[0])
+	}
+	if want := []string{"D1:1", "D1:5", "D2:5"}; !slices.Equal(got, want) {
+		t.Fatalf("terbit %v, ingin %v (panggilan %v)", got, want, m.calls)
+	}
+	// FetchMeta memakai nama feed, kunci arsip memakai awalan aslinya.
+	first := pub.msgs[0]
+	if !strings.Contains(string(first.Data), "|st|") || !strings.Contains(string(first.Data), k) ||
+		first.ID != eventid.MsgID("st", "s1", []byte("D1:1")) {
+		t.Fatalf("%s %s", first.Data, first.ID)
+	}
+	f := rep.Feeds[0]
+	if f.Connector != "st" || f.Payloads != 7 || f.Published != 3 || f.AlreadySeen != 1 || f.Rejected != 1 {
+		t.Fatalf("%+v", f)
+	}
+
+	// Awalan arsip tidak boleh dipakai dua feed atau kosong.
+	for name, feeds := range map[string][]Feed{
+		"awalan bentrok": {&multi{name: "st"}, feed{"st-nilai"}},
+		"awalan kosong":  {&emptyMulti{}},
+	} {
+		if _, err := New(a, pub, &clock{}).Run(t.Context(), feeds, Options{}); !errors.Is(err, ErrOptions) {
+			t.Errorf("%s: %v", name, err)
+		}
+	}
+}
+
+type emptyMulti struct{ multi }
+
+func (emptyMulti) Name() string       { return "kosong" }
+func (emptyMulti) Archives() []string { return nil }
+
 // FuzzRunOrdered: berapa pun feed dan waktu ambilnya, pesan terbit urut waktu
 // ambil, dan replay kedua tidak menerbitkan apa pun.
 func FuzzRunOrdered(f *testing.F) {
