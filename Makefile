@@ -143,10 +143,10 @@ geo: ## Jalankan geo-processor (butuh `make up seed`); status di http://127.0.0.
 	@echo "geo-processor ($(GEO_DATABASE_URL_SAFE))"
 	@cd services/geo-processor && DATABASE_URL="$(GEO_DATABASE_URL)" go run ./cmd/geo-processor
 
-river-snap: ## Pilih sel GloFAS untuk titik pantau sungai (±2 menit, ±800 lokasi Open-Meteo); peta cek di .cache/titik-sungai.geojson
+river-snap: ## Pilih sel GloFAS dari reanalisis 2020–2022 (jalan pertama ±10 menit, ±4.300 panggilan Open-Meteo; ulang gratis dari .cache/river-snap); peta cek di .cache/titik-sungai.geojson
 	go run ./services/ingest/cmd/river-snap -src docs/calibration/titik-sungai-32.csv \
 	  -out services/ingest/internal/adapters/sitelist/data/rivers_32.csv -report docs/calibration/titik-sungai.md \
-	  -geojson .cache/titik-sungai.geojson
+	  -geojson .cache/titik-sungai.geojson $(ARGS)
 	pnpm exec prettier --write --log-level warn docs/calibration/titik-sungai.md
 
 CALIBRATION_DIR ?= $(CURDIR)/.cache/calibration

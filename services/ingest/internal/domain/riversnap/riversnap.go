@@ -67,7 +67,8 @@ func (s Station) Offsets() []series.LatLon {
 // Candidate adalah satu sel yang dijawab sumber beserta debit rata-ratanya.
 type Candidate struct {
 	Cell series.LatLon
-	// Mean adalah debit rata-rata (m³/s) selama jendela pengambilan.
+	// Mean adalah debit rata-rata (m³/s) selama periode acuan; NaN bila
+	// sel tidak punya cukup data.
 	Mean float64
 }
 
