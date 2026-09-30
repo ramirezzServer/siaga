@@ -2,9 +2,9 @@
 
 Dokumen ini adalah titik lanjut untuk sesi kerja berikutnya, termasuk chat baru dengan asisten AI. Perbarui setiap akhir sesi.
 
-## Status: Fase 1e-3b-1 selesai di workspace asisten, menunggu verifikasi di WSL (2026-09-30)
+## Status: Fase 1e-3b-1 selesai dan terverifikasi (2026-09-30); berikutnya 1e-3b-2
 
-Fase 0 sampai 1e-3a ter-commit dan terverifikasi (1e-3a di `9ae83a3..98854e2`). Fase 1e dipecah: **1e-1** arsip Garage + replay, **1e-2a** OpenTelemetry + dashboard, **1e-2b** deploy (**1e-2b-1** image + CI + manifest, **1e-2b-2** Garage dan Collector di cluster, SOPS, default deny, **1e-2b-3** retensi dan backup arsip), **1e-3** backfill + kalibrasi. 1e-3 dipecah lagi: **1e-3a** pengisian ulang OpenAQ, replay prakiraan BMKG + OpenAQ, peta pemeriksaan titik sungai, **1e-3b** reanalisis GloFAS → ambang banjir → `hazard.flood.*` (**1e-3b-1** pemilihan sel dari reanalisis, bagian ini; **1e-3b-2** ambang persentil dan `hazard.flood.*`), **1e-3c** arsip FIRMS SP → ambang titik api → `hazard.fire.*`, set berlabel T4, radius dirasakan, replay CAP.
+Fase 0 sampai 1e-3b-1 ter-commit dan terverifikasi, CI hijau di semua fase (1e-3a di `9ae83a3..98854e2`, 1e-3b-1 di `5f9d217` dan `8955ef2`). Fase 1e dipecah: **1e-1** arsip Garage + replay, **1e-2a** OpenTelemetry + dashboard, **1e-2b** deploy (**1e-2b-1** image + CI + manifest, **1e-2b-2** Garage dan Collector di cluster, SOPS, default deny, **1e-2b-3** retensi dan backup arsip), **1e-3** backfill + kalibrasi. 1e-3 dipecah lagi: **1e-3a** pengisian ulang OpenAQ, replay prakiraan BMKG + OpenAQ, peta pemeriksaan titik sungai, **1e-3b** reanalisis GloFAS → ambang banjir → `hazard.flood.*` (**1e-3b-1** pemilihan sel dari reanalisis, bagian ini; **1e-3b-2** ambang persentil dan `hazard.flood.*`), **1e-3c** arsip FIRMS SP → ambang titik api → `hazard.fire.*`, set berlabel T4, radius dirasakan, replay CAP.
 
 ### Fase 1e-3b-1: pemilihan sel titik sungai dari reanalisis GloFAS
 
@@ -17,17 +17,24 @@ Fase 0 sampai 1e-3a ter-commit dan terverifikasi (1e-3a di `9ae83a3..98854e2`). 
 
 Belum pernah menyentuh Open-Meteo asli (tidak terjangkau dari workspace). Nama model `consolidated_v4` dan rumus bobot berasal dari source Open-Meteo (temuan 1e-1); titik uji pertama memastikannya dengan satu panggilan.
 
-### Verifikasi yang perlu dijalankan di WSL (1e-3b-1)
+### Verifikasi di WSL (1e-3b-1)
 
-```bash
-bash "/mnt/c/KULIAH/PROJECT CODE/siaga-titipan/terapkan-fase-1e-3b-1.sh"   # patch, check, commit
-git push
-make river-snap          # jalan pertama ±10 menit, ±4.255 panggilan; jangan di hari yang sama dengan backfill reanalisis 1e-3b-2
-git diff --stat          # rivers_32.csv dan titik-sungai.md berubah: pilihan dari reanalisis
-make river-snap          # jalan kedua dari cache: tanpa request, git diff tidak bertambah
-```
+Terverifikasi 2026-09-30, commit `5f9d217` di-push:
 
-Lalu buka `.cache/titik-sungai.geojson` di geojson.io dan periksa titik yang masih bertanda. Hasil manual ditulis di `docs/calibration/titik-sungai-32.csv` dengan radius 0 dan catatan asal verifikasi, lalu `make river-snap` lagi (dari cache) dan commit `chore(ingest)` atau `docs(docs)` berisi CSV sumber, `rivers_32.csv`, dan laporan. Titik-titik dari temuan 28 Sep (ADR 0019, Konteks) layak diperiksa walau tidak bertanda.
+- `make river-snap` jalan pertama: 816 titik permintaan, 23 request, ±4.255 panggilan Open-Meteo tanpa 429; titik uji lolos, jadi `models=consolidated_v4` dan rumus bobot benar. 10 titik bertanda (laporan 24 Sep: 17).
+- Jalan kedua: 816 dari cache, 0 panggilan, `git diff` tidak bertambah. Hasil jalan pertama di-commit sebagai `8955ef2`.
+
+### Penetapan titik sungai (1e-3b-1)
+
+Semua titik bertanda dan titik yang dulu pindah (ADR 0019, Konteks) ditelusuri dari debit sel kandidat di peta pemeriksaan: debit sel hilir kira-kira sama dengan jumlah sel hulunya, jadi arah aliran dan pemisahan sungai bisa dibaca dari angkanya. 14 titik ditetapkan dengan radius 0 di `docs/calibration/titik-sungai-32.csv` (catatan per titik ada di sana):
+
+- **Ciliwung dan Cisadane** berjalan sejajar di barat Bogor: Cisadane di kolom 106.725 (8,0 → 9,7 → 15,4 → 19,4 → barat ke 56–61), Ciliwung di kolom 106.775 (Katulampa 11,3 → 13,6 → 15,7 → … → 27,4 di batas Jakarta). `cisadane-bogor`, `ciliwung-bogor`, dan `ciliwung-depok` dipindah ke kolom masing-masing; sel lama Depok ternyata alur Bekasi.
+- **Kali Bekasi**: GloFAS baru menggabungkan alur barat (Cikeas) dan alur timur (Cileungsi) di -6.125, 106.975 (53,9), ±12 km di utara Bekasi kota. `bekasi-kota` dipasang di sel gabungan itu; `bekasi-p2c` di alur barat terdekat ke P2C (-6.325, 106.925), jadi hanya mewakili Cikeas. Ambang P2C perlu dibaca dengan catatan itu.
+- `cilamaya-hilir` pindah dari sel Ciasem (107.675) ke sel Cilamaya (-6.225, 107.575); `citanduy-tasikmalaya` pindah dari cabang utara (Cimuntur) ke alur utama Citanduy (-7.325, 108.225).
+- `cimanuk-muara` tetap di -6.375, 108.225: sel hilirnya (-6.325) sedikit lebih kecil dan akan bertanda `hilir-lebih-kecil`, hidrografnya sama.
+- `citarum-majalaya`, `citarum-nanjung`, `cisanggarung-kuningan`, `cikeas`, `cileungsi`, `katulampa` diterima apa adanya dan dikunci.
+
+Belum dicocokkan secara visual dengan alur OSM di geojson.io; bila kelak dicek dan berbeda, ubah baris CSV-nya lalu `make river-snap` (dari cache, hanya titik baru yang diminta).
 
 ### Fase 1e-3a: pengisian ulang OpenAQ, replay dari isi payload, peta titik sungai
 
@@ -42,7 +49,7 @@ Lalu buka `.cache/titik-sungai.geojson` di geojson.io dan periksa titik yang mas
 
 ### Verifikasi di WSL (1e-3a)
 
-Terverifikasi 2026-09-28: commit `9ae83a3..98854e2` di `main`, sudah di-push.
+Terverifikasi 2026-09-28: commit `9ae83a3..98854e2` di `main`, sudah di-push, CI hijau.
 
 - `make archive-upload`: 0 disalin, 310 sudah ada (arsip lokal fase 1a–1d sudah di Garage).
 - `make replay ARGS="-publish=false -strict"`: 37.342 payload dari 13 feed, 0 rusak, 0 gagal parse, 0 ditolak (`bmkg-prakiraan` 35.296 payload, `openaq-stasiun` 123 payload/82 event).
@@ -310,7 +317,7 @@ Target demo fase 1: dashboard Grafana berisi data live semua sumber.
 - [x] **1e-2b-2** Garage satu node di cluster (ingest mengarsipkan langsung), OTel Collector `otelcol-k8s` (satu-satunya pemegang token Grafana Cloud, scrape metrik NATS dan Garage), secret produksi dalam satu `SopsSecret` terenkripsi age (`make secrets-prod`, sops-secrets-operator di fase 2), NetworkPolicy default deny namespace, baris dashboard platform (ADR 0017). Terverifikasi di WSL; CI hijau.
 - [ ] **1e-2b-3** (setelah ±2026-10-02, seminggu data arsip) retensi arsip (lifecycle Garage) dan backup Garage ke Oracle Object Storage. Bahan: ukuran arsip di temuan 1e-3a.
 - [x] **1e-3a** Pengisian ulang jam OpenAQ (`backfill openaq`, nilai mentah, maks 7 hari), replay prakiraan BMKG dan OpenAQ dengan konteks dari isi payload (`MultiFeed`, `PartialFeed`), peta GeoJSON pemeriksaan titik sungai, panel "Target scrape" abu-abu saat kosong (ADR 0018). Terverifikasi di WSL.
-- [ ] **1e-3b-1** river-snap memilih sel dari debit rata-rata reanalisis `consolidated_v4` 2020-07..2022-06 dengan cache, titik uji, dan batas kuota berbobot (ADR 0019). Menunggu verifikasi di WSL, lalu **pemeriksaan manual pengguna**: titik bertanda diperiksa di peta `.cache/titik-sungai.geojson`, koordinat sel benar ditulis di `docs/calibration/titik-sungai-32.csv` dengan radius 0 dan catatan asal verifikasi, lalu `make river-snap` (dari cache).
+- [x] **1e-3b-1** river-snap memilih sel dari debit rata-rata reanalisis `consolidated_v4` 2020-07..2022-06 dengan cache, titik uji, dan batas kuota berbobot (ADR 0019); 14 titik ditetapkan dari penelusuran debit sel GloFAS. Terverifikasi di WSL.
 - [ ] **1e-3b-2** Reanalisis penuh 1984–2022 hanya untuk sel terpilih (±100 panggilan per sel, ±3.800 total, di hari lain dari jalan pertama river-snap) → ambang persentil 80/90/98/99,5 per titik → `hazard.flood.*`.
 - [ ] **1e-3c** Arsip FIRMS standar (SP) → ambang titik api → `hazard.fire.*`; set berlabel T4 dan kalibrasi radius dirasakan dari arsip gempa; replay CAP (pasangkan dokumen id/en dengan entri RSS).
 
