@@ -2,9 +2,32 @@
 
 Dokumen ini adalah titik lanjut untuk sesi kerja berikutnya, termasuk chat baru dengan asisten AI. Perbarui setiap akhir sesi.
 
-## Status: Fase 1e-3a selesai di workspace asisten, menunggu verifikasi di WSL (2026-09-28)
+## Status: Fase 1e-3b-1 selesai di workspace asisten, menunggu verifikasi di WSL (2026-09-30)
 
-Fase 0 sampai 1e-2b-2 ter-commit dan terverifikasi (1e-2b-2 di `5b4955c..92f294b`, CI hijau). Fase 1e dipecah: **1e-1** arsip Garage + replay, **1e-2a** OpenTelemetry + dashboard, **1e-2b** deploy (**1e-2b-1** image + CI + manifest, **1e-2b-2** Garage dan Collector di cluster, SOPS, default deny, **1e-2b-3** retensi dan backup arsip), **1e-3** backfill + kalibrasi. 1e-3 dipecah lagi: **1e-3a** pengisian ulang OpenAQ, replay prakiraan BMKG + OpenAQ, peta pemeriksaan titik sungai (bagian ini), **1e-3b** reanalisis GloFAS → ambang banjir → `hazard.flood.*`, **1e-3c** arsip FIRMS SP → ambang titik api → `hazard.fire.*`, set berlabel T4, radius dirasakan, replay CAP.
+Fase 0 sampai 1e-3a ter-commit dan terverifikasi (1e-3a di `9ae83a3..98854e2`). Fase 1e dipecah: **1e-1** arsip Garage + replay, **1e-2a** OpenTelemetry + dashboard, **1e-2b** deploy (**1e-2b-1** image + CI + manifest, **1e-2b-2** Garage dan Collector di cluster, SOPS, default deny, **1e-2b-3** retensi dan backup arsip), **1e-3** backfill + kalibrasi. 1e-3 dipecah lagi: **1e-3a** pengisian ulang OpenAQ, replay prakiraan BMKG + OpenAQ, peta pemeriksaan titik sungai, **1e-3b** reanalisis GloFAS → ambang banjir → `hazard.flood.*` (**1e-3b-1** pemilihan sel dari reanalisis, bagian ini; **1e-3b-2** ambang persentil dan `hazard.flood.*`), **1e-3c** arsip FIRMS SP → ambang titik api → `hazard.fire.*`, set berlabel T4, radius dirasakan, replay CAP.
+
+### Fase 1e-3b-1: pemilihan sel titik sungai dari reanalisis GloFAS
+
+| Bagian     | Isi                                                                                                                                                                                                                                                                         | Terverifikasi di workspace asisten                                                                                                                                                              |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| river-snap | Debit rata-rata periode acuan reanalisis `consolidated_v4` 2020-07-01..2022-06-30 (730 hari, bobot ±5,2 per lokasi), bukan jendela prakiraan 14 hari; flag `-model`, `-from`, `-to`, `-cache`, `-max-calls` (bawaan 4.500); `make river-snap ARGS=…`                        | Test app 96,4%, domain 98,5%, `-race`; golangci-lint 2.13.2 bersih                                                                                                                              |
+| Cache      | `.cache/river-snap/glofas-<model>-<dari>-<sampai>.json` per titik permintaan (sel dijawab, rata-rata 4 desimal, hari berisi), disimpan setelah tiap request; jalan ulang tanpa kuota                                                                                        | Server Flood tiruan dengan 38 titik asli: 816 titik permintaan unik; berhenti di `-max-calls 60` lalu dilanjutkan dari cache; jalan ketiga dari cache tanpa request dan `rivers_32.csv` identik |
+| Pengaman   | Titik uji satu lokasi saat cache kosong (`ErrEmptyReanalysis` bila tanpa debit), jumlah hari per lokasi harus sama dengan periode, sel < 90% hari berisi tidak dipakai, maks 200 panggilan per request dan 400 per menit, request terakhir dipotong supaya pas dengan batas | Test unit (model kosong, hari kurang, sel jarang, batas habis di tengah dan tepat di awal, cache periode lain, galat checkpoint)                                                                |
+| Repo       | ADR 0019, catatan di ADR 0011 butir 5, README, Makefile                                                                                                                                                                                                                     | —                                                                                                                                                                                               |
+
+Belum pernah menyentuh Open-Meteo asli (tidak terjangkau dari workspace). Nama model `consolidated_v4` dan rumus bobot berasal dari source Open-Meteo (temuan 1e-1); titik uji pertama memastikannya dengan satu panggilan.
+
+### Verifikasi yang perlu dijalankan di WSL (1e-3b-1)
+
+```bash
+bash "/mnt/c/KULIAH/PROJECT CODE/siaga-titipan/terapkan-fase-1e-3b-1.sh"   # patch, check, commit
+git push
+make river-snap          # jalan pertama ±10 menit, ±4.255 panggilan; jangan di hari yang sama dengan backfill reanalisis 1e-3b-2
+git diff --stat          # rivers_32.csv dan titik-sungai.md berubah: pilihan dari reanalisis
+make river-snap          # jalan kedua dari cache: tanpa request, git diff tidak bertambah
+```
+
+Lalu buka `.cache/titik-sungai.geojson` di geojson.io dan periksa titik yang masih bertanda. Hasil manual ditulis di `docs/calibration/titik-sungai-32.csv` dengan radius 0 dan catatan asal verifikasi, lalu `make river-snap` lagi (dari cache) dan commit `chore(ingest)` atau `docs(docs)` berisi CSV sumber, `rivers_32.csv`, dan laporan. Titik-titik dari temuan 28 Sep (ADR 0019, Konteks) layak diperiksa walau tidak bertanda.
 
 ### Fase 1e-3a: pengisian ulang OpenAQ, replay dari isi payload, peta titik sungai
 
@@ -17,19 +40,16 @@ Fase 0 sampai 1e-2b-2 ter-commit dan terverifikasi (1e-2b-2 di `5b4955c..92f294b
 | Image             | Biner `backfill` di image ingest (Makefile, Tiltfile, CI, uji asap)                                                                                                                                                                                                                    | —                                                                                                                                                                                              |
 | Repo              | ADR 0018, README, `docs/events.md`, catatan ADR 0014                                                                                                                                                                                                                                   | —                                                                                                                                                                                              |
 
-### Verifikasi yang perlu dijalankan di WSL (1e-3a)
+### Verifikasi di WSL (1e-3a)
 
-```bash
-bash "/mnt/c/KULIAH/PROJECT CODE/siaga-titipan/terapkan-fase-1e-3a.sh"   # patch, check, images-smoke, commit
-git push
-make archive-upload                                  # sisa 1e-1: arsip lokal fase 1a–1d ke Garage
-make replay ARGS="-publish=false -strict"            # semua payload terbaca, termasuk prakiraan dan OpenAQ
-make backfill-openaq FROM=2026-09-26T12:00:00Z TO=2026-09-26T16:00:00Z ARGS=-publish=false   # cek dulu tanpa NATS
-make backfill-openaq FROM=2026-09-26T12:00:00Z TO=2026-09-26T16:00:00Z                       # isi celah 26 Sep (geo-processor jalan)
-make river-snap                                      # lalu buka .cache/titik-sungai.geojson di geojson.io
-```
+Terverifikasi 2026-09-28: commit `9ae83a3..98854e2` di `main`, sudah di-push.
 
-Setelah backfill: `SELECT sensor_id, observed_at, value FROM ts.aq_observation WHERE observed_at BETWEEN '2026-09-26 12:00Z' AND '2026-09-26 16:00Z' ORDER BY 1, 2;` harus berisi jam 14.00 UTC untuk kedua sensor, tanpa baris bergeser (misal 13.30). Dashboard: salin ulang ke Grafana Cloud (Import → Overwrite).
+- `make archive-upload`: 0 disalin, 310 sudah ada (arsip lokal fase 1a–1d sudah di Garage).
+- `make replay ARGS="-publish=false -strict"`: 37.342 payload dari 13 feed, 0 rusak, 0 gagal parse, 0 ditolak (`bmkg-prakiraan` 35.296 payload, `openaq-stasiun` 123 payload/82 event).
+- `make backfill-openaq FROM=2026-09-26T12:00:00Z TO=2026-09-26T16:00:00Z`: 2 stasiun, 10 nilai terbit; `ts.aq_observation` kini berisi jam 14.00 UTC (sensor 17000275 = 51,6; 17620437 = 49,3), baris lain tidak berubah dan tidak ada yang bergeser.
+- Dashboard diimpor ulang ke Grafana Cloud.
+- FIRMS pulih: 4 produk sukses, 0 gagal sejak ingest start 28 Sep 18.42 WIB.
+- `make river-snap` dijalankan ulang 28 Sep 22.16 WIB: 7 titik pindah sel tanpa perubahan file sumber. Hasil tidak di-commit; ditangani 1e-3b-1 (ADR 0019).
 
 ### Temuan yang perlu ditindaklanjuti (1e-3a)
 
@@ -289,8 +309,9 @@ Target demo fase 1: dashboard Grafana berisi data live semua sumber.
 - [x] **1e-2b-1** Image ingest dan geo-processor (satu Dockerfile, amd64 + arm64, distroless nonroot), job CI `images` (uji asap, Trivy, push GHCR + SBOM + cosign di `main`) dan `manifests`, manifest Kustomize ingest + geo-processor + Job migrasi dengan overlay local/prod, panel keterlambatan dashboard tanpa jeda ekspor (ADR 0016). Terverifikasi di WSL; CI hijau dan paket GHCR publik.
 - [x] **1e-2b-2** Garage satu node di cluster (ingest mengarsipkan langsung), OTel Collector `otelcol-k8s` (satu-satunya pemegang token Grafana Cloud, scrape metrik NATS dan Garage), secret produksi dalam satu `SopsSecret` terenkripsi age (`make secrets-prod`, sops-secrets-operator di fase 2), NetworkPolicy default deny namespace, baris dashboard platform (ADR 0017). Terverifikasi di WSL; CI hijau.
 - [ ] **1e-2b-3** (setelah ±2026-10-02, seminggu data arsip) retensi arsip (lifecycle Garage) dan backup Garage ke Oracle Object Storage. Bahan: ukuran arsip di temuan 1e-3a.
-- [x] **1e-3a** Pengisian ulang jam OpenAQ (`backfill openaq`, nilai mentah, maks 7 hari), replay prakiraan BMKG dan OpenAQ dengan konteks dari isi payload (`MultiFeed`, `PartialFeed`), peta GeoJSON pemeriksaan titik sungai, panel "Target scrape" abu-abu saat kosong (ADR 0018). Menunggu verifikasi di WSL.
-- [ ] **1e-3b** Reanalisis GloFAS (`consolidated_v4`, ±102 panggilan per titik) → ambang persentil banjir → `hazard.flood.*`. **Prasyarat pengguna**: 17 titik sungai bertanda diperiksa manual dengan peta `.cache/titik-sungai.geojson` (koordinat sel benar ditulis di `docs/calibration/titik-sungai-32.csv` dengan radius 0 dan catatan asal verifikasi, lalu `make river-snap`).
+- [x] **1e-3a** Pengisian ulang jam OpenAQ (`backfill openaq`, nilai mentah, maks 7 hari), replay prakiraan BMKG dan OpenAQ dengan konteks dari isi payload (`MultiFeed`, `PartialFeed`), peta GeoJSON pemeriksaan titik sungai, panel "Target scrape" abu-abu saat kosong (ADR 0018). Terverifikasi di WSL.
+- [ ] **1e-3b-1** river-snap memilih sel dari debit rata-rata reanalisis `consolidated_v4` 2020-07..2022-06 dengan cache, titik uji, dan batas kuota berbobot (ADR 0019). Menunggu verifikasi di WSL, lalu **pemeriksaan manual pengguna**: titik bertanda diperiksa di peta `.cache/titik-sungai.geojson`, koordinat sel benar ditulis di `docs/calibration/titik-sungai-32.csv` dengan radius 0 dan catatan asal verifikasi, lalu `make river-snap` (dari cache).
+- [ ] **1e-3b-2** Reanalisis penuh 1984–2022 hanya untuk sel terpilih (±100 panggilan per sel, ±3.800 total, di hari lain dari jalan pertama river-snap) → ambang persentil 80/90/98/99,5 per titik → `hazard.flood.*`.
 - [ ] **1e-3c** Arsip FIRMS standar (SP) → ambang titik api → `hazard.fire.*`; set berlabel T4 dan kalibrasi radius dirasakan dari arsip gempa; replay CAP (pasangkan dokumen id/en dengan entri RSS).
 
 Catatan tertunda (dari sesi 28 Sep, di luar fase):
@@ -319,6 +340,8 @@ Workspace cloud asisten tidak bisa menjangkau `proxy.golang.org`, `go.dev`, atau
 - Sesi 1e-1: membangun Go dari source sempat ditolak pemeriksa keamanan workspace dan baru jalan setelah pengguna mengizinkan eksplisit. golangci-lint butuh mirror GitHub untuk semua dependensi vanity; `codeberg.org` (go-errorlint v1.9.0, garif) diblokir, jadi dipakai mirror GitHub v1.8.0/v0.1.0 dengan nama modul diganti, dan `decorder` (GitLab) dibuang. Registry Docker juga diblokir, jadi Garage asli tidak bisa dijalankan di workspace; uji S3 memakai server tiruan (`s3archive/s3test`).
 
 - Sesi 1e-3a: modul Go tidak lagi dirakit dari mirror. Pengguna menjalankan `ekspor-modcache.sh` di WSL (cache modul SIAGA di folder sementara, dikemas ke titipan), lalu workspace memakai `GOPROXY=file://…` dengan `GOFLAGS=-mod=mod`. Go 1.27.1 dibangun dari tag `go1.27.1` repo `golang/go` (bootstrap Go 1.24 bawaan); golangci-lint 2.13.2 dari rilis GitHub. Endpoint OpenAQ baru direkam dulu lewat skrip titipan (`ambil-sampel-openaq-jam.sh`) sebelum kode ditulis.
+
+- Sesi 1e-3b-1: `modcache-siaga.tgz` (±659 MB) melewati batas 400 MB per file bridge desktop app, jadi tidak bisa dipakai. Paket yang dibutuhkan river-snap hanya perlu `google.golang.org/protobuf` (clone `protocolbuffers/protobuf-go` tag v1.36.12); modul lain di `go.mod` cukup `replace` ke folder berisi `go.mod` kosong di `go.work` sementara (`GOPROXY=off`). Untuk paket yang lebih banyak, pecah titipan cache per modul atau kecilkan dengan `go mod download` hanya untuk paket yang diuji.
 
 - Sesi 1e-2b-2: rilis GitHub yang bisa diunduh dan dipakai menguji: otelcol-k8s (checksum per file `<nama>.sha256`, bukan file checksums gabungan), nats-server, prometheus-nats-exporter (`checksums.txt`, arsip `linux-x86_64`), sops, age, gitleaks. Garage tidak punya binary di GitHub (rilis di `garagehq.deuxfleurs.fr`, tidak terjangkau); source-nya ada di mirror `deuxfleurs-org/garage`. Repo Helm `isindir.github.io` tidak terjangkau, tetapi repo GitHub operator bisa di-clone. Uji Collector memakai `/etc/hosts` untuk nama Service (`garage`, `nats-0.nats-headless`).
 

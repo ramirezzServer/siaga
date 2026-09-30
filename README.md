@@ -27,7 +27,7 @@ make ingest           # tarik BMKG, USGS, Open-Meteo, OpenAQ, FIRMS ke NATS, ars
 make geo              # gempa + cuaca → hazard.*, deret waktu → ts.* (status: :8082/status)
 make check            # lint + test
 make calibrate-dedup  # ukur ambang deduplikasi dengan katalog historis BMKG + USGS
-make river-snap       # pilih sel GloFAS untuk 38 titik pantau sungai (±800 lokasi Open-Meteo), peta cek .cache/titik-sungai.geojson
+make river-snap       # pilih sel GloFAS untuk 38 titik pantau sungai dari reanalisis 2020–2022 (±4.300 panggilan sekali, lalu dari cache), peta cek .cache/titik-sungai.geojson
 make archive-ls       # isi arsip payload mentah per konektor; archive-verify memeriksa integritasnya
 make replay FROM=2026-09-24 TO=2026-09-25   # putar ulang arsip ke NATS, urut waktu ambil asli
 make backfill-openaq FROM=2026-09-26 TO=2026-09-27   # isi ulang jam OpenAQ yang terlewat (maks ±7 hari)
