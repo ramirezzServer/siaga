@@ -1,0 +1,26 @@
+# Ambang indeks hujan sub-DAS Citarum Hulu (PRD, Batas kemampuan data; tingkat seperti debit: p80, p90, p98, p99,5).
+# Puncak harian (UTC) akumulasi hujan rata-rata wilayah (mm), Open-Meteo arsip models=ecmwf_ifs, 2017-01-01..2024-12-31.
+# Dibuat `make rain-threshold` dari docs/calibration/sub-das-citarum-hulu.csv; jangan diedit manual (ADR 0020).
+# 21 baris
+subdas,nama,jam,p50,p80,p90,p98,p99_5,hari_berisi
+cirasea,Cirasea,3,1.92,6.66,10.28,17.58,24.41,2922
+cirasea,Cirasea,6,2.85,9.15,14.26,25.60,37.93,2922
+cirasea,Cirasea,24,6.24,17.44,24.67,45.71,66.68,2922
+cisangkuy,Cisangkuy,3,1.95,6.96,10.34,20.00,30.16,2922
+cisangkuy,Cisangkuy,6,2.88,9.79,14.89,28.50,44.39,2922
+cisangkuy,Cisangkuy,24,6.73,18.29,26.71,52.51,73.08,2922
+ciwidey,Ciwidey,3,1.60,5.37,8.04,16.96,27.84,2922
+ciwidey,Ciwidey,6,2.44,7.75,11.39,24.23,38.74,2922
+ciwidey,Ciwidey,24,5.04,14.80,21.83,47.23,68.52,2922
+citarik,Citarik,3,1.73,5.63,8.51,15.38,23.57,2922
+citarik,Citarik,6,2.46,7.78,11.54,21.46,38.00,2922
+citarik,Citarik,24,5.45,13.94,20.90,42.26,63.28,2922
+ciminyak,Ciminyak,3,1.74,5.86,9.06,17.83,26.56,2922
+ciminyak,Ciminyak,6,2.54,8.12,12.52,25.12,40.62,2922
+ciminyak,Ciminyak,24,5.84,15.77,23.36,44.50,71.55,2922
+cihaur,Cihaur,3,2.09,6.86,10.18,17.38,27.17,2922
+cihaur,Cihaur,6,3.01,9.27,14.21,24.71,39.38,2922
+cihaur,Cihaur,24,7.28,17.13,24.67,46.69,76.23,2922
+cikapundung,Cikapundung,3,1.74,6.06,9.55,17.53,29.41,2922
+cikapundung,Cikapundung,6,2.64,8.40,13.08,25.66,40.56,2922
+cikapundung,Cikapundung,24,5.78,15.39,23.21,48.69,76.70,2922

@@ -1,0 +1,43 @@
+# Ambang banjir titik pantau sungai provinsi 32 (PRD, Aturan bisnis: Info p80, Waspada p90, Siaga p98, Bahaya p99,5).
+# Debit harian (m³/s) Open-Meteo Flood API models=consolidated_v4, 1997-01-01..2024-12-31 (10227 hari), sel = kolom lat/lon.
+# Dibuat `make flood-threshold`; jangan diedit manual (ADR 0020).
+# 38 titik
+id,sungai,nama,lat,lon,p50,p80,p90,p98,p99_5,maks_tahunan_median,hari_berisi,rasio_p98_seamless
+citarum-majalaya,Citarum,Majalaya,-7.0750,107.7250,10.38,29.48,37.82,52.70,63.99,66.30,10227,0.92
+citarum-dayeuhkolot,Citarum,Dayeuhkolot,-6.9750,107.6250,41.07,106.65,136.72,190.20,241.10,276.99,10227,0.93
+citarum-nanjung,Citarum,Nanjung,-6.9750,107.5250,95.83,215.77,271.90,378.73,479.70,534.19,10227,0.87
+citarum-hilir-jatiluhur,Citarum,Hilir Jatiluhur,-6.4250,107.3250,200.84,441.59,592.47,711.79,1010.58,770.07,10227,1.00
+citarum-karawang,Citarum,Karawang,-6.3250,107.2750,204.12,449.82,604.34,728.46,1031.76,788.12,10227,1.00
+citarum-muara,Citarum,Muara,-5.9750,107.0250,230.74,523.81,700.46,883.06,1198.14,972.94,10227,1.01
+cimanuk-garut,Cimanuk,Garut kota,-7.1750,107.9250,26.80,76.80,99.69,142.88,170.74,174.19,10227,0.95
+cimanuk-hulu-jatigede,Cimanuk,Hulu Jatigede,-6.9750,108.0250,47.87,157.42,201.77,275.06,330.03,332.44,10227,0.95
+cimanuk-hilir-jatigede,Cimanuk,Hilir Jatigede,-6.7750,108.0750,70.12,243.91,314.50,424.60,516.46,554.93,10227,0.95
+cimanuk-jatibarang,Cimanuk,Jatibarang,-6.4750,108.2750,103.23,378.14,491.04,673.53,796.75,812.79,10227,0.95
+cimanuk-muara,Cimanuk,Muara,-6.3750,108.2250,99.69,380.94,496.74,682.91,806.24,821.30,10227,0.94
+bekasi-cileungsi,Cileungsi,Cileungsi,-6.4250,107.0250,5.68,10.56,12.93,17.58,21.62,22.88,10227,1.05
+bekasi-cikeas,Cikeas,Cikeas,-6.4250,106.8750,16.14,28.58,34.65,47.02,57.86,59.60,10227,1.04
+bekasi-p2c,Kali Bekasi,Pertemuan Cileungsi-Cikeas,-6.3250,106.9250,21.23,38.72,47.42,65.07,81.79,94.94,10227,1.06
+bekasi-kota,Kali Bekasi,Bekasi kota,-6.1250,106.9750,43.77,89.36,112.08,157.85,201.30,206.74,10227,1.03
+cisadane-hulu,Cisadane,Hulu Salak,-6.7250,106.7750,7.49,14.10,17.32,24.29,30.18,26.04,10227,1.00
+cisadane-bogor,Cisadane,Kota Bogor,-6.5750,106.7250,18.50,33.12,40.59,56.08,69.20,71.35,10227,0.94
+cisadane-batas-banten,Cisadane,Batas Banten,-6.3750,106.6250,60.09,110.43,133.28,178.47,217.78,198.92,10227,1.01
+ciliwung-katulampa,Ciliwung,Katulampa,-6.6750,106.8250,10.56,17.97,21.70,29.83,37.54,41.31,10227,1.01
+ciliwung-bogor,Ciliwung,Kota Bogor,-6.5750,106.7750,14.63,24.88,30.08,41.46,52.21,61.83,10227,1.00
+ciliwung-depok,Ciliwung,Depok,-6.3750,106.7750,20.28,35.73,43.98,61.44,80.66,92.22,10227,1.01
+cisanggarung-kuningan,Cisanggarung,Kuningan,-6.9750,108.6250,14.92,65.37,84.11,113.55,132.01,121.75,10227,0.99
+cisanggarung-cirebon-timur,Cisanggarung,Cirebon timur,-6.9250,108.7250,22.33,91.68,117.30,157.12,182.54,169.02,10227,0.98
+cisanggarung-muara,Cisanggarung,Muara,-6.8250,108.7750,22.39,95.16,121.74,163.06,190.37,177.44,10227,0.99
+cipunagara-subang,Cipunagara,Subang tengah,-6.5250,107.8750,21.80,66.76,88.74,127.23,157.07,154.96,10227,1.03
+cipunagara-pamanukan,Cipunagara,Pamanukan,-6.2750,107.7750,34.16,103.47,136.72,197.83,246.59,238.06,10227,1.03
+cilamaya-hilir,Cilamaya,Hilir,-6.2250,107.5750,6.35,12.27,15.48,21.70,28.23,22.04,10227,1.02
+citanduy-tasikmalaya,Citanduy,Tasikmalaya,-7.3250,108.2250,29.76,76.98,93.84,120.34,142.84,136.09,10227,0.98
+citanduy-ciamis,Citanduy,Ciamis,-7.3750,108.3750,43.36,108.14,131.13,168.43,193.03,182.87,10227,0.98
+citanduy-banjar,Citanduy,Kota Banjar,-7.3250,108.5250,87.31,246.74,305.90,392.99,441.59,426.56,10227,0.99
+citanduy-muara,Citanduy,Muara,-7.6750,108.7750,154.24,438.54,546.02,690.83,820.99,749.85,10227,0.98
+cimandiri-tengah,Cimandiri,Tengah,-7.0250,106.7250,28.85,56.68,69.63,102.39,133.20,114.12,10227,0.94
+cimandiri-palabuhanratu,Cimandiri,Palabuhanratu,-7.0250,106.5250,93.84,182.65,222.87,328.61,418.63,333.80,10227,0.96
+ciwulan-tengah,Ciwulan,Tengah,-7.4750,108.1250,40.98,96.50,119.23,156.21,186.50,171.33,10227,0.96
+ciwulan-muara,Ciwulan,Muara,-7.7750,108.0750,58.57,140.51,175.76,234.50,289.90,247.82,10227,0.98
+cilaki-muara,Cilaki,Muara,-7.6750,107.6750,8.59,16.30,21.23,33.95,46.63,43.69,10227,0.97
+cikaso-muara,Cikaso,Muara,-7.3750,106.8250,88.13,152.46,183.93,259.62,327.85,287.11,10227,0.96
+cibuni-muara,Cibuni,Muara,-7.4750,107.0750,24.64,42.25,53.70,84.11,108.74,97.63,10227,0.95
