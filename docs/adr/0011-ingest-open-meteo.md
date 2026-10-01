@@ -26,7 +26,7 @@ Rekaman asli 2026-09-24 (`services/ingest/internal/adapters/openmeteo/testdata`,
 
 ## Konsekuensi
 
-- Sisa kuota harian (±6.500) cukup untuk `river-snap` (±800 lokasi) dan backfill historis bertahap, tetapi reanalisis GloFAS 1984–2022 untuk ambang persentil (±1.000 panggilan per titik) harus dicicil beberapa hari.
+- Sisa kuota harian (±6.500) cukup untuk `river-snap` (±800 lokasi) dan backfill historis bertahap, tetapi reanalisis GloFAS 1984–2022 untuk ambang persentil (±1.000 panggilan per titik) harus dicicil beberapa hari. (Dikoreksi: bobot kuota dibagi jumlah variabel, HANDOFF temuan 1e-1; reanalisis di Open-Meteo berisi 1997–2025-05; ambang 1997–2024 cukup ±2.800 panggilan, ADR 0020.)
 - Satu request gagal berarti semua titik jenis itu tertunda sampai polling berikutnya (runner memakai backoff). Karena jendela tetap per hari, data jam yang terlewat tetap terambil.
 - `hazard.flood.*` belum diterbitkan: ambang banjir butuh titik sungai yang sudah diverifikasi dan persentil reanalisis.
 - Model `best_match` bisa berganti model dasar tanpa pemberitahuan; nama model disimpan di setiap event dan baris `ts.*`, jadi pergantian eksplisit ke model tertentu (misal `ecmwf_ifs025`) cukup lewat konstanta tanpa mengubah skema.

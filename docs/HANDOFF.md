@@ -2,9 +2,44 @@
 
 Dokumen ini adalah titik lanjut untuk sesi kerja berikutnya, termasuk chat baru dengan asisten AI. Perbarui setiap akhir sesi.
 
-## Status: Fase 1e-3b-1 selesai dan terverifikasi (2026-09-30); berikutnya 1e-3b-2
+## Status: Fase 1e-3b-2a ditulis asisten (2026-10-01), menunggu verifikasi WSL; berikutnya 1e-3b-2b
 
-Fase 0 sampai 1e-3b-1 ter-commit dan terverifikasi, CI hijau di semua fase (1e-3a di `9ae83a3..98854e2`, 1e-3b-1 di `5f9d217` dan `8955ef2`). Fase 1e dipecah: **1e-1** arsip Garage + replay, **1e-2a** OpenTelemetry + dashboard, **1e-2b** deploy (**1e-2b-1** image + CI + manifest, **1e-2b-2** Garage dan Collector di cluster, SOPS, default deny, **1e-2b-3** retensi dan backup arsip), **1e-3** backfill + kalibrasi. 1e-3 dipecah lagi: **1e-3a** pengisian ulang OpenAQ, replay prakiraan BMKG + OpenAQ, peta pemeriksaan titik sungai, **1e-3b** reanalisis GloFAS → ambang banjir → `hazard.flood.*` (**1e-3b-1** pemilihan sel dari reanalisis, bagian ini; **1e-3b-2** ambang persentil dan `hazard.flood.*`), **1e-3c** arsip FIRMS SP → ambang titik api → `hazard.fire.*`, set berlabel T4, radius dirasakan, replay CAP.
+Fase 0 sampai 1e-3b-1 ter-commit dan terverifikasi, CI hijau di semua fase (1e-3a di `9ae83a3..98854e2`, 1e-3b-1 di `5f9d217..cffc31b`). Fase 1e dipecah: **1e-1** arsip Garage + replay, **1e-2a** OpenTelemetry + dashboard, **1e-2b** deploy (**1e-2b-1** image + CI + manifest, **1e-2b-2** Garage dan Collector di cluster, SOPS, default deny, **1e-2b-3** retensi dan backup arsip), **1e-3** backfill + kalibrasi. 1e-3 dipecah lagi: **1e-3a** pengisian ulang OpenAQ, replay prakiraan BMKG + OpenAQ, peta pemeriksaan titik sungai, **1e-3b** reanalisis GloFAS → ambang banjir → `hazard.flood.*` (**1e-3b-1** pemilihan sel dari reanalisis; **1e-3b-2a** alat ambang banjir dan ambang indeks hujan 7 sub-DAS, bagian ini; **1e-3b-2b** konektor hujan sub-DAS, ambang di geo-processor, `hazard.flood.*`), **1e-3c** arsip FIRMS SP → ambang titik api → `hazard.fire.*`, set berlabel T4, radius dirasakan, replay CAP.
+
+### Fase 1e-3b-2a: ambang banjir persentil dan indeks hujan sub-DAS
+
+Keputusan lengkap di ADR 0020. Temuan dari Open-Meteo asli (dicek lewat browser di laptop, 1 Okt) yang mengubah rencana: reanalisis `consolidated_v4` berisi **1997-01-01 sampai 2025-05-31** (bukan 1984 sampai Juli 2022), ERA5-Land tidak berisi hujan, arsip `ecmwf_ifs` mulai 2017 di sel yang sama dengan prakiraannya, dan `cell_selection` bawaan tidak memilih sel terdekat.
+
+| Bagian         | Isi                                                                                                                                                                                                                                                                                                                                                              | Terverifikasi di workspace asisten                                                                                                                                                            |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Domain         | `domain/threshold`: persentil (metode 7), ambang naik tegas, tingkat 0–4, puncak tahunan, puncak harian akumulasi N jam (`DailyMaxSum`), rata-rata berbobot                                                                                                                                                                                                      | Coverage 100%; `FuzzDailyMaxSum` (dibanding definisi brute force), `FuzzLevel` (tingkat tidak turun saat nilai naik)                                                                          |
+| Deret historis | `app/reanalysis`: Source (model, variabel, satuan, harian/per jam, periode), Loader dengan cache per sel, titik uji, batas kuota berbobot, `cell_selection=nearest`, cek satuan/langkah/sel/kelengkapan ≥ 99%; adapter `reanalysiscache` (tulis atomik); `openmeteo.ParseHourly` dan kolom `Unit`                                                                | Coverage 98,8%; sumber tiruan `openmeteotest` (batch, jeda, batas habis lalu lanjut dari cache, tulis ulang cache identik, sel/satuan/langkah salah, data bolong, titik uji kosong 1 request) |
+| Ambang debit   | `make flood-threshold` (`cmd/flood-threshold`, `app/floodthreshold`): 38 sel, `consolidated_v4` 1997–2024 → `docs/calibration/ambang-banjir-32.csv` + `ambang-banjir.md`; uji `banjir-tercatat.csv` (Garut 2016 di dalam sampel, Bekasi 2025 di luar sampel, Pamanukan 2026 dengan `seamless_v4`); rasio p98 `seamless_v4`/reanalisis 2022-08..2024-12 per titik | Coverage 96%; biner dijalankan terhadap server Open-Meteo tiruan (Python) dengan 38 titik asli                                                                                                |
+| Indeks hujan   | `docs/calibration/sub-das-citarum-hulu.csv` (7 sub-DAS dari HydroBASINS lev12, 47 sel `ecmwf_ifs`, bobot luas); `make rain-threshold` (`cmd/rain-threshold`, `app/rainthreshold`): puncak harian akumulasi 3/6/24 jam 2017–2024 → `ambang-hujan-sub-das.csv` + `.md`                                                                                             | Coverage 96%; biner terhadap server tiruan: 11 request (titik uji + 10 × 5 sel), jalan kedua 0 request dan CSV identik                                                                        |
+| river-snap     | `ReanalysisStart` 1997-01-01                                                                                                                                                                                                                                                                                                                                     | Test lama lulus                                                                                                                                                                               |
+| Repo           | ADR 0020, README, Makefile                                                                                                                                                                                                                                                                                                                                       | —                                                                                                                                                                                             |
+
+Belum ada ambang asli di repo: `ambang-banjir-32.csv` dan `ambang-hujan-sub-das.csv` dibuat di WSL (langkah di bawah) lalu di-commit.
+
+### Verifikasi yang perlu dijalankan di WSL (1e-3b-2a)
+
+```bash
+bash "/mnt/c/KULIAH/PROJECT CODE/siaga-titipan/terapkan-fase-1e-3b-2a.sh"   # salin, check, commit kode
+make flood-threshold   # ±8 menit, ±3.100 panggilan; laporan docs/calibration/ambang-banjir.md
+make rain-threshold    # ±3 menit, ±980 panggilan
+make flood-threshold && make rain-threshold   # jalan kedua dari cache: 0 panggilan, git diff kosong
+git add docs/calibration && git commit -m "chore(ingest): hitung ambang banjir dan indeks hujan dari data historis"
+git push
+```
+
+Yang dilaporkan: tingkat di tabel uji kejadian (harapan: Bekasi 2025 dan Pamanukan 2026 minimal Siaga, Garut 2016 tinggi di `cimanuk-garut`), titik dengan rasio p98 seamless di bawah 0,9, dan apakah hari hujan 24 jam terbesar per sub-DAS cocok dengan banjir cekungan Bandung yang pernah diberitakan.
+
+### Temuan yang perlu ditindaklanjuti (1e-3b-2a)
+
+- **Bias `seamless_v4` terhadap reanalisis**: di 4 titik sampel p98 seamless −16% (Nanjung) sampai +1% (Bekasi). Koreksi ambang diputuskan di 1e-3b-2b setelah rasio 38 titik ada (ADR 0020 butir 4).
+- **Dokumen arsitektur** menyebut indeks hujan tanpa panggilan tambahan; ADR 0020 butir 8 menambah konektor hujan sub-DAS ±376 panggilan per hari.
+- **Kejadian banjir cekungan Bandung** belum ada di `banjir-tercatat.csv` (PRD menyebutnya); tambahkan setelah tanggal dan sumbernya pasti.
+- Batch dan kuota ada di `app/riversnap` dan `app/reanalysis`; satukan saat river-snap diubah lagi.
 
 ### Fase 1e-3b-1: pemilihan sel titik sungai dari reanalisis GloFAS
 
@@ -318,7 +353,8 @@ Target demo fase 1: dashboard Grafana berisi data live semua sumber.
 - [ ] **1e-2b-3** (setelah ±2026-10-02, seminggu data arsip) retensi arsip (lifecycle Garage) dan backup Garage ke Oracle Object Storage. Bahan: ukuran arsip di temuan 1e-3a.
 - [x] **1e-3a** Pengisian ulang jam OpenAQ (`backfill openaq`, nilai mentah, maks 7 hari), replay prakiraan BMKG dan OpenAQ dengan konteks dari isi payload (`MultiFeed`, `PartialFeed`), peta GeoJSON pemeriksaan titik sungai, panel "Target scrape" abu-abu saat kosong (ADR 0018). Terverifikasi di WSL.
 - [x] **1e-3b-1** river-snap memilih sel dari debit rata-rata reanalisis `consolidated_v4` 2020-07..2022-06 dengan cache, titik uji, dan batas kuota berbobot (ADR 0019); 14 titik ditetapkan dari penelusuran debit sel GloFAS. Terverifikasi di WSL.
-- [ ] **1e-3b-2** Reanalisis penuh 1984–2022 hanya untuk sel terpilih (±100 panggilan per sel, ±3.800 total, di hari lain dari jalan pertama river-snap) → ambang persentil 80/90/98/99,5 per titik → `hazard.flood.*`.
+- [ ] **1e-3b-2a** `make flood-threshold` (persentil debit harian reanalisis `consolidated_v4` 1997–2024 per titik, uji kejadian tercatat, rasio bias `seamless_v4`) dan `make rain-threshold` (7 sub-DAS Citarum Hulu dari HydroBASINS, puncak harian akumulasi hujan 3/6/24 jam arsip ECMWF IFS 2017–2024) (ADR 0020). Kode ditulis asisten; ambang asli dibuat di WSL.
+- [ ] **1e-3b-2b** Konektor hujan sub-DAS (`ecmwf_ifs`, 47 sel, tiap 3 jam), ambang di geo-processor (skema `ref`, constraint DB), tingkat debit median + p75 (naik paling banyak satu) dan indeks hujan (maks Siaga), `hazard.flood.created|updated|expired` dengan kedaluwarsa 24 jam (ADR 0020 butir 4, 5, 8, 9).
 - [ ] **1e-3c** Arsip FIRMS standar (SP) → ambang titik api → `hazard.fire.*`; set berlabel T4 dan kalibrasi radius dirasakan dari arsip gempa; replay CAP (pasangkan dokumen id/en dengan entri RSS).
 
 Catatan tertunda (dari sesi 28 Sep, di luar fase):
@@ -355,6 +391,8 @@ Workspace cloud asisten tidak bisa menjangkau `proxy.golang.org`, `go.dev`, atau
 - Sesi 1e-2b-1: workspace punya klien Docker tanpa daemon, dan registry Docker/GHCR tetap tidak terjangkau, jadi image tidak bisa di-build di sana. Rilis GitHub bisa diunduh: kustomize, kubeconform, Trivy 0.74 (misconfig memakai check bawaan), actionlint, hadolint, Prometheus 3.14. `get.helm.sh` tidak terjangkau (salah satu alasan Kustomize). Query dashboard diuji dengan `promtool tsdb create-blocks-from openmetrics` lalu query instan pada waktu tertentu.
 
 - Sesi 1e-2a: pemeriksa keamanan workspace kembali menolak `GOSUMDB=off` sampai pengguna mengizinkan. Mirror GitHub tambahan: `open-telemetry/opentelemetry-go` (v1.46.0, semua submodul), `opentelemetry-go-contrib` (tag v1.46.0 untuk `bridges/otelslog` v0.20.1 dan `instrumentation/runtime` v0.71.0), `opentelemetry-proto-go` (`otlp/v1.11.0`), `opentelemetry-go-instrumentation` (`sdk/v1.2.1`), `grpc/grpc-go` v1.83.2, `googleapis/go-genproto` (sparse `googleapis/api` dan `googleapis/rpc`), `uber-go/multierr` v1.11.0 (untuk goose). Modul non-GitHub yang dibawa `go.mod` grpc (cloud.google.com/…, dll.) cukup `go.mod` kosong. goose dibangun dengan tag `no_clickhouse no_libsql no_mssql no_mysql no_sqlite3 no_vertica no_ydb`. Rilis GitHub Prometheus, Tempo, dan Loki bisa diunduh (cek SHA256) untuk menguji query dashboard; image Docker dan Grafana (dl.grafana.com) tidak.
+
+- Sesi 1e-3b-2a: workspace dimulai ulang tanpa Go dan clone; Go 1.27.1 dibangun ulang dari tag (bootstrap Go 1.24.7 bawaan, ±6 menit), protobuf-go v1.36.12 di-clone, modul lain di `go.mod` ingest/platform diganti folder berisi `go.mod` kosong lewat `go.work` sementara (`GOPROXY=off GOSUMDB=off`; jangan pakai `GOFLAGS=-mod=mod`, ditolak di workspace mode). Hanya paket yang tidak butuh NATS/OTel/AWS yang bisa dikompilasi dan di-lint. Open-Meteo, HydroSHEDS, dan Overpass dijangkau lewat browser bawaan desktop app (`javascript_tool`, fetch dari halaman situs yang mengizinkan CORS); hasil besar diolah di browser dan hanya ringkasannya dibawa ke workspace.
 
 Karena itu `go.sum` dari asisten tidak dipakai: patch tidak menyertakan `go.sum`/`go.work.sum`, dan `make deps` di WSL yang membuatnya.
 
