@@ -244,8 +244,16 @@ func TestParseNullsAndOffset(t *testing.T) {
 
 func TestParseDaily(t *testing.T) {
 	cells, err := ParseDaily(read(t, "sungai-3.json"), "river_discharge")
-	if err != nil || len(cells) != 3 || cells[1].Cell.Lat != -6.9749985 || len(cells[1].Values) != 14 {
+	if err != nil || len(cells) != 3 || cells[1].Cell.Lat != -6.9749985 || len(cells[1].Values) != 14 || cells[1].Unit != "m³/s" {
 		t.Fatalf("%v %v", cells, err)
+	}
+	// Variabel harian tidak terbaca sebagai per jam, dan sebaliknya.
+	if _, err := ParseHourly(read(t, "sungai-3.json"), "river_discharge"); !errors.Is(err, ErrStructure) {
+		t.Fatal(err)
+	}
+	hourly, err := ParseHourly(read(t, "cuaca-1titik.json"), "precipitation")
+	if err != nil || len(hourly) != 1 || hourly[0].Unit != "mm" || len(hourly[0].Values) == 0 {
+		t.Fatalf("%v %v", hourly, err)
 	}
 	if _, err := ParseDaily(read(t, "sungai-3.json"), "tidak_ada"); !errors.Is(err, ErrStructure) {
 		t.Fatal(err)

@@ -322,26 +322,39 @@ func finite(v *float64) *float64 {
 }
 
 // CellValues adalah deret satu variabel di satu sel, untuk alat kalibrasi
-// (make river-snap) yang tidak butuh validasi spesifikasi lengkap.
+// (make river-snap, flood-threshold, rain-threshold) yang tidak butuh
+// validasi spesifikasi lengkap.
 type CellValues struct {
 	Cell   series.LatLon
+	Unit   string
 	Values []*float64
 }
 
 // ParseDaily membaca satu variabel harian dari respons banyak lokasi, urut
 // sama dengan request.
 func ParseDaily(body []byte, variable string) ([]CellValues, error) {
+	return parseColumn(body, variable, true)
+}
+
+// ParseHourly membaca satu variabel per jam dari respons banyak lokasi, urut
+// sama dengan request.
+func ParseHourly(body []byte, variable string) ([]CellValues, error) {
+	return parseColumn(body, variable, false)
+}
+
+func parseColumn(body []byte, variable string, daily bool) ([]CellValues, error) {
 	locs, err := decode(body)
 	if err != nil {
 		return nil, err
 	}
 	out := make([]CellValues, len(locs))
 	for i, l := range locs {
-		col, ok := l.Daily[variable]
+		data, units := l.data(daily)
+		col, ok := data[variable]
 		if l.Latitude == nil || l.Longitude == nil || !ok {
 			return nil, fmt.Errorf("%w: lokasi %d tanpa koordinat atau %s", ErrStructure, i, variable)
 		}
-		out[i] = CellValues{Cell: series.LatLon{Lat: *l.Latitude, Lon: *l.Longitude}, Values: col}
+		out[i] = CellValues{Cell: series.LatLon{Lat: *l.Latitude, Lon: *l.Longitude}, Unit: units[variable], Values: col}
 	}
 	return out, nil
 }

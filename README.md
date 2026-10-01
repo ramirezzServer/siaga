@@ -28,6 +28,8 @@ make geo              # gempa + cuaca → hazard.*, deret waktu → ts.* (status
 make check            # lint + test
 make calibrate-dedup  # ukur ambang deduplikasi dengan katalog historis BMKG + USGS
 make river-snap       # pilih sel GloFAS untuk 38 titik pantau sungai dari reanalisis 2020–2022 (±4.300 panggilan sekali, lalu dari cache), peta cek .cache/titik-sungai.geojson
+make flood-threshold  # ambang banjir 38 titik dari reanalisis GloFAS 1997–2024 + uji banjir tercatat (±3.100 panggilan sekali, lalu dari cache)
+make rain-threshold   # ambang indeks hujan 7 sub-DAS Citarum Hulu dari arsip ECMWF IFS 2017–2024 (±1.000 panggilan sekali)
 make archive-ls       # isi arsip payload mentah per konektor; archive-verify memeriksa integritasnya
 make replay FROM=2026-09-24 TO=2026-09-25   # putar ulang arsip ke NATS, urut waktu ambil asli
 make backfill-openaq FROM=2026-09-26 TO=2026-09-27   # isi ulang jam OpenAQ yang terlewat (maks ±7 hari)

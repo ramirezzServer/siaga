@@ -111,7 +111,7 @@ grid-list: regions-fetch ## Bangun ulang simpul grid 0,25° Open-Meteo ingest (P
 	  -grid-out ../ingest/internal/adapters/sitelist/data/grid025_$(PROVINCE).txt
 
 ##@ Pipa data
-.PHONY: ingest ingest-record geo calibrate-dedup river-snap archive-ls archive-verify archive-upload replay backfill-openaq
+.PHONY: ingest ingest-record geo calibrate-dedup river-snap flood-threshold rain-threshold archive-ls archive-verify archive-upload replay backfill-openaq
 ingest: ## Jalankan ingest (butuh `make up`); arsip ke Garage, status di http://127.0.0.1:8081/status
 	cd services/ingest && INGEST_ARCHIVE_URL="$(INGEST_ARCHIVE_URL)" go run ./cmd/ingest
 
@@ -148,6 +148,14 @@ river-snap: ## Pilih sel GloFAS dari reanalisis 2020–2022 (jalan pertama ±10 
 	  -out services/ingest/internal/adapters/sitelist/data/rivers_32.csv -report docs/calibration/titik-sungai.md \
 	  -geojson .cache/titik-sungai.geojson $(ARGS)
 	pnpm exec prettier --write --log-level warn docs/calibration/titik-sungai.md
+
+flood-threshold: ## Ambang banjir 38 titik dari reanalisis GloFAS 1997–2024 + uji kejadian (jalan pertama ±8 menit, ±3.100 panggilan Open-Meteo; ulang gratis dari .cache/flood-threshold)
+	go run ./services/ingest/cmd/flood-threshold $(ARGS)
+	pnpm exec prettier --write --log-level warn docs/calibration/ambang-banjir.md
+
+rain-threshold: ## Ambang indeks hujan 7 sub-DAS Citarum Hulu dari arsip ECMWF IFS 2017–2024 (jalan pertama ±3 menit, ±1.000 panggilan Open-Meteo; ulang gratis dari .cache/rain-threshold)
+	go run ./services/ingest/cmd/rain-threshold $(ARGS)
+	pnpm exec prettier --write --log-level warn docs/calibration/ambang-hujan-sub-das.md
 
 CALIBRATION_DIR ?= $(CURDIR)/.cache/calibration
 calibrate-dedup: ## Ukur ambang deduplikasi gempa dengan katalog BMKG + USGS historis

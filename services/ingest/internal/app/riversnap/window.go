@@ -26,12 +26,17 @@ const DefaultModel = "consolidated_v4"
 
 // Periode acuan bawaan: dua tahun hidrologi penuh (Juli sampai Juni), jadi
 // memuat dua musim hujan dan dua musim kemarau, di dalam periode reanalisis
-// Open-Meteo (1984 sampai Juli 2022). Rata-rata 1984–2022 untuk semua sel
-// kandidat butuh ±82 ribu panggilan, jauh di atas kuota harian (ADR 0019).
+// Open-Meteo. Rata-rata seluruh reanalisis untuk semua sel kandidat butuh
+// puluhan ribu panggilan, jauh di atas kuota harian (ADR 0019).
+//
+// Reanalisis consolidated_v4 di Open-Meteo berisi 1997-01-01 sampai
+// 2025-05-31 (dicek 2026-10-01 di beberapa sel Jawa Barat; 1984–1996 kosong
+// semua walau dokumentasinya menyebut 1984 sampai Juli 2022), jadi
+// ReanalysisStart 1997 (ADR 0020).
 var (
 	DefaultFrom     = time.Date(2020, 7, 1, 0, 0, 0, 0, time.UTC)
 	DefaultTo       = time.Date(2022, 6, 30, 0, 0, 0, 0, time.UTC)
-	ReanalysisStart = time.Date(1984, 1, 1, 0, 0, 0, 0, time.UTC)
+	ReanalysisStart = time.Date(1997, 1, 1, 0, 0, 0, 0, time.UTC)
 )
 
 // DefaultWindow adalah periode acuan bawaan.
