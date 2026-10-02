@@ -27,7 +27,8 @@ type ExpiryReason int32
 
 const (
 	ExpiryReason_EXPIRY_REASON_UNSPECIFIED ExpiryReason = 0
-	// Masa aktif habis (gempa: 6 jam sejak kejadian; cuaca: waktu expires CAP).
+	// Masa aktif habis (gempa: 6 jam sejak kejadian; cuaca: waktu expires CAP;
+	// banjir: 24 jam sejak keluaran model terakhir di atas ambang Info).
 	ExpiryReason_EXPIRY_REASON_ELAPSED ExpiryReason = 1
 	// Ternyata kejadian yang sama dengan kejadian lain; lihat merged_into_hazard_id.
 	ExpiryReason_EXPIRY_REASON_MERGED ExpiryReason = 2

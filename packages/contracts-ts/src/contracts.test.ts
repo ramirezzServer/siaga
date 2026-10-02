@@ -7,8 +7,10 @@ import {
   CapMsgType,
   CapSeverity,
   AirQualityObservationSchema,
+  CatchmentRainfallForecastSchema,
   FireConfidence,
   FireDetectionSchema,
+  FloodIndicator,
   GridWeatherForecastSchema,
   HazardCreatedSchema,
   HazardKind,
@@ -151,6 +153,7 @@ describe("kontrak event raw", () => {
     expect(decoded.steps[1]?.precipitationMm).toBeUndefined();
     expect(decoded.site?.elevationM).toBeUndefined();
     expect(subjects.raw("forecast", "openmeteo")).toBe("raw.forecast.openmeteo");
+    expect(subjects.raw("rain", "openmeteo")).toBe("raw.rain.openmeteo");
   });
 
   it("debit sungai membawa titik pantau dan statistik ensemble", () => {
@@ -175,6 +178,52 @@ describe("kontrak event raw", () => {
       site: { river: "Citarum" },
     });
     expect(subjects.raw("flood", "openmeteo")).toBe("raw.flood.openmeteo");
+  });
+
+  it("hujan sub-DAS membawa jumlah sel dan langkah per jam", () => {
+    const rain = create(CatchmentRainfallForecastSchema, {
+      source: Source.OPEN_METEO,
+      site: { id: "catchment:cikapundung", name: "Cikapundung" },
+      model: "ecmwf_ifs",
+      cellCount: 3,
+      steps: [
+        { validTime: timestampFromDate(new Date("2026-10-01T00:00:00Z")), precipitationMm: 0 },
+        { validTime: timestampFromDate(new Date("2026-10-01T01:00:00Z")), precipitationMm: 4.25 },
+      ],
+    });
+    const decoded = fromBinary(
+      CatchmentRainfallForecastSchema,
+      toBinary(CatchmentRainfallForecastSchema, rain),
+    );
+    expect(decoded).toEqual(rain);
+    expect(decoded.site?.river).toBe("");
+    expect(subjects.raw("rain", "openmeteo")).toBe("raw.rain.openmeteo");
+  });
+
+  it("kejadian banjir membawa penilaian per hari", () => {
+    const event = create(HazardCreatedSchema, {
+      hazard: create(HazardSchema, {
+        kind: HazardKind.FLOOD,
+        level: AlertLevel.SIAGA,
+        primarySource: Source.OPEN_METEO,
+        detail: {
+          case: "flood",
+          value: {
+            indicator: FloodIndicator.DISCHARGE,
+            siteId: "river:citarum-nanjung",
+            dischargeThresholdsM3s: [187.7, 236.6, 329.5, 417.3],
+            maxLevel: AlertLevel.BAHAYA,
+            days: [{ level: AlertLevel.SIAGA, dischargeM3s: 340, possible: false }],
+          },
+        },
+      }),
+    });
+    const decoded = fromBinary(HazardCreatedSchema, toBinary(HazardCreatedSchema, event));
+    expect(decoded).toEqual(event);
+    expect(toJson(HazardCreatedSchema, decoded)).toMatchObject({
+      hazard: { kind: "HAZARD_KIND_FLOOD", flood: { indicator: "FLOOD_INDICATOR_DISCHARGE" } },
+    });
+    expect(subjects.hazard(HazardKind.FLOOD, "created")).toBe("hazard.flood.created");
   });
   it("pengukuran udara stasiun membawa satuan sumber per sensor", () => {
     const obs = create(AirQualityObservationSchema, {

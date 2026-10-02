@@ -31,7 +31,6 @@ type Spec struct {
 // definisi di paket ini, jadi layanan mana pun menghasilkan konfigurasi yang sama.
 const OwnerShared = "*"
 
-
 const day = 24 * time.Hour
 
 // Raw menampung payload sumber yang sudah divalidasi ingest (subjek raw.<jenis>.<sumber>).
@@ -74,7 +73,8 @@ var DLQ = Spec{
 type Kind string
 
 // Jenis data. Nilainya sama dengan subjects.ts di @siaga/contracts.
-// KindForecast hanya dipakai untuk data raw (prakiraan bukan kejadian bahaya).
+// KindForecast dan KindRain hanya dipakai untuk data raw (prakiraan bukan
+// kejadian bahaya; indeks hujan sub-DAS menjadi kejadian hazard.flood.*).
 const (
 	KindQuake    Kind = "quake"
 	KindWeather  Kind = "weather"
@@ -82,6 +82,7 @@ const (
 	KindFire     Kind = "fire"
 	KindAQ       Kind = "aq"
 	KindForecast Kind = "forecast"
+	KindRain     Kind = "rain"
 )
 
 // Source adalah potongan subjek untuk sumber data raw.

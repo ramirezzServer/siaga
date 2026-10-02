@@ -76,6 +76,7 @@ message Hazard {
   oneof detail {
     EarthquakeDetail earthquake = 20;
     WeatherWarningDetail weather = 21;
+    FloodDetail flood = 22;
   }
 }
 
@@ -141,4 +142,81 @@ message WeatherWarningDetail {
   double area_km2 = 18;
   // Jumlah pesan CAP dalam rantai kejadian ini (pesan awal + pembaruan).
   uint32 message_count = 19;
+}
+
+// Indikator potensi banjir.
+enum FloodIndicator {
+  FLOOD_INDICATOR_UNSPECIFIED = 0;
+  // Debit sungai model (GloFAS) di titik pantau sungai, dibandingkan dengan
+  // persentil debit harian reanalisis di sel yang sama.
+  FLOOD_INDICATOR_DISCHARGE = 1;
+  // Indeks hujan sub-DAS: akumulasi hujan rata-rata wilayah 3, 6, dan 24 jam
+  // dibandingkan dengan persentil historisnya. Bukan pengukuran debit:
+  // tingkat tertinggi Siaga dan berlabel "indikasi potensi banjir".
+  FLOOD_INDICATOR_RAINFALL_INDEX = 2;
+}
+
+// Detail potensi banjir di satu titik pantau sungai atau satu sub-DAS (ADR
+// 0020–0021). Semua angka adalah keluaran model, bukan pengukuran lapangan.
+message FloodDetail {
+  FloodIndicator indicator = 1;
+  // ID titik pantau: "river:<slug>" (debit) atau "catchment:<slug>" (indeks hujan).
+  string site_id = 2;
+  // Nama titik pantau atau sub-DAS, misal "Nanjung" atau "Cikapundung".
+  string site_name = 3;
+  // Sungai titik pantau debit; kosong untuk sub-DAS.
+  string river = 4;
+  // Model sumber, misal "glofas_v4" atau "ecmwf_ifs".
+  string model = 5;
+  // Waktu SIAGA menerima keluaran model yang dinilai.
+  google.protobuf.Timestamp issued_at = 6;
+  // Tanggal UTC (pukul 00.00) hari pertama dengan tingkat tertinggi di jendela.
+  google.protobuf.Timestamp peak_date = 7;
+  // true bila tingkat kejadian dinaikkan satu dari P75 ensemble ("kemungkinan").
+  bool possible = 8;
+  // Waktu terima keluaran terakhir yang mencapai ambang Info; kejadian
+  // berakhir 24 jam setelahnya bila tidak ada keluaran baru di atas ambang.
+  google.protobuf.Timestamp last_exceeded_at = 9;
+  // Hari ini sampai 3 hari ke depan (tanggal UTC), urut tanggal.
+  repeated FloodDay days = 10;
+  // Ambang debit efektif Info, Waspada, Siaga, Bahaya (m³/s) setelah koreksi
+  // bias. Kosong untuk indeks hujan.
+  repeated double discharge_thresholds_m3s = 11;
+  // Ambang indeks hujan per jendela akumulasi. Kosong untuk debit.
+  repeated RainfallThreshold rainfall_thresholds = 12;
+  // Tingkat tertinggi yang boleh dicapai titik ini (indeks hujan dan titik di
+  // hilir waduk: Siaga).
+  AlertLevel max_level = 13;
+}
+
+// Ambang indeks hujan satu jendela akumulasi.
+message RainfallThreshold {
+  uint32 window_hours = 1;
+  // Ambang Info, Waspada, Siaga, Bahaya (mm).
+  repeated double thresholds_mm = 2;
+}
+
+// Penilaian satu hari prakiraan.
+message FloodDay {
+  // Tanggal UTC pukul 00.00.
+  google.protobuf.Timestamp date = 1;
+  // ALERT_LEVEL_UNSPECIFIED berarti di bawah ambang Info atau tanpa data.
+  AlertLevel level = 2;
+  // true bila tingkat hari ini dinaikkan satu dari P75 ensemble.
+  bool possible = 3;
+  // Debit penentu tingkat: median ensemble, atau debit tunggal bila
+  // statistik ensemble kosong.
+  optional double discharge_m3s = 4;
+  optional double discharge_p75_m3s = 5;
+  // Maksimum ensemble: skenario terburuk, tidak menentukan tingkat.
+  optional double discharge_max_m3s = 6;
+  // Akumulasi hujan rata-rata wilayah terbesar yang berakhir di hari itu (mm).
+  optional double rain_3h_mm = 7;
+  optional double rain_6h_mm = 8;
+  optional double rain_24h_mm = 9;
+  // Jendela indeks hujan (jam) yang menentukan tingkat; 0 untuk debit atau
+  // bila di bawah ambang Info.
+  uint32 window_hours = 10;
+  // true bila discharge_m3s adalah median ensemble, false bila debit tunggal.
+  bool from_ensemble = 11;
 }

@@ -29,16 +29,19 @@ const (
 type ModelSite struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// ID titik yang stabil di SIAGA: "grid:<lintang>:<bujur>" dengan dua
-	// desimal (misal "grid:-6.75:107.50") atau "river:<slug>" (misal
-	// "river:citarum-dayeuhkolot").
+	// desimal (misal "grid:-6.75:107.50"), "river:<slug>" (misal
+	// "river:citarum-dayeuhkolot"), atau "catchment:<slug>" untuk sub-DAS
+	// (misal "catchment:cikapundung").
 	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	// Nama titik pantau sungai, misal "Dayeuhkolot". Kosong untuk grid.
+	// Nama titik pantau sungai atau sub-DAS, misal "Dayeuhkolot" atau
+	// "Cikapundung". Kosong untuk grid.
 	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	// Nama sungai, misal "Citarum". Kosong untuk grid.
 	River string `protobuf:"bytes,3,opt,name=river,proto3" json:"river,omitempty"`
 	// Titik yang diminta SIAGA.
 	Requested *v1.Point `protobuf:"bytes,4,opt,name=requested,proto3" json:"requested,omitempty"`
-	// Pusat sel model yang dijawab sumber.
+	// Pusat sel model yang dijawab sumber. Untuk sub-DAS: titik berat sel-sel
+	// yang dirata-rata (berbobot luas), sama dengan requested.
 	Cell *v1.Point `protobuf:"bytes,5,opt,name=cell,proto3" json:"cell,omitempty"`
 	// Elevasi sel model menurut sumber, bila ada.
 	ElevationM    *float64 `protobuf:"fixed64,6,opt,name=elevation_m,json=elevationM,proto3,oneof" json:"elevation_m,omitempty"`
@@ -700,6 +703,154 @@ func (x *DischargeStep) GetEnsembleP75M3S() float64 {
 	return 0
 }
 
+// Prakiraan hujan per jam rata-rata wilayah satu sub-DAS: rata-rata berbobot
+// luas sel model yang menutupinya (bobot di
+// docs/calibration/sub-das-citarum-hulu.csv), dihitung ingest dengan fungsi
+// yang sama dengan kalibrasi ambang indeks hujan (ADR 0020–0021).
+// Subjek NATS: raw.rain.openmeteo.
+type CatchmentRainfallForecast struct {
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	Meta   *FetchMeta             `protobuf:"bytes,1,opt,name=meta,proto3" json:"meta,omitempty"`
+	Source v11.Source             `protobuf:"varint,2,opt,name=source,proto3,enum=siaga.hazard.v1.Source" json:"source,omitempty"`
+	// ID "catchment:<slug>"; name adalah nama sub-DAS, river kosong.
+	Site *ModelSite `protobuf:"bytes,3,opt,name=site,proto3" json:"site,omitempty"`
+	// Model sumber, misal "ecmwf_ifs".
+	Model string `protobuf:"bytes,4,opt,name=model,proto3" json:"model,omitempty"`
+	// Jumlah sel model yang dirata-rata.
+	CellCount uint32 `protobuf:"varint,5,opt,name=cell_count,json=cellCount,proto3" json:"cell_count,omitempty"`
+	// Langkah per jam, urut waktu tanpa duplikat. Jam yang salah satu selnya
+	// kosong tidak dikirim, jadi deret bisa berlubang.
+	Steps         []*RainfallStep `protobuf:"bytes,6,rep,name=steps,proto3" json:"steps,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CatchmentRainfallForecast) Reset() {
+	*x = CatchmentRainfallForecast{}
+	mi := &file_siaga_raw_v1_model_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CatchmentRainfallForecast) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CatchmentRainfallForecast) ProtoMessage() {}
+
+func (x *CatchmentRainfallForecast) ProtoReflect() protoreflect.Message {
+	mi := &file_siaga_raw_v1_model_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CatchmentRainfallForecast.ProtoReflect.Descriptor instead.
+func (*CatchmentRainfallForecast) Descriptor() ([]byte, []int) {
+	return file_siaga_raw_v1_model_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *CatchmentRainfallForecast) GetMeta() *FetchMeta {
+	if x != nil {
+		return x.Meta
+	}
+	return nil
+}
+
+func (x *CatchmentRainfallForecast) GetSource() v11.Source {
+	if x != nil {
+		return x.Source
+	}
+	return v11.Source(0)
+}
+
+func (x *CatchmentRainfallForecast) GetSite() *ModelSite {
+	if x != nil {
+		return x.Site
+	}
+	return nil
+}
+
+func (x *CatchmentRainfallForecast) GetModel() string {
+	if x != nil {
+		return x.Model
+	}
+	return ""
+}
+
+func (x *CatchmentRainfallForecast) GetCellCount() uint32 {
+	if x != nil {
+		return x.CellCount
+	}
+	return 0
+}
+
+func (x *CatchmentRainfallForecast) GetSteps() []*RainfallStep {
+	if x != nil {
+		return x.Steps
+	}
+	return nil
+}
+
+// Hujan satu jam rata-rata wilayah sub-DAS.
+type RainfallStep struct {
+	state     protoimpl.MessageState `protogen:"open.v1"`
+	ValidTime *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=valid_time,json=validTime,proto3" json:"valid_time,omitempty"`
+	// Akumulasi hujan satu jam sebelum valid_time (mm).
+	PrecipitationMm float64 `protobuf:"fixed64,2,opt,name=precipitation_mm,json=precipitationMm,proto3" json:"precipitation_mm,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *RainfallStep) Reset() {
+	*x = RainfallStep{}
+	mi := &file_siaga_raw_v1_model_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RainfallStep) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RainfallStep) ProtoMessage() {}
+
+func (x *RainfallStep) ProtoReflect() protoreflect.Message {
+	mi := &file_siaga_raw_v1_model_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RainfallStep.ProtoReflect.Descriptor instead.
+func (*RainfallStep) Descriptor() ([]byte, []int) {
+	return file_siaga_raw_v1_model_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *RainfallStep) GetValidTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ValidTime
+	}
+	return nil
+}
+
+func (x *RainfallStep) GetPrecipitationMm() float64 {
+	if x != nil {
+		return x.PrecipitationMm
+	}
+	return 0
+}
+
 var File_siaga_raw_v1_model_proto protoreflect.FileDescriptor
 
 const file_siaga_raw_v1_model_proto_rawDesc = "" +
@@ -795,7 +946,19 @@ const file_siaga_raw_v1_model_proto_rawDesc = "" +
 	"\x11_ensemble_max_m3sB\x13\n" +
 	"\x11_ensemble_min_m3sB\x13\n" +
 	"\x11_ensemble_p25_m3sB\x13\n" +
-	"\x11_ensemble_p75_m3sB\xba\x01\n" +
+	"\x11_ensemble_p75_m3s\"\x8d\x02\n" +
+	"\x19CatchmentRainfallForecast\x12+\n" +
+	"\x04meta\x18\x01 \x01(\v2\x17.siaga.raw.v1.FetchMetaR\x04meta\x12/\n" +
+	"\x06source\x18\x02 \x01(\x0e2\x17.siaga.hazard.v1.SourceR\x06source\x12+\n" +
+	"\x04site\x18\x03 \x01(\v2\x17.siaga.raw.v1.ModelSiteR\x04site\x12\x14\n" +
+	"\x05model\x18\x04 \x01(\tR\x05model\x12\x1d\n" +
+	"\n" +
+	"cell_count\x18\x05 \x01(\rR\tcellCount\x120\n" +
+	"\x05steps\x18\x06 \x03(\v2\x1a.siaga.raw.v1.RainfallStepR\x05steps\"t\n" +
+	"\fRainfallStep\x129\n" +
+	"\n" +
+	"valid_time\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\tvalidTime\x12)\n" +
+	"\x10precipitation_mm\x18\x02 \x01(\x01R\x0fprecipitationMmB\xba\x01\n" +
 	"\x10com.siaga.raw.v1B\n" +
 	"ModelProtoP\x01ZHgithub.com/ramirezzServer/siaga/libs/go/contracts/gen/siaga/raw/v1;rawv1\xa2\x02\x03SRX\xaa\x02\fSiaga.Raw.V1\xca\x02\fSiaga\\Raw\\V1\xe2\x02\x18Siaga\\Raw\\V1\\GPBMetadata\xea\x02\x0eSiaga::Raw::V1b\x06proto3"
 
@@ -811,43 +974,50 @@ func file_siaga_raw_v1_model_proto_rawDescGZIP() []byte {
 	return file_siaga_raw_v1_model_proto_rawDescData
 }
 
-var file_siaga_raw_v1_model_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_siaga_raw_v1_model_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_siaga_raw_v1_model_proto_goTypes = []any{
-	(*ModelSite)(nil),              // 0: siaga.raw.v1.ModelSite
-	(*GridWeatherForecast)(nil),    // 1: siaga.raw.v1.GridWeatherForecast
-	(*GridWeatherStep)(nil),        // 2: siaga.raw.v1.GridWeatherStep
-	(*AirQualityForecast)(nil),     // 3: siaga.raw.v1.AirQualityForecast
-	(*AirQualityStep)(nil),         // 4: siaga.raw.v1.AirQualityStep
-	(*RiverDischargeForecast)(nil), // 5: siaga.raw.v1.RiverDischargeForecast
-	(*DischargeStep)(nil),          // 6: siaga.raw.v1.DischargeStep
-	(*v1.Point)(nil),               // 7: siaga.common.v1.Point
-	(*FetchMeta)(nil),              // 8: siaga.raw.v1.FetchMeta
-	(v11.Source)(0),                // 9: siaga.hazard.v1.Source
-	(*timestamppb.Timestamp)(nil),  // 10: google.protobuf.Timestamp
+	(*ModelSite)(nil),                 // 0: siaga.raw.v1.ModelSite
+	(*GridWeatherForecast)(nil),       // 1: siaga.raw.v1.GridWeatherForecast
+	(*GridWeatherStep)(nil),           // 2: siaga.raw.v1.GridWeatherStep
+	(*AirQualityForecast)(nil),        // 3: siaga.raw.v1.AirQualityForecast
+	(*AirQualityStep)(nil),            // 4: siaga.raw.v1.AirQualityStep
+	(*RiverDischargeForecast)(nil),    // 5: siaga.raw.v1.RiverDischargeForecast
+	(*DischargeStep)(nil),             // 6: siaga.raw.v1.DischargeStep
+	(*CatchmentRainfallForecast)(nil), // 7: siaga.raw.v1.CatchmentRainfallForecast
+	(*RainfallStep)(nil),              // 8: siaga.raw.v1.RainfallStep
+	(*v1.Point)(nil),                  // 9: siaga.common.v1.Point
+	(*FetchMeta)(nil),                 // 10: siaga.raw.v1.FetchMeta
+	(v11.Source)(0),                   // 11: siaga.hazard.v1.Source
+	(*timestamppb.Timestamp)(nil),     // 12: google.protobuf.Timestamp
 }
 var file_siaga_raw_v1_model_proto_depIdxs = []int32{
-	7,  // 0: siaga.raw.v1.ModelSite.requested:type_name -> siaga.common.v1.Point
-	7,  // 1: siaga.raw.v1.ModelSite.cell:type_name -> siaga.common.v1.Point
-	8,  // 2: siaga.raw.v1.GridWeatherForecast.meta:type_name -> siaga.raw.v1.FetchMeta
-	9,  // 3: siaga.raw.v1.GridWeatherForecast.source:type_name -> siaga.hazard.v1.Source
+	9,  // 0: siaga.raw.v1.ModelSite.requested:type_name -> siaga.common.v1.Point
+	9,  // 1: siaga.raw.v1.ModelSite.cell:type_name -> siaga.common.v1.Point
+	10, // 2: siaga.raw.v1.GridWeatherForecast.meta:type_name -> siaga.raw.v1.FetchMeta
+	11, // 3: siaga.raw.v1.GridWeatherForecast.source:type_name -> siaga.hazard.v1.Source
 	0,  // 4: siaga.raw.v1.GridWeatherForecast.site:type_name -> siaga.raw.v1.ModelSite
 	2,  // 5: siaga.raw.v1.GridWeatherForecast.steps:type_name -> siaga.raw.v1.GridWeatherStep
-	10, // 6: siaga.raw.v1.GridWeatherStep.valid_time:type_name -> google.protobuf.Timestamp
-	8,  // 7: siaga.raw.v1.AirQualityForecast.meta:type_name -> siaga.raw.v1.FetchMeta
-	9,  // 8: siaga.raw.v1.AirQualityForecast.source:type_name -> siaga.hazard.v1.Source
+	12, // 6: siaga.raw.v1.GridWeatherStep.valid_time:type_name -> google.protobuf.Timestamp
+	10, // 7: siaga.raw.v1.AirQualityForecast.meta:type_name -> siaga.raw.v1.FetchMeta
+	11, // 8: siaga.raw.v1.AirQualityForecast.source:type_name -> siaga.hazard.v1.Source
 	0,  // 9: siaga.raw.v1.AirQualityForecast.site:type_name -> siaga.raw.v1.ModelSite
 	4,  // 10: siaga.raw.v1.AirQualityForecast.steps:type_name -> siaga.raw.v1.AirQualityStep
-	10, // 11: siaga.raw.v1.AirQualityStep.valid_time:type_name -> google.protobuf.Timestamp
-	8,  // 12: siaga.raw.v1.RiverDischargeForecast.meta:type_name -> siaga.raw.v1.FetchMeta
-	9,  // 13: siaga.raw.v1.RiverDischargeForecast.source:type_name -> siaga.hazard.v1.Source
+	12, // 11: siaga.raw.v1.AirQualityStep.valid_time:type_name -> google.protobuf.Timestamp
+	10, // 12: siaga.raw.v1.RiverDischargeForecast.meta:type_name -> siaga.raw.v1.FetchMeta
+	11, // 13: siaga.raw.v1.RiverDischargeForecast.source:type_name -> siaga.hazard.v1.Source
 	0,  // 14: siaga.raw.v1.RiverDischargeForecast.site:type_name -> siaga.raw.v1.ModelSite
 	6,  // 15: siaga.raw.v1.RiverDischargeForecast.steps:type_name -> siaga.raw.v1.DischargeStep
-	10, // 16: siaga.raw.v1.DischargeStep.valid_date:type_name -> google.protobuf.Timestamp
-	17, // [17:17] is the sub-list for method output_type
-	17, // [17:17] is the sub-list for method input_type
-	17, // [17:17] is the sub-list for extension type_name
-	17, // [17:17] is the sub-list for extension extendee
-	0,  // [0:17] is the sub-list for field type_name
+	12, // 16: siaga.raw.v1.DischargeStep.valid_date:type_name -> google.protobuf.Timestamp
+	10, // 17: siaga.raw.v1.CatchmentRainfallForecast.meta:type_name -> siaga.raw.v1.FetchMeta
+	11, // 18: siaga.raw.v1.CatchmentRainfallForecast.source:type_name -> siaga.hazard.v1.Source
+	0,  // 19: siaga.raw.v1.CatchmentRainfallForecast.site:type_name -> siaga.raw.v1.ModelSite
+	8,  // 20: siaga.raw.v1.CatchmentRainfallForecast.steps:type_name -> siaga.raw.v1.RainfallStep
+	12, // 21: siaga.raw.v1.RainfallStep.valid_time:type_name -> google.protobuf.Timestamp
+	22, // [22:22] is the sub-list for method output_type
+	22, // [22:22] is the sub-list for method input_type
+	22, // [22:22] is the sub-list for extension type_name
+	22, // [22:22] is the sub-list for extension extendee
+	0,  // [0:22] is the sub-list for field type_name
 }
 
 func init() { file_siaga_raw_v1_model_proto_init() }
@@ -866,7 +1036,7 @@ func file_siaga_raw_v1_model_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_siaga_raw_v1_model_proto_rawDesc), len(file_siaga_raw_v1_model_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   7,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

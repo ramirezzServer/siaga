@@ -14,7 +14,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file siaga/hazard/v1/hazard.proto.
  */
 export const file_siaga_hazard_v1_hazard: GenFile = /*@__PURE__*/
-  fileDesc("ChxzaWFnYS9oYXphcmQvdjEvaGF6YXJkLnByb3RvEg9zaWFnYS5oYXphcmQudjEimgUKBkhhemFyZBIKCgJpZBgBIAEoCRIpCgRraW5kGAIgASgOMhsuc2lhZ2EuaGF6YXJkLnYxLkhhemFyZEtpbmQSKgoFbGV2ZWwYAyABKA4yGy5zaWFnYS5oYXphcmQudjEuQWxlcnRMZXZlbBIvCg5wcmltYXJ5X3NvdXJjZRgEIAEoDjIXLnNpYWdhLmhhemFyZC52MS5Tb3VyY2USFwoPc291cmNlX2V2ZW50X2lkGAUgASgJEi8KC29jY3VycmVkX2F0GAYgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIvCgtkZXRlY3RlZF9hdBgHIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASLgoKZXhwaXJlc19hdBgIIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASKAoIbG9jYXRpb24YCSABKAsyFi5zaWFnYS5jb21tb24udjEuUG9pbnQSFAoMYXJlYV9nZW9qc29uGAogASgJEjQKEGltcGFjdGVkX3JlZ2lvbnMYCyADKAsyGi5zaWFnYS5jb21tb24udjEuUmVnaW9uUmVmEg0KBXRpdGxlGAwgASgJEg8KB3N1bW1hcnkYDSABKAkSDQoFZHJpbGwYDiABKAgSEAoIcmV2aXNpb24YDyABKA0SHQoVaW1wYWN0ZWRfcmVnaW9uX2NvdW50GBAgASgNEjcKCmVhcnRocXVha2UYFCABKAsyIS5zaWFnYS5oYXphcmQudjEuRWFydGhxdWFrZURldGFpbEgAEjgKB3dlYXRoZXIYFSABKAsyJS5zaWFnYS5oYXphcmQudjEuV2VhdGhlcldhcm5pbmdEZXRhaWxIAEIICgZkZXRhaWwi8AEKEEVhcnRocXVha2VEZXRhaWwSEQoJbWFnbml0dWRlGAEgASgBEhAKCGRlcHRoX2ttGAIgASgBEhgKEGZlbHRfZGVzY3JpcHRpb24YAyABKAkSGQoRdHN1bmFtaV9wb3RlbnRpYWwYBCABKAgSFAoMc2hha2VtYXBfdXJsGAUgASgJEjwKFWNvcnJvYm9yYXRpbmdfcmVwb3J0cxgGIAMoCzIdLnNpYWdhLmhhemFyZC52MS5Tb3VyY2VSZXBvcnQSFgoOZmVsdF9yYWRpdXNfa20YByABKAESFgoObWFnbml0dWRlX3R5cGUYCCABKAki5AEKDFNvdXJjZVJlcG9ydBInCgZzb3VyY2UYASABKA4yFy5zaWFnYS5oYXphcmQudjEuU291cmNlEhcKD3NvdXJjZV9ldmVudF9pZBgCIAEoCRIRCgltYWduaXR1ZGUYAyABKAESKAoIbG9jYXRpb24YBCABKAsyFi5zaWFnYS5jb21tb24udjEuUG9pbnQSLwoLb2NjdXJyZWRfYXQYBSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEhAKCGRlcHRoX2ttGAYgASgBEhIKCnNvdXJjZV91cmwYByABKAkiqQMKFFdlYXRoZXJXYXJuaW5nRGV0YWlsEhQKDGNhcF9zZXZlcml0eRgBIAEoCRIRCgljYXBfZXZlbnQYAiABKAkSEAoIaGVhZGxpbmUYAyABKAkSEwoLZGVzY3JpcHRpb24YBCABKAkSEwoLaW5zdHJ1Y3Rpb24YBSABKAkSFgoOY2FwX2lkZW50aWZpZXIYBiABKAkSFAoMY2FwX21zZ190eXBlGAcgASgJEhMKC2NhcF91cmdlbmN5GAggASgJEhUKDWNhcF9jZXJ0YWludHkYCSABKAkSFgoOY2FwX2V2ZW50X2NvZGUYCiABKAkSFAoMY2FwX2V2ZW50X2VuGAsgASgJEhMKC2hlYWRsaW5lX2VuGAwgASgJEhYKDmRlc2NyaXB0aW9uX2VuGA0gASgJEhYKDmluc3RydWN0aW9uX2VuGA4gASgJEhEKCWFyZWFfZGVzYxgPIAEoCRIPCgd3ZWJfdXJsGBAgASgJEhIKCnNvdXJjZV91cmwYESABKAkSEAoIYXJlYV9rbTIYEiABKAESFQoNbWVzc2FnZV9jb3VudBgTIAEoDSqsAQoKSGF6YXJkS2luZBIbChdIQVpBUkRfS0lORF9VTlNQRUNJRklFRBAAEhoKFkhBWkFSRF9LSU5EX0VBUlRIUVVBS0UQARIXChNIQVpBUkRfS0lORF9XRUFUSEVSEAISFQoRSEFaQVJEX0tJTkRfRkxPT0QQAxIYChRIQVpBUkRfS0lORF9XSUxERklSRRAEEhsKF0hBWkFSRF9LSU5EX0FJUl9RVUFMSVRZEAUqhwEKCkFsZXJ0TGV2ZWwSGwoXQUxFUlRfTEVWRUxfVU5TUEVDSUZJRUQQABIUChBBTEVSVF9MRVZFTF9JTkZPEAESFwoTQUxFUlRfTEVWRUxfV0FTUEFEQRACEhUKEUFMRVJUX0xFVkVMX1NJQUdBEAMSFgoSQUxFUlRfTEVWRUxfQkFIQVlBEAQqlQEKBlNvdXJjZRIWChJTT1VSQ0VfVU5TUEVDSUZJRUQQABIPCgtTT1VSQ0VfQk1LRxABEg8KC1NPVVJDRV9VU0dTEAISFQoRU09VUkNFX09QRU5fTUVURU8QAxIVChFTT1VSQ0VfTkFTQV9GSVJNUxAEEhEKDVNPVVJDRV9PUEVOQVEQBRIQCgxTT1VSQ0VfRFJJTEwQBkLQAQoTY29tLnNpYWdhLmhhemFyZC52MUILSGF6YXJkUHJvdG9QAVpOZ2l0aHViLmNvbS9yYW1pcmV6elNlcnZlci9zaWFnYS9saWJzL2dvL2NvbnRyYWN0cy9nZW4vc2lhZ2EvaGF6YXJkL3YxO2hhemFyZHYxogIDU0hYqgIPU2lhZ2EuSGF6YXJkLlYxygIPU2lhZ2FcSGF6YXJkXFYx4gIbU2lhZ2FcSGF6YXJkXFYxXEdQQk1ldGFkYXRh6gIRU2lhZ2E6OkhhemFyZDo6VjFiBnByb3RvMw", [file_google_protobuf_timestamp, file_siaga_common_v1_geo]);
+  fileDesc("ChxzaWFnYS9oYXphcmQvdjEvaGF6YXJkLnByb3RvEg9zaWFnYS5oYXphcmQudjEiyQUKBkhhemFyZBIKCgJpZBgBIAEoCRIpCgRraW5kGAIgASgOMhsuc2lhZ2EuaGF6YXJkLnYxLkhhemFyZEtpbmQSKgoFbGV2ZWwYAyABKA4yGy5zaWFnYS5oYXphcmQudjEuQWxlcnRMZXZlbBIvCg5wcmltYXJ5X3NvdXJjZRgEIAEoDjIXLnNpYWdhLmhhemFyZC52MS5Tb3VyY2USFwoPc291cmNlX2V2ZW50X2lkGAUgASgJEi8KC29jY3VycmVkX2F0GAYgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIvCgtkZXRlY3RlZF9hdBgHIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASLgoKZXhwaXJlc19hdBgIIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASKAoIbG9jYXRpb24YCSABKAsyFi5zaWFnYS5jb21tb24udjEuUG9pbnQSFAoMYXJlYV9nZW9qc29uGAogASgJEjQKEGltcGFjdGVkX3JlZ2lvbnMYCyADKAsyGi5zaWFnYS5jb21tb24udjEuUmVnaW9uUmVmEg0KBXRpdGxlGAwgASgJEg8KB3N1bW1hcnkYDSABKAkSDQoFZHJpbGwYDiABKAgSEAoIcmV2aXNpb24YDyABKA0SHQoVaW1wYWN0ZWRfcmVnaW9uX2NvdW50GBAgASgNEjcKCmVhcnRocXVha2UYFCABKAsyIS5zaWFnYS5oYXphcmQudjEuRWFydGhxdWFrZURldGFpbEgAEjgKB3dlYXRoZXIYFSABKAsyJS5zaWFnYS5oYXphcmQudjEuV2VhdGhlcldhcm5pbmdEZXRhaWxIABItCgVmbG9vZBgWIAEoCzIcLnNpYWdhLmhhemFyZC52MS5GbG9vZERldGFpbEgAQggKBmRldGFpbCLwAQoQRWFydGhxdWFrZURldGFpbBIRCgltYWduaXR1ZGUYASABKAESEAoIZGVwdGhfa20YAiABKAESGAoQZmVsdF9kZXNjcmlwdGlvbhgDIAEoCRIZChF0c3VuYW1pX3BvdGVudGlhbBgEIAEoCBIUCgxzaGFrZW1hcF91cmwYBSABKAkSPAoVY29ycm9ib3JhdGluZ19yZXBvcnRzGAYgAygLMh0uc2lhZ2EuaGF6YXJkLnYxLlNvdXJjZVJlcG9ydBIWCg5mZWx0X3JhZGl1c19rbRgHIAEoARIWCg5tYWduaXR1ZGVfdHlwZRgIIAEoCSLkAQoMU291cmNlUmVwb3J0EicKBnNvdXJjZRgBIAEoDjIXLnNpYWdhLmhhemFyZC52MS5Tb3VyY2USFwoPc291cmNlX2V2ZW50X2lkGAIgASgJEhEKCW1hZ25pdHVkZRgDIAEoARIoCghsb2NhdGlvbhgEIAEoCzIWLnNpYWdhLmNvbW1vbi52MS5Qb2ludBIvCgtvY2N1cnJlZF9hdBgFIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASEAoIZGVwdGhfa20YBiABKAESEgoKc291cmNlX3VybBgHIAEoCSKpAwoUV2VhdGhlcldhcm5pbmdEZXRhaWwSFAoMY2FwX3NldmVyaXR5GAEgASgJEhEKCWNhcF9ldmVudBgCIAEoCRIQCghoZWFkbGluZRgDIAEoCRITCgtkZXNjcmlwdGlvbhgEIAEoCRITCgtpbnN0cnVjdGlvbhgFIAEoCRIWCg5jYXBfaWRlbnRpZmllchgGIAEoCRIUCgxjYXBfbXNnX3R5cGUYByABKAkSEwoLY2FwX3VyZ2VuY3kYCCABKAkSFQoNY2FwX2NlcnRhaW50eRgJIAEoCRIWCg5jYXBfZXZlbnRfY29kZRgKIAEoCRIUCgxjYXBfZXZlbnRfZW4YCyABKAkSEwoLaGVhZGxpbmVfZW4YDCABKAkSFgoOZGVzY3JpcHRpb25fZW4YDSABKAkSFgoOaW5zdHJ1Y3Rpb25fZW4YDiABKAkSEQoJYXJlYV9kZXNjGA8gASgJEg8KB3dlYl91cmwYECABKAkSEgoKc291cmNlX3VybBgRIAEoCRIQCghhcmVhX2ttMhgSIAEoARIVCg1tZXNzYWdlX2NvdW50GBMgASgNIuUDCgtGbG9vZERldGFpbBIyCglpbmRpY2F0b3IYASABKA4yHy5zaWFnYS5oYXphcmQudjEuRmxvb2RJbmRpY2F0b3ISDwoHc2l0ZV9pZBgCIAEoCRIRCglzaXRlX25hbWUYAyABKAkSDQoFcml2ZXIYBCABKAkSDQoFbW9kZWwYBSABKAkSLQoJaXNzdWVkX2F0GAYgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBItCglwZWFrX2RhdGUYByABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEhAKCHBvc3NpYmxlGAggASgIEjQKEGxhc3RfZXhjZWVkZWRfYXQYCSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEicKBGRheXMYCiADKAsyGS5zaWFnYS5oYXphcmQudjEuRmxvb2REYXkSIAoYZGlzY2hhcmdlX3RocmVzaG9sZHNfbTNzGAsgAygBEj8KE3JhaW5mYWxsX3RocmVzaG9sZHMYDCADKAsyIi5zaWFnYS5oYXphcmQudjEuUmFpbmZhbGxUaHJlc2hvbGQSLgoJbWF4X2xldmVsGA0gASgOMhsuc2lhZ2EuaGF6YXJkLnYxLkFsZXJ0TGV2ZWwiQAoRUmFpbmZhbGxUaHJlc2hvbGQSFAoMd2luZG93X2hvdXJzGAEgASgNEhUKDXRocmVzaG9sZHNfbW0YAiADKAEiswMKCEZsb29kRGF5EigKBGRhdGUYASABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEioKBWxldmVsGAIgASgOMhsuc2lhZ2EuaGF6YXJkLnYxLkFsZXJ0TGV2ZWwSEAoIcG9zc2libGUYAyABKAgSGgoNZGlzY2hhcmdlX20zcxgEIAEoAUgAiAEBEh4KEWRpc2NoYXJnZV9wNzVfbTNzGAUgASgBSAGIAQESHgoRZGlzY2hhcmdlX21heF9tM3MYBiABKAFIAogBARIXCgpyYWluXzNoX21tGAcgASgBSAOIAQESFwoKcmFpbl82aF9tbRgIIAEoAUgEiAEBEhgKC3JhaW5fMjRoX21tGAkgASgBSAWIAQESFAoMd2luZG93X2hvdXJzGAogASgNEhUKDWZyb21fZW5zZW1ibGUYCyABKAhCEAoOX2Rpc2NoYXJnZV9tM3NCFAoSX2Rpc2NoYXJnZV9wNzVfbTNzQhQKEl9kaXNjaGFyZ2VfbWF4X20zc0INCgtfcmFpbl8zaF9tbUINCgtfcmFpbl82aF9tbUIOCgxfcmFpbl8yNGhfbW0qrAEKCkhhemFyZEtpbmQSGwoXSEFaQVJEX0tJTkRfVU5TUEVDSUZJRUQQABIaChZIQVpBUkRfS0lORF9FQVJUSFFVQUtFEAESFwoTSEFaQVJEX0tJTkRfV0VBVEhFUhACEhUKEUhBWkFSRF9LSU5EX0ZMT09EEAMSGAoUSEFaQVJEX0tJTkRfV0lMREZJUkUQBBIbChdIQVpBUkRfS0lORF9BSVJfUVVBTElUWRAFKocBCgpBbGVydExldmVsEhsKF0FMRVJUX0xFVkVMX1VOU1BFQ0lGSUVEEAASFAoQQUxFUlRfTEVWRUxfSU5GTxABEhcKE0FMRVJUX0xFVkVMX1dBU1BBREEQAhIVChFBTEVSVF9MRVZFTF9TSUFHQRADEhYKEkFMRVJUX0xFVkVMX0JBSEFZQRAEKpUBCgZTb3VyY2USFgoSU09VUkNFX1VOU1BFQ0lGSUVEEAASDwoLU09VUkNFX0JNS0cQARIPCgtTT1VSQ0VfVVNHUxACEhUKEVNPVVJDRV9PUEVOX01FVEVPEAMSFQoRU09VUkNFX05BU0FfRklSTVMQBBIRCg1TT1VSQ0VfT1BFTkFREAUSEAoMU09VUkNFX0RSSUxMEAYqdAoORmxvb2RJbmRpY2F0b3ISHwobRkxPT0RfSU5ESUNBVE9SX1VOU1BFQ0lGSUVEEAASHQoZRkxPT0RfSU5ESUNBVE9SX0RJU0NIQVJHRRABEiIKHkZMT09EX0lORElDQVRPUl9SQUlORkFMTF9JTkRFWBACQtABChNjb20uc2lhZ2EuaGF6YXJkLnYxQgtIYXphcmRQcm90b1ABWk5naXRodWIuY29tL3JhbWlyZXp6U2VydmVyL3NpYWdhL2xpYnMvZ28vY29udHJhY3RzL2dlbi9zaWFnYS9oYXphcmQvdjE7aGF6YXJkdjGiAgNTSFiqAg9TaWFnYS5IYXphcmQuVjHKAg9TaWFnYVxIYXphcmRcVjHiAhtTaWFnYVxIYXphcmRcVjFcR1BCTWV0YWRhdGHqAhFTaWFnYTo6SGF6YXJkOjpWMWIGcHJvdG8z", [file_google_protobuf_timestamp, file_siaga_common_v1_geo]);
 
 /**
  * Kejadian bahaya yang sudah dinormalisasi dan dideduplikasi oleh geo-processor.
@@ -147,6 +147,12 @@ export type Hazard = Message<"siaga.hazard.v1.Hazard"> & {
      */
     value: WeatherWarningDetail;
     case: "weather";
+  } | {
+    /**
+     * @generated from field: siaga.hazard.v1.FloodDetail flood = 22;
+     */
+    value: FloodDetail;
+    case: "flood";
   } | { case: undefined; value?: undefined };
 };
 
@@ -404,6 +410,226 @@ export const WeatherWarningDetailSchema: GenMessage<WeatherWarningDetail> = /*@_
   messageDesc(file_siaga_hazard_v1_hazard, 3);
 
 /**
+ * Detail potensi banjir di satu titik pantau sungai atau satu sub-DAS (ADR
+ * 0020–0021). Semua angka adalah keluaran model, bukan pengukuran lapangan.
+ *
+ * @generated from message siaga.hazard.v1.FloodDetail
+ */
+export type FloodDetail = Message<"siaga.hazard.v1.FloodDetail"> & {
+  /**
+   * @generated from field: siaga.hazard.v1.FloodIndicator indicator = 1;
+   */
+  indicator: FloodIndicator;
+
+  /**
+   * ID titik pantau: "river:<slug>" (debit) atau "catchment:<slug>" (indeks hujan).
+   *
+   * @generated from field: string site_id = 2;
+   */
+  siteId: string;
+
+  /**
+   * Nama titik pantau atau sub-DAS, misal "Nanjung" atau "Cikapundung".
+   *
+   * @generated from field: string site_name = 3;
+   */
+  siteName: string;
+
+  /**
+   * Sungai titik pantau debit; kosong untuk sub-DAS.
+   *
+   * @generated from field: string river = 4;
+   */
+  river: string;
+
+  /**
+   * Model sumber, misal "glofas_v4" atau "ecmwf_ifs".
+   *
+   * @generated from field: string model = 5;
+   */
+  model: string;
+
+  /**
+   * Waktu SIAGA menerima keluaran model yang dinilai.
+   *
+   * @generated from field: google.protobuf.Timestamp issued_at = 6;
+   */
+  issuedAt?: Timestamp | undefined;
+
+  /**
+   * Tanggal UTC (pukul 00.00) hari pertama dengan tingkat tertinggi di jendela.
+   *
+   * @generated from field: google.protobuf.Timestamp peak_date = 7;
+   */
+  peakDate?: Timestamp | undefined;
+
+  /**
+   * true bila tingkat kejadian dinaikkan satu dari P75 ensemble ("kemungkinan").
+   *
+   * @generated from field: bool possible = 8;
+   */
+  possible: boolean;
+
+  /**
+   * Waktu terima keluaran terakhir yang mencapai ambang Info; kejadian
+   * berakhir 24 jam setelahnya bila tidak ada keluaran baru di atas ambang.
+   *
+   * @generated from field: google.protobuf.Timestamp last_exceeded_at = 9;
+   */
+  lastExceededAt?: Timestamp | undefined;
+
+  /**
+   * Hari ini sampai 3 hari ke depan (tanggal UTC), urut tanggal.
+   *
+   * @generated from field: repeated siaga.hazard.v1.FloodDay days = 10;
+   */
+  days: FloodDay[];
+
+  /**
+   * Ambang debit efektif Info, Waspada, Siaga, Bahaya (m³/s) setelah koreksi
+   * bias. Kosong untuk indeks hujan.
+   *
+   * @generated from field: repeated double discharge_thresholds_m3s = 11;
+   */
+  dischargeThresholdsM3s: number[];
+
+  /**
+   * Ambang indeks hujan per jendela akumulasi. Kosong untuk debit.
+   *
+   * @generated from field: repeated siaga.hazard.v1.RainfallThreshold rainfall_thresholds = 12;
+   */
+  rainfallThresholds: RainfallThreshold[];
+
+  /**
+   * Tingkat tertinggi yang boleh dicapai titik ini (indeks hujan dan titik di
+   * hilir waduk: Siaga).
+   *
+   * @generated from field: siaga.hazard.v1.AlertLevel max_level = 13;
+   */
+  maxLevel: AlertLevel;
+};
+
+/**
+ * Describes the message siaga.hazard.v1.FloodDetail.
+ * Use `create(FloodDetailSchema)` to create a new message.
+ */
+export const FloodDetailSchema: GenMessage<FloodDetail> = /*@__PURE__*/
+  messageDesc(file_siaga_hazard_v1_hazard, 4);
+
+/**
+ * Ambang indeks hujan satu jendela akumulasi.
+ *
+ * @generated from message siaga.hazard.v1.RainfallThreshold
+ */
+export type RainfallThreshold = Message<"siaga.hazard.v1.RainfallThreshold"> & {
+  /**
+   * @generated from field: uint32 window_hours = 1;
+   */
+  windowHours: number;
+
+  /**
+   * Ambang Info, Waspada, Siaga, Bahaya (mm).
+   *
+   * @generated from field: repeated double thresholds_mm = 2;
+   */
+  thresholdsMm: number[];
+};
+
+/**
+ * Describes the message siaga.hazard.v1.RainfallThreshold.
+ * Use `create(RainfallThresholdSchema)` to create a new message.
+ */
+export const RainfallThresholdSchema: GenMessage<RainfallThreshold> = /*@__PURE__*/
+  messageDesc(file_siaga_hazard_v1_hazard, 5);
+
+/**
+ * Penilaian satu hari prakiraan.
+ *
+ * @generated from message siaga.hazard.v1.FloodDay
+ */
+export type FloodDay = Message<"siaga.hazard.v1.FloodDay"> & {
+  /**
+   * Tanggal UTC pukul 00.00.
+   *
+   * @generated from field: google.protobuf.Timestamp date = 1;
+   */
+  date?: Timestamp | undefined;
+
+  /**
+   * ALERT_LEVEL_UNSPECIFIED berarti di bawah ambang Info atau tanpa data.
+   *
+   * @generated from field: siaga.hazard.v1.AlertLevel level = 2;
+   */
+  level: AlertLevel;
+
+  /**
+   * true bila tingkat hari ini dinaikkan satu dari P75 ensemble.
+   *
+   * @generated from field: bool possible = 3;
+   */
+  possible: boolean;
+
+  /**
+   * Debit penentu tingkat: median ensemble, atau debit tunggal bila
+   * statistik ensemble kosong.
+   *
+   * @generated from field: optional double discharge_m3s = 4;
+   */
+  dischargeM3s?: number | undefined;
+
+  /**
+   * @generated from field: optional double discharge_p75_m3s = 5;
+   */
+  dischargeP75M3s?: number | undefined;
+
+  /**
+   * Maksimum ensemble: skenario terburuk, tidak menentukan tingkat.
+   *
+   * @generated from field: optional double discharge_max_m3s = 6;
+   */
+  dischargeMaxM3s?: number | undefined;
+
+  /**
+   * Akumulasi hujan rata-rata wilayah terbesar yang berakhir di hari itu (mm).
+   *
+   * @generated from field: optional double rain_3h_mm = 7;
+   */
+  rain3hMm?: number | undefined;
+
+  /**
+   * @generated from field: optional double rain_6h_mm = 8;
+   */
+  rain6hMm?: number | undefined;
+
+  /**
+   * @generated from field: optional double rain_24h_mm = 9;
+   */
+  rain24hMm?: number | undefined;
+
+  /**
+   * Jendela indeks hujan (jam) yang menentukan tingkat; 0 untuk debit atau
+   * bila di bawah ambang Info.
+   *
+   * @generated from field: uint32 window_hours = 10;
+   */
+  windowHours: number;
+
+  /**
+   * true bila discharge_m3s adalah median ensemble, false bila debit tunggal.
+   *
+   * @generated from field: bool from_ensemble = 11;
+   */
+  fromEnsemble: boolean;
+};
+
+/**
+ * Describes the message siaga.hazard.v1.FloodDay.
+ * Use `create(FloodDaySchema)` to create a new message.
+ */
+export const FloodDaySchema: GenMessage<FloodDay> = /*@__PURE__*/
+  messageDesc(file_siaga_hazard_v1_hazard, 6);
+
+/**
  * Jenis bahaya yang dipantau SIAGA.
  *
  * @generated from enum siaga.hazard.v1.HazardKind
@@ -534,4 +760,39 @@ export enum Source {
  */
 export const SourceSchema: GenEnum<Source> = /*@__PURE__*/
   enumDesc(file_siaga_hazard_v1_hazard, 2);
+
+/**
+ * Indikator potensi banjir.
+ *
+ * @generated from enum siaga.hazard.v1.FloodIndicator
+ */
+export enum FloodIndicator {
+  /**
+   * @generated from enum value: FLOOD_INDICATOR_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * Debit sungai model (GloFAS) di titik pantau sungai, dibandingkan dengan
+   * persentil debit harian reanalisis di sel yang sama.
+   *
+   * @generated from enum value: FLOOD_INDICATOR_DISCHARGE = 1;
+   */
+  DISCHARGE = 1,
+
+  /**
+   * Indeks hujan sub-DAS: akumulasi hujan rata-rata wilayah 3, 6, dan 24 jam
+   * dibandingkan dengan persentil historisnya. Bukan pengukuran debit:
+   * tingkat tertinggi Siaga dan berlabel "indikasi potensi banjir".
+   *
+   * @generated from enum value: FLOOD_INDICATOR_RAINFALL_INDEX = 2;
+   */
+  RAINFALL_INDEX = 2,
+}
+
+/**
+ * Describes the enum siaga.hazard.v1.FloodIndicator.
+ */
+export const FloodIndicatorSchema: GenEnum<FloodIndicator> = /*@__PURE__*/
+  enumDesc(file_siaga_hazard_v1_hazard, 3);
 

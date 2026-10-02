@@ -202,6 +202,61 @@ func (Source) EnumDescriptor() ([]byte, []int) {
 	return file_siaga_hazard_v1_hazard_proto_rawDescGZIP(), []int{2}
 }
 
+// Indikator potensi banjir.
+type FloodIndicator int32
+
+const (
+	FloodIndicator_FLOOD_INDICATOR_UNSPECIFIED FloodIndicator = 0
+	// Debit sungai model (GloFAS) di titik pantau sungai, dibandingkan dengan
+	// persentil debit harian reanalisis di sel yang sama.
+	FloodIndicator_FLOOD_INDICATOR_DISCHARGE FloodIndicator = 1
+	// Indeks hujan sub-DAS: akumulasi hujan rata-rata wilayah 3, 6, dan 24 jam
+	// dibandingkan dengan persentil historisnya. Bukan pengukuran debit:
+	// tingkat tertinggi Siaga dan berlabel "indikasi potensi banjir".
+	FloodIndicator_FLOOD_INDICATOR_RAINFALL_INDEX FloodIndicator = 2
+)
+
+// Enum value maps for FloodIndicator.
+var (
+	FloodIndicator_name = map[int32]string{
+		0: "FLOOD_INDICATOR_UNSPECIFIED",
+		1: "FLOOD_INDICATOR_DISCHARGE",
+		2: "FLOOD_INDICATOR_RAINFALL_INDEX",
+	}
+	FloodIndicator_value = map[string]int32{
+		"FLOOD_INDICATOR_UNSPECIFIED":    0,
+		"FLOOD_INDICATOR_DISCHARGE":      1,
+		"FLOOD_INDICATOR_RAINFALL_INDEX": 2,
+	}
+)
+
+func (x FloodIndicator) Enum() *FloodIndicator {
+	p := new(FloodIndicator)
+	*p = x
+	return p
+}
+
+func (x FloodIndicator) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (FloodIndicator) Descriptor() protoreflect.EnumDescriptor {
+	return file_siaga_hazard_v1_hazard_proto_enumTypes[3].Descriptor()
+}
+
+func (FloodIndicator) Type() protoreflect.EnumType {
+	return &file_siaga_hazard_v1_hazard_proto_enumTypes[3]
+}
+
+func (x FloodIndicator) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use FloodIndicator.Descriptor instead.
+func (FloodIndicator) EnumDescriptor() ([]byte, []int) {
+	return file_siaga_hazard_v1_hazard_proto_rawDescGZIP(), []int{3}
+}
+
 // Kejadian bahaya yang sudah dinormalisasi dan dideduplikasi oleh geo-processor.
 type Hazard struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -242,6 +297,7 @@ type Hazard struct {
 	//
 	//	*Hazard_Earthquake
 	//	*Hazard_Weather
+	//	*Hazard_Flood
 	Detail        isHazard_Detail `protobuf_oneof:"detail"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -414,6 +470,15 @@ func (x *Hazard) GetWeather() *WeatherWarningDetail {
 	return nil
 }
 
+func (x *Hazard) GetFlood() *FloodDetail {
+	if x != nil {
+		if x, ok := x.Detail.(*Hazard_Flood); ok {
+			return x.Flood
+		}
+	}
+	return nil
+}
+
 type isHazard_Detail interface {
 	isHazard_Detail()
 }
@@ -426,9 +491,15 @@ type Hazard_Weather struct {
 	Weather *WeatherWarningDetail `protobuf:"bytes,21,opt,name=weather,proto3,oneof"`
 }
 
+type Hazard_Flood struct {
+	Flood *FloodDetail `protobuf:"bytes,22,opt,name=flood,proto3,oneof"`
+}
+
 func (*Hazard_Earthquake) isHazard_Detail() {}
 
 func (*Hazard_Weather) isHazard_Detail() {}
+
+func (*Hazard_Flood) isHazard_Detail() {}
 
 // Detail gempa.
 type EarthquakeDetail struct {
@@ -831,11 +902,357 @@ func (x *WeatherWarningDetail) GetMessageCount() uint32 {
 	return 0
 }
 
+// Detail potensi banjir di satu titik pantau sungai atau satu sub-DAS (ADR
+// 0020–0021). Semua angka adalah keluaran model, bukan pengukuran lapangan.
+type FloodDetail struct {
+	state     protoimpl.MessageState `protogen:"open.v1"`
+	Indicator FloodIndicator         `protobuf:"varint,1,opt,name=indicator,proto3,enum=siaga.hazard.v1.FloodIndicator" json:"indicator,omitempty"`
+	// ID titik pantau: "river:<slug>" (debit) atau "catchment:<slug>" (indeks hujan).
+	SiteId string `protobuf:"bytes,2,opt,name=site_id,json=siteId,proto3" json:"site_id,omitempty"`
+	// Nama titik pantau atau sub-DAS, misal "Nanjung" atau "Cikapundung".
+	SiteName string `protobuf:"bytes,3,opt,name=site_name,json=siteName,proto3" json:"site_name,omitempty"`
+	// Sungai titik pantau debit; kosong untuk sub-DAS.
+	River string `protobuf:"bytes,4,opt,name=river,proto3" json:"river,omitempty"`
+	// Model sumber, misal "glofas_v4" atau "ecmwf_ifs".
+	Model string `protobuf:"bytes,5,opt,name=model,proto3" json:"model,omitempty"`
+	// Waktu SIAGA menerima keluaran model yang dinilai.
+	IssuedAt *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=issued_at,json=issuedAt,proto3" json:"issued_at,omitempty"`
+	// Tanggal UTC (pukul 00.00) hari pertama dengan tingkat tertinggi di jendela.
+	PeakDate *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=peak_date,json=peakDate,proto3" json:"peak_date,omitempty"`
+	// true bila tingkat kejadian dinaikkan satu dari P75 ensemble ("kemungkinan").
+	Possible bool `protobuf:"varint,8,opt,name=possible,proto3" json:"possible,omitempty"`
+	// Waktu terima keluaran terakhir yang mencapai ambang Info; kejadian
+	// berakhir 24 jam setelahnya bila tidak ada keluaran baru di atas ambang.
+	LastExceededAt *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=last_exceeded_at,json=lastExceededAt,proto3" json:"last_exceeded_at,omitempty"`
+	// Hari ini sampai 3 hari ke depan (tanggal UTC), urut tanggal.
+	Days []*FloodDay `protobuf:"bytes,10,rep,name=days,proto3" json:"days,omitempty"`
+	// Ambang debit efektif Info, Waspada, Siaga, Bahaya (m³/s) setelah koreksi
+	// bias. Kosong untuk indeks hujan.
+	DischargeThresholdsM3S []float64 `protobuf:"fixed64,11,rep,packed,name=discharge_thresholds_m3s,json=dischargeThresholdsM3s,proto3" json:"discharge_thresholds_m3s,omitempty"`
+	// Ambang indeks hujan per jendela akumulasi. Kosong untuk debit.
+	RainfallThresholds []*RainfallThreshold `protobuf:"bytes,12,rep,name=rainfall_thresholds,json=rainfallThresholds,proto3" json:"rainfall_thresholds,omitempty"`
+	// Tingkat tertinggi yang boleh dicapai titik ini (indeks hujan dan titik di
+	// hilir waduk: Siaga).
+	MaxLevel      AlertLevel `protobuf:"varint,13,opt,name=max_level,json=maxLevel,proto3,enum=siaga.hazard.v1.AlertLevel" json:"max_level,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FloodDetail) Reset() {
+	*x = FloodDetail{}
+	mi := &file_siaga_hazard_v1_hazard_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FloodDetail) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FloodDetail) ProtoMessage() {}
+
+func (x *FloodDetail) ProtoReflect() protoreflect.Message {
+	mi := &file_siaga_hazard_v1_hazard_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FloodDetail.ProtoReflect.Descriptor instead.
+func (*FloodDetail) Descriptor() ([]byte, []int) {
+	return file_siaga_hazard_v1_hazard_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *FloodDetail) GetIndicator() FloodIndicator {
+	if x != nil {
+		return x.Indicator
+	}
+	return FloodIndicator_FLOOD_INDICATOR_UNSPECIFIED
+}
+
+func (x *FloodDetail) GetSiteId() string {
+	if x != nil {
+		return x.SiteId
+	}
+	return ""
+}
+
+func (x *FloodDetail) GetSiteName() string {
+	if x != nil {
+		return x.SiteName
+	}
+	return ""
+}
+
+func (x *FloodDetail) GetRiver() string {
+	if x != nil {
+		return x.River
+	}
+	return ""
+}
+
+func (x *FloodDetail) GetModel() string {
+	if x != nil {
+		return x.Model
+	}
+	return ""
+}
+
+func (x *FloodDetail) GetIssuedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.IssuedAt
+	}
+	return nil
+}
+
+func (x *FloodDetail) GetPeakDate() *timestamppb.Timestamp {
+	if x != nil {
+		return x.PeakDate
+	}
+	return nil
+}
+
+func (x *FloodDetail) GetPossible() bool {
+	if x != nil {
+		return x.Possible
+	}
+	return false
+}
+
+func (x *FloodDetail) GetLastExceededAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.LastExceededAt
+	}
+	return nil
+}
+
+func (x *FloodDetail) GetDays() []*FloodDay {
+	if x != nil {
+		return x.Days
+	}
+	return nil
+}
+
+func (x *FloodDetail) GetDischargeThresholdsM3S() []float64 {
+	if x != nil {
+		return x.DischargeThresholdsM3S
+	}
+	return nil
+}
+
+func (x *FloodDetail) GetRainfallThresholds() []*RainfallThreshold {
+	if x != nil {
+		return x.RainfallThresholds
+	}
+	return nil
+}
+
+func (x *FloodDetail) GetMaxLevel() AlertLevel {
+	if x != nil {
+		return x.MaxLevel
+	}
+	return AlertLevel_ALERT_LEVEL_UNSPECIFIED
+}
+
+// Ambang indeks hujan satu jendela akumulasi.
+type RainfallThreshold struct {
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	WindowHours uint32                 `protobuf:"varint,1,opt,name=window_hours,json=windowHours,proto3" json:"window_hours,omitempty"`
+	// Ambang Info, Waspada, Siaga, Bahaya (mm).
+	ThresholdsMm  []float64 `protobuf:"fixed64,2,rep,packed,name=thresholds_mm,json=thresholdsMm,proto3" json:"thresholds_mm,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RainfallThreshold) Reset() {
+	*x = RainfallThreshold{}
+	mi := &file_siaga_hazard_v1_hazard_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RainfallThreshold) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RainfallThreshold) ProtoMessage() {}
+
+func (x *RainfallThreshold) ProtoReflect() protoreflect.Message {
+	mi := &file_siaga_hazard_v1_hazard_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RainfallThreshold.ProtoReflect.Descriptor instead.
+func (*RainfallThreshold) Descriptor() ([]byte, []int) {
+	return file_siaga_hazard_v1_hazard_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *RainfallThreshold) GetWindowHours() uint32 {
+	if x != nil {
+		return x.WindowHours
+	}
+	return 0
+}
+
+func (x *RainfallThreshold) GetThresholdsMm() []float64 {
+	if x != nil {
+		return x.ThresholdsMm
+	}
+	return nil
+}
+
+// Penilaian satu hari prakiraan.
+type FloodDay struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Tanggal UTC pukul 00.00.
+	Date *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=date,proto3" json:"date,omitempty"`
+	// ALERT_LEVEL_UNSPECIFIED berarti di bawah ambang Info atau tanpa data.
+	Level AlertLevel `protobuf:"varint,2,opt,name=level,proto3,enum=siaga.hazard.v1.AlertLevel" json:"level,omitempty"`
+	// true bila tingkat hari ini dinaikkan satu dari P75 ensemble.
+	Possible bool `protobuf:"varint,3,opt,name=possible,proto3" json:"possible,omitempty"`
+	// Debit penentu tingkat: median ensemble, atau debit tunggal bila
+	// statistik ensemble kosong.
+	DischargeM3S    *float64 `protobuf:"fixed64,4,opt,name=discharge_m3s,json=dischargeM3s,proto3,oneof" json:"discharge_m3s,omitempty"`
+	DischargeP75M3S *float64 `protobuf:"fixed64,5,opt,name=discharge_p75_m3s,json=dischargeP75M3s,proto3,oneof" json:"discharge_p75_m3s,omitempty"`
+	// Maksimum ensemble: skenario terburuk, tidak menentukan tingkat.
+	DischargeMaxM3S *float64 `protobuf:"fixed64,6,opt,name=discharge_max_m3s,json=dischargeMaxM3s,proto3,oneof" json:"discharge_max_m3s,omitempty"`
+	// Akumulasi hujan rata-rata wilayah terbesar yang berakhir di hari itu (mm).
+	Rain_3HMm  *float64 `protobuf:"fixed64,7,opt,name=rain_3h_mm,json=rain3hMm,proto3,oneof" json:"rain_3h_mm,omitempty"`
+	Rain_6HMm  *float64 `protobuf:"fixed64,8,opt,name=rain_6h_mm,json=rain6hMm,proto3,oneof" json:"rain_6h_mm,omitempty"`
+	Rain_24HMm *float64 `protobuf:"fixed64,9,opt,name=rain_24h_mm,json=rain24hMm,proto3,oneof" json:"rain_24h_mm,omitempty"`
+	// Jendela indeks hujan (jam) yang menentukan tingkat; 0 untuk debit atau
+	// bila di bawah ambang Info.
+	WindowHours uint32 `protobuf:"varint,10,opt,name=window_hours,json=windowHours,proto3" json:"window_hours,omitempty"`
+	// true bila discharge_m3s adalah median ensemble, false bila debit tunggal.
+	FromEnsemble  bool `protobuf:"varint,11,opt,name=from_ensemble,json=fromEnsemble,proto3" json:"from_ensemble,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FloodDay) Reset() {
+	*x = FloodDay{}
+	mi := &file_siaga_hazard_v1_hazard_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FloodDay) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FloodDay) ProtoMessage() {}
+
+func (x *FloodDay) ProtoReflect() protoreflect.Message {
+	mi := &file_siaga_hazard_v1_hazard_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FloodDay.ProtoReflect.Descriptor instead.
+func (*FloodDay) Descriptor() ([]byte, []int) {
+	return file_siaga_hazard_v1_hazard_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *FloodDay) GetDate() *timestamppb.Timestamp {
+	if x != nil {
+		return x.Date
+	}
+	return nil
+}
+
+func (x *FloodDay) GetLevel() AlertLevel {
+	if x != nil {
+		return x.Level
+	}
+	return AlertLevel_ALERT_LEVEL_UNSPECIFIED
+}
+
+func (x *FloodDay) GetPossible() bool {
+	if x != nil {
+		return x.Possible
+	}
+	return false
+}
+
+func (x *FloodDay) GetDischargeM3S() float64 {
+	if x != nil && x.DischargeM3S != nil {
+		return *x.DischargeM3S
+	}
+	return 0
+}
+
+func (x *FloodDay) GetDischargeP75M3S() float64 {
+	if x != nil && x.DischargeP75M3S != nil {
+		return *x.DischargeP75M3S
+	}
+	return 0
+}
+
+func (x *FloodDay) GetDischargeMaxM3S() float64 {
+	if x != nil && x.DischargeMaxM3S != nil {
+		return *x.DischargeMaxM3S
+	}
+	return 0
+}
+
+func (x *FloodDay) GetRain_3HMm() float64 {
+	if x != nil && x.Rain_3HMm != nil {
+		return *x.Rain_3HMm
+	}
+	return 0
+}
+
+func (x *FloodDay) GetRain_6HMm() float64 {
+	if x != nil && x.Rain_6HMm != nil {
+		return *x.Rain_6HMm
+	}
+	return 0
+}
+
+func (x *FloodDay) GetRain_24HMm() float64 {
+	if x != nil && x.Rain_24HMm != nil {
+		return *x.Rain_24HMm
+	}
+	return 0
+}
+
+func (x *FloodDay) GetWindowHours() uint32 {
+	if x != nil {
+		return x.WindowHours
+	}
+	return 0
+}
+
+func (x *FloodDay) GetFromEnsemble() bool {
+	if x != nil {
+		return x.FromEnsemble
+	}
+	return false
+}
+
 var File_siaga_hazard_v1_hazard_proto protoreflect.FileDescriptor
 
 const file_siaga_hazard_v1_hazard_proto_rawDesc = "" +
 	"\n" +
-	"\x1csiaga/hazard/v1/hazard.proto\x12\x0fsiaga.hazard.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x19siaga/common/v1/geo.proto\"\xdf\x06\n" +
+	"\x1csiaga/hazard/v1/hazard.proto\x12\x0fsiaga.hazard.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x19siaga/common/v1/geo.proto\"\x95\a\n" +
 	"\x06Hazard\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12/\n" +
 	"\x04kind\x18\x02 \x01(\x0e2\x1b.siaga.hazard.v1.HazardKindR\x04kind\x121\n" +
@@ -860,7 +1277,8 @@ const file_siaga_hazard_v1_hazard_proto_rawDesc = "" +
 	"\n" +
 	"earthquake\x18\x14 \x01(\v2!.siaga.hazard.v1.EarthquakeDetailH\x00R\n" +
 	"earthquake\x12A\n" +
-	"\aweather\x18\x15 \x01(\v2%.siaga.hazard.v1.WeatherWarningDetailH\x00R\aweatherB\b\n" +
+	"\aweather\x18\x15 \x01(\v2%.siaga.hazard.v1.WeatherWarningDetailH\x00R\aweather\x124\n" +
+	"\x05flood\x18\x16 \x01(\v2\x1c.siaga.hazard.v1.FloodDetailH\x00R\x05floodB\b\n" +
 	"\x06detail\"\xe7\x02\n" +
 	"\x10EarthquakeDetail\x12\x1c\n" +
 	"\tmagnitude\x18\x01 \x01(\x01R\tmagnitude\x12\x19\n" +
@@ -906,7 +1324,46 @@ const file_siaga_hazard_v1_hazard_proto_rawDesc = "" +
 	"\n" +
 	"source_url\x18\x11 \x01(\tR\tsourceUrl\x12\x19\n" +
 	"\barea_km2\x18\x12 \x01(\x01R\aareaKm2\x12#\n" +
-	"\rmessage_count\x18\x13 \x01(\rR\fmessageCount*\xac\x01\n" +
+	"\rmessage_count\x18\x13 \x01(\rR\fmessageCount\"\xfa\x04\n" +
+	"\vFloodDetail\x12=\n" +
+	"\tindicator\x18\x01 \x01(\x0e2\x1f.siaga.hazard.v1.FloodIndicatorR\tindicator\x12\x17\n" +
+	"\asite_id\x18\x02 \x01(\tR\x06siteId\x12\x1b\n" +
+	"\tsite_name\x18\x03 \x01(\tR\bsiteName\x12\x14\n" +
+	"\x05river\x18\x04 \x01(\tR\x05river\x12\x14\n" +
+	"\x05model\x18\x05 \x01(\tR\x05model\x127\n" +
+	"\tissued_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\bissuedAt\x127\n" +
+	"\tpeak_date\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\bpeakDate\x12\x1a\n" +
+	"\bpossible\x18\b \x01(\bR\bpossible\x12D\n" +
+	"\x10last_exceeded_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\x0elastExceededAt\x12-\n" +
+	"\x04days\x18\n" +
+	" \x03(\v2\x19.siaga.hazard.v1.FloodDayR\x04days\x128\n" +
+	"\x18discharge_thresholds_m3s\x18\v \x03(\x01R\x16dischargeThresholdsM3s\x12S\n" +
+	"\x13rainfall_thresholds\x18\f \x03(\v2\".siaga.hazard.v1.RainfallThresholdR\x12rainfallThresholds\x128\n" +
+	"\tmax_level\x18\r \x01(\x0e2\x1b.siaga.hazard.v1.AlertLevelR\bmaxLevel\"[\n" +
+	"\x11RainfallThreshold\x12!\n" +
+	"\fwindow_hours\x18\x01 \x01(\rR\vwindowHours\x12#\n" +
+	"\rthresholds_mm\x18\x02 \x03(\x01R\fthresholdsMm\"\xb4\x04\n" +
+	"\bFloodDay\x12.\n" +
+	"\x04date\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\x04date\x121\n" +
+	"\x05level\x18\x02 \x01(\x0e2\x1b.siaga.hazard.v1.AlertLevelR\x05level\x12\x1a\n" +
+	"\bpossible\x18\x03 \x01(\bR\bpossible\x12(\n" +
+	"\rdischarge_m3s\x18\x04 \x01(\x01H\x00R\fdischargeM3s\x88\x01\x01\x12/\n" +
+	"\x11discharge_p75_m3s\x18\x05 \x01(\x01H\x01R\x0fdischargeP75M3s\x88\x01\x01\x12/\n" +
+	"\x11discharge_max_m3s\x18\x06 \x01(\x01H\x02R\x0fdischargeMaxM3s\x88\x01\x01\x12!\n" +
+	"\n" +
+	"rain_3h_mm\x18\a \x01(\x01H\x03R\brain3hMm\x88\x01\x01\x12!\n" +
+	"\n" +
+	"rain_6h_mm\x18\b \x01(\x01H\x04R\brain6hMm\x88\x01\x01\x12#\n" +
+	"\vrain_24h_mm\x18\t \x01(\x01H\x05R\train24hMm\x88\x01\x01\x12!\n" +
+	"\fwindow_hours\x18\n" +
+	" \x01(\rR\vwindowHours\x12#\n" +
+	"\rfrom_ensemble\x18\v \x01(\bR\ffromEnsembleB\x10\n" +
+	"\x0e_discharge_m3sB\x14\n" +
+	"\x12_discharge_p75_m3sB\x14\n" +
+	"\x12_discharge_max_m3sB\r\n" +
+	"\v_rain_3h_mmB\r\n" +
+	"\v_rain_6h_mmB\x0e\n" +
+	"\f_rain_24h_mm*\xac\x01\n" +
 	"\n" +
 	"HazardKind\x12\x1b\n" +
 	"\x17HAZARD_KIND_UNSPECIFIED\x10\x00\x12\x1a\n" +
@@ -929,7 +1386,11 @@ const file_siaga_hazard_v1_hazard_proto_rawDesc = "" +
 	"\x11SOURCE_OPEN_METEO\x10\x03\x12\x15\n" +
 	"\x11SOURCE_NASA_FIRMS\x10\x04\x12\x11\n" +
 	"\rSOURCE_OPENAQ\x10\x05\x12\x10\n" +
-	"\fSOURCE_DRILL\x10\x06B\xd0\x01\n" +
+	"\fSOURCE_DRILL\x10\x06*t\n" +
+	"\x0eFloodIndicator\x12\x1f\n" +
+	"\x1bFLOOD_INDICATOR_UNSPECIFIED\x10\x00\x12\x1d\n" +
+	"\x19FLOOD_INDICATOR_DISCHARGE\x10\x01\x12\"\n" +
+	"\x1eFLOOD_INDICATOR_RAINFALL_INDEX\x10\x02B\xd0\x01\n" +
 	"\x13com.siaga.hazard.v1B\vHazardProtoP\x01ZNgithub.com/ramirezzServer/siaga/libs/go/contracts/gen/siaga/hazard/v1;hazardv1\xa2\x02\x03SHX\xaa\x02\x0fSiaga.Hazard.V1\xca\x02\x0fSiaga\\Hazard\\V1\xe2\x02\x1bSiaga\\Hazard\\V1\\GPBMetadata\xea\x02\x11Siaga::Hazard::V1b\x06proto3"
 
 var (
@@ -944,40 +1405,54 @@ func file_siaga_hazard_v1_hazard_proto_rawDescGZIP() []byte {
 	return file_siaga_hazard_v1_hazard_proto_rawDescData
 }
 
-var file_siaga_hazard_v1_hazard_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_siaga_hazard_v1_hazard_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_siaga_hazard_v1_hazard_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
+var file_siaga_hazard_v1_hazard_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_siaga_hazard_v1_hazard_proto_goTypes = []any{
 	(HazardKind)(0),               // 0: siaga.hazard.v1.HazardKind
 	(AlertLevel)(0),               // 1: siaga.hazard.v1.AlertLevel
 	(Source)(0),                   // 2: siaga.hazard.v1.Source
-	(*Hazard)(nil),                // 3: siaga.hazard.v1.Hazard
-	(*EarthquakeDetail)(nil),      // 4: siaga.hazard.v1.EarthquakeDetail
-	(*SourceReport)(nil),          // 5: siaga.hazard.v1.SourceReport
-	(*WeatherWarningDetail)(nil),  // 6: siaga.hazard.v1.WeatherWarningDetail
-	(*timestamppb.Timestamp)(nil), // 7: google.protobuf.Timestamp
-	(*v1.Point)(nil),              // 8: siaga.common.v1.Point
-	(*v1.RegionRef)(nil),          // 9: siaga.common.v1.RegionRef
+	(FloodIndicator)(0),           // 3: siaga.hazard.v1.FloodIndicator
+	(*Hazard)(nil),                // 4: siaga.hazard.v1.Hazard
+	(*EarthquakeDetail)(nil),      // 5: siaga.hazard.v1.EarthquakeDetail
+	(*SourceReport)(nil),          // 6: siaga.hazard.v1.SourceReport
+	(*WeatherWarningDetail)(nil),  // 7: siaga.hazard.v1.WeatherWarningDetail
+	(*FloodDetail)(nil),           // 8: siaga.hazard.v1.FloodDetail
+	(*RainfallThreshold)(nil),     // 9: siaga.hazard.v1.RainfallThreshold
+	(*FloodDay)(nil),              // 10: siaga.hazard.v1.FloodDay
+	(*timestamppb.Timestamp)(nil), // 11: google.protobuf.Timestamp
+	(*v1.Point)(nil),              // 12: siaga.common.v1.Point
+	(*v1.RegionRef)(nil),          // 13: siaga.common.v1.RegionRef
 }
 var file_siaga_hazard_v1_hazard_proto_depIdxs = []int32{
 	0,  // 0: siaga.hazard.v1.Hazard.kind:type_name -> siaga.hazard.v1.HazardKind
 	1,  // 1: siaga.hazard.v1.Hazard.level:type_name -> siaga.hazard.v1.AlertLevel
 	2,  // 2: siaga.hazard.v1.Hazard.primary_source:type_name -> siaga.hazard.v1.Source
-	7,  // 3: siaga.hazard.v1.Hazard.occurred_at:type_name -> google.protobuf.Timestamp
-	7,  // 4: siaga.hazard.v1.Hazard.detected_at:type_name -> google.protobuf.Timestamp
-	7,  // 5: siaga.hazard.v1.Hazard.expires_at:type_name -> google.protobuf.Timestamp
-	8,  // 6: siaga.hazard.v1.Hazard.location:type_name -> siaga.common.v1.Point
-	9,  // 7: siaga.hazard.v1.Hazard.impacted_regions:type_name -> siaga.common.v1.RegionRef
-	4,  // 8: siaga.hazard.v1.Hazard.earthquake:type_name -> siaga.hazard.v1.EarthquakeDetail
-	6,  // 9: siaga.hazard.v1.Hazard.weather:type_name -> siaga.hazard.v1.WeatherWarningDetail
-	5,  // 10: siaga.hazard.v1.EarthquakeDetail.corroborating_reports:type_name -> siaga.hazard.v1.SourceReport
-	2,  // 11: siaga.hazard.v1.SourceReport.source:type_name -> siaga.hazard.v1.Source
-	8,  // 12: siaga.hazard.v1.SourceReport.location:type_name -> siaga.common.v1.Point
-	7,  // 13: siaga.hazard.v1.SourceReport.occurred_at:type_name -> google.protobuf.Timestamp
-	14, // [14:14] is the sub-list for method output_type
-	14, // [14:14] is the sub-list for method input_type
-	14, // [14:14] is the sub-list for extension type_name
-	14, // [14:14] is the sub-list for extension extendee
-	0,  // [0:14] is the sub-list for field type_name
+	11, // 3: siaga.hazard.v1.Hazard.occurred_at:type_name -> google.protobuf.Timestamp
+	11, // 4: siaga.hazard.v1.Hazard.detected_at:type_name -> google.protobuf.Timestamp
+	11, // 5: siaga.hazard.v1.Hazard.expires_at:type_name -> google.protobuf.Timestamp
+	12, // 6: siaga.hazard.v1.Hazard.location:type_name -> siaga.common.v1.Point
+	13, // 7: siaga.hazard.v1.Hazard.impacted_regions:type_name -> siaga.common.v1.RegionRef
+	5,  // 8: siaga.hazard.v1.Hazard.earthquake:type_name -> siaga.hazard.v1.EarthquakeDetail
+	7,  // 9: siaga.hazard.v1.Hazard.weather:type_name -> siaga.hazard.v1.WeatherWarningDetail
+	8,  // 10: siaga.hazard.v1.Hazard.flood:type_name -> siaga.hazard.v1.FloodDetail
+	6,  // 11: siaga.hazard.v1.EarthquakeDetail.corroborating_reports:type_name -> siaga.hazard.v1.SourceReport
+	2,  // 12: siaga.hazard.v1.SourceReport.source:type_name -> siaga.hazard.v1.Source
+	12, // 13: siaga.hazard.v1.SourceReport.location:type_name -> siaga.common.v1.Point
+	11, // 14: siaga.hazard.v1.SourceReport.occurred_at:type_name -> google.protobuf.Timestamp
+	3,  // 15: siaga.hazard.v1.FloodDetail.indicator:type_name -> siaga.hazard.v1.FloodIndicator
+	11, // 16: siaga.hazard.v1.FloodDetail.issued_at:type_name -> google.protobuf.Timestamp
+	11, // 17: siaga.hazard.v1.FloodDetail.peak_date:type_name -> google.protobuf.Timestamp
+	11, // 18: siaga.hazard.v1.FloodDetail.last_exceeded_at:type_name -> google.protobuf.Timestamp
+	10, // 19: siaga.hazard.v1.FloodDetail.days:type_name -> siaga.hazard.v1.FloodDay
+	9,  // 20: siaga.hazard.v1.FloodDetail.rainfall_thresholds:type_name -> siaga.hazard.v1.RainfallThreshold
+	1,  // 21: siaga.hazard.v1.FloodDetail.max_level:type_name -> siaga.hazard.v1.AlertLevel
+	11, // 22: siaga.hazard.v1.FloodDay.date:type_name -> google.protobuf.Timestamp
+	1,  // 23: siaga.hazard.v1.FloodDay.level:type_name -> siaga.hazard.v1.AlertLevel
+	24, // [24:24] is the sub-list for method output_type
+	24, // [24:24] is the sub-list for method input_type
+	24, // [24:24] is the sub-list for extension type_name
+	24, // [24:24] is the sub-list for extension extendee
+	0,  // [0:24] is the sub-list for field type_name
 }
 
 func init() { file_siaga_hazard_v1_hazard_proto_init() }
@@ -988,14 +1463,16 @@ func file_siaga_hazard_v1_hazard_proto_init() {
 	file_siaga_hazard_v1_hazard_proto_msgTypes[0].OneofWrappers = []any{
 		(*Hazard_Earthquake)(nil),
 		(*Hazard_Weather)(nil),
+		(*Hazard_Flood)(nil),
 	}
+	file_siaga_hazard_v1_hazard_proto_msgTypes[6].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_siaga_hazard_v1_hazard_proto_rawDesc), len(file_siaga_hazard_v1_hazard_proto_rawDesc)),
-			NumEnums:      3,
-			NumMessages:   4,
+			NumEnums:      4,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -11,16 +11,19 @@ import "siaga/raw/v1/fetch.proto";
 // titik pantau sungai. Nilai model berasal dari sel model terdekat.
 message ModelSite {
   // ID titik yang stabil di SIAGA: "grid:<lintang>:<bujur>" dengan dua
-  // desimal (misal "grid:-6.75:107.50") atau "river:<slug>" (misal
-  // "river:citarum-dayeuhkolot").
+  // desimal (misal "grid:-6.75:107.50"), "river:<slug>" (misal
+  // "river:citarum-dayeuhkolot"), atau "catchment:<slug>" untuk sub-DAS
+  // (misal "catchment:cikapundung").
   string id = 1;
-  // Nama titik pantau sungai, misal "Dayeuhkolot". Kosong untuk grid.
+  // Nama titik pantau sungai atau sub-DAS, misal "Dayeuhkolot" atau
+  // "Cikapundung". Kosong untuk grid.
   string name = 2;
   // Nama sungai, misal "Citarum". Kosong untuk grid.
   string river = 3;
   // Titik yang diminta SIAGA.
   siaga.common.v1.Point requested = 4;
-  // Pusat sel model yang dijawab sumber.
+  // Pusat sel model yang dijawab sumber. Untuk sub-DAS: titik berat sel-sel
+  // yang dirata-rata (berbobot luas), sama dengan requested.
   siaga.common.v1.Point cell = 5;
   // Elevasi sel model menurut sumber, bila ada.
   optional double elevation_m = 6;
@@ -107,4 +110,30 @@ message DischargeStep {
   optional double ensemble_min_m3s = 6;
   optional double ensemble_p25_m3s = 7;
   optional double ensemble_p75_m3s = 8;
+}
+
+// Prakiraan hujan per jam rata-rata wilayah satu sub-DAS: rata-rata berbobot
+// luas sel model yang menutupinya (bobot di
+// docs/calibration/sub-das-citarum-hulu.csv), dihitung ingest dengan fungsi
+// yang sama dengan kalibrasi ambang indeks hujan (ADR 0020–0021).
+// Subjek NATS: raw.rain.openmeteo.
+message CatchmentRainfallForecast {
+  FetchMeta meta = 1;
+  siaga.hazard.v1.Source source = 2;
+  // ID "catchment:<slug>"; name adalah nama sub-DAS, river kosong.
+  ModelSite site = 3;
+  // Model sumber, misal "ecmwf_ifs".
+  string model = 4;
+  // Jumlah sel model yang dirata-rata.
+  uint32 cell_count = 5;
+  // Langkah per jam, urut waktu tanpa duplikat. Jam yang salah satu selnya
+  // kosong tidak dikirim, jadi deret bisa berlubang.
+  repeated RainfallStep steps = 6;
+}
+
+// Hujan satu jam rata-rata wilayah sub-DAS.
+message RainfallStep {
+  google.protobuf.Timestamp valid_time = 1;
+  // Akumulasi hujan satu jam sebelum valid_time (mm).
+  double precipitation_mm = 2;
 }

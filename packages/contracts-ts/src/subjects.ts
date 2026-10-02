@@ -13,9 +13,10 @@ type Transition = "created" | "updated" | "expired";
 
 /**
  * Potongan subjek untuk data raw dari ingest. Harus sama dengan libs/go/contracts/streams.
- * `forecast` hanya ada di raw: prakiraan bukan kejadian bahaya.
+ * `forecast` dan `rain` hanya ada di raw: prakiraan bukan kejadian bahaya
+ * (indeks hujan sub-DAS menjadi kejadian `hazard.flood.*`).
  */
-export type RawKind = "quake" | "weather" | "flood" | "fire" | "aq" | "forecast";
+export type RawKind = "quake" | "weather" | "flood" | "fire" | "aq" | "forecast" | "rain";
 export type RawSource = "bmkg" | "usgs" | "openmeteo" | "openaq" | "firms";
 
 /** Pembentuk nama subjek NATS. */

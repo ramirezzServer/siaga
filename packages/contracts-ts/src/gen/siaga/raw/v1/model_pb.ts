@@ -18,7 +18,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file siaga/raw/v1/model.proto.
  */
 export const file_siaga_raw_v1_model: GenFile = /*@__PURE__*/
-  fileDesc("ChhzaWFnYS9yYXcvdjEvbW9kZWwucHJvdG8SDHNpYWdhLnJhdy52MSKvAQoJTW9kZWxTaXRlEgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSDQoFcml2ZXIYAyABKAkSKQoJcmVxdWVzdGVkGAQgASgLMhYuc2lhZ2EuY29tbW9uLnYxLlBvaW50EiQKBGNlbGwYBSABKAsyFi5zaWFnYS5jb21tb24udjEuUG9pbnQSGAoLZWxldmF0aW9uX20YBiABKAFIAIgBAUIOCgxfZWxldmF0aW9uX20iyQEKE0dyaWRXZWF0aGVyRm9yZWNhc3QSJQoEbWV0YRgBIAEoCzIXLnNpYWdhLnJhdy52MS5GZXRjaE1ldGESJwoGc291cmNlGAIgASgOMhcuc2lhZ2EuaGF6YXJkLnYxLlNvdXJjZRIlCgRzaXRlGAMgASgLMhcuc2lhZ2EucmF3LnYxLk1vZGVsU2l0ZRINCgVtb2RlbBgEIAEoCRIsCgVzdGVwcxgFIAMoCzIdLnNpYWdhLnJhdy52MS5HcmlkV2VhdGhlclN0ZXAiyQQKD0dyaWRXZWF0aGVyU3RlcBIuCgp2YWxpZF90aW1lGAEgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIaCg10ZW1wZXJhdHVyZV9jGAIgASgBSACIAQESIgoVcmVsYXRpdmVfaHVtaWRpdHlfcGN0GAMgASgBSAGIAQESHQoQcHJlY2lwaXRhdGlvbl9tbRgEIAEoAUgCiAEBEhkKDHdlYXRoZXJfY29kZRgFIAEoBUgDiAEBEhwKD2Nsb3VkX2NvdmVyX3BjdBgGIAEoAUgEiAEBEhsKDndpbmRfc3BlZWRfa21oGAcgASgBSAWIAQESGgoNd2luZF9mcm9tX2RlZxgIIAEoAUgGiAEBEhoKDXdpbmRfZ3VzdF9rbWgYCSABKAFIB4gBARIhChRzdXJmYWNlX3ByZXNzdXJlX2hwYRgKIAEoAUgIiAEBEiQKF2JvdW5kYXJ5X2xheWVyX2hlaWdodF9tGAsgASgBSAmIAQFCEAoOX3RlbXBlcmF0dXJlX2NCGAoWX3JlbGF0aXZlX2h1bWlkaXR5X3BjdEITChFfcHJlY2lwaXRhdGlvbl9tbUIPCg1fd2VhdGhlcl9jb2RlQhIKEF9jbG91ZF9jb3Zlcl9wY3RCEQoPX3dpbmRfc3BlZWRfa21oQhAKDl93aW5kX2Zyb21fZGVnQhAKDl93aW5kX2d1c3Rfa21oQhcKFV9zdXJmYWNlX3ByZXNzdXJlX2hwYUIaChhfYm91bmRhcnlfbGF5ZXJfaGVpZ2h0X20ixwEKEkFpclF1YWxpdHlGb3JlY2FzdBIlCgRtZXRhGAEgASgLMhcuc2lhZ2EucmF3LnYxLkZldGNoTWV0YRInCgZzb3VyY2UYAiABKA4yFy5zaWFnYS5oYXphcmQudjEuU291cmNlEiUKBHNpdGUYAyABKAsyFy5zaWFnYS5yYXcudjEuTW9kZWxTaXRlEg0KBW1vZGVsGAQgASgJEisKBXN0ZXBzGAUgAygLMhwuc2lhZ2EucmF3LnYxLkFpclF1YWxpdHlTdGVwItADCg5BaXJRdWFsaXR5U3RlcBIuCgp2YWxpZF90aW1lGAEgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIXCgpwbTJfNV91Z20zGAIgASgBSACIAQESFgoJcG0xMF91Z20zGAMgASgBSAGIAQESIQoUY2FyYm9uX21vbm94aWRlX3VnbTMYBCABKAFIAogBARIiChVuaXRyb2dlbl9kaW94aWRlX3VnbTMYBSABKAFIA4gBARIhChRzdWxwaHVyX2Rpb3hpZGVfdWdtMxgGIAEoAUgEiAEBEhcKCm96b25lX3VnbTMYByABKAFIBYgBARIiChVhZXJvc29sX29wdGljYWxfZGVwdGgYCCABKAFIBogBARIWCglkdXN0X3VnbTMYCSABKAFIB4gBAUINCgtfcG0yXzVfdWdtM0IMCgpfcG0xMF91Z20zQhcKFV9jYXJib25fbW9ub3hpZGVfdWdtM0IYChZfbml0cm9nZW5fZGlveGlkZV91Z20zQhcKFV9zdWxwaHVyX2Rpb3hpZGVfdWdtM0INCgtfb3pvbmVfdWdtM0IYChZfYWVyb3NvbF9vcHRpY2FsX2RlcHRoQgwKCl9kdXN0X3VnbTMiygEKFlJpdmVyRGlzY2hhcmdlRm9yZWNhc3QSJQoEbWV0YRgBIAEoCzIXLnNpYWdhLnJhdy52MS5GZXRjaE1ldGESJwoGc291cmNlGAIgASgOMhcuc2lhZ2EuaGF6YXJkLnYxLlNvdXJjZRIlCgRzaXRlGAMgASgLMhcuc2lhZ2EucmF3LnYxLk1vZGVsU2l0ZRINCgVtb2RlbBgEIAEoCRIqCgVzdGVwcxgFIAMoCzIbLnNpYWdhLnJhdy52MS5EaXNjaGFyZ2VTdGVwIq0DCg1EaXNjaGFyZ2VTdGVwEi4KCnZhbGlkX2RhdGUYASABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEhoKDWRpc2NoYXJnZV9tM3MYAiABKAFIAIgBARIeChFlbnNlbWJsZV9tZWFuX20zcxgDIAEoAUgBiAEBEiAKE2Vuc2VtYmxlX21lZGlhbl9tM3MYBCABKAFIAogBARIdChBlbnNlbWJsZV9tYXhfbTNzGAUgASgBSAOIAQESHQoQZW5zZW1ibGVfbWluX20zcxgGIAEoAUgEiAEBEh0KEGVuc2VtYmxlX3AyNV9tM3MYByABKAFIBYgBARIdChBlbnNlbWJsZV9wNzVfbTNzGAggASgBSAaIAQFCEAoOX2Rpc2NoYXJnZV9tM3NCFAoSX2Vuc2VtYmxlX21lYW5fbTNzQhYKFF9lbnNlbWJsZV9tZWRpYW5fbTNzQhMKEV9lbnNlbWJsZV9tYXhfbTNzQhMKEV9lbnNlbWJsZV9taW5fbTNzQhMKEV9lbnNlbWJsZV9wMjVfbTNzQhMKEV9lbnNlbWJsZV9wNzVfbTNzQroBChBjb20uc2lhZ2EucmF3LnYxQgpNb2RlbFByb3RvUAFaSGdpdGh1Yi5jb20vcmFtaXJlenpTZXJ2ZXIvc2lhZ2EvbGlicy9nby9jb250cmFjdHMvZ2VuL3NpYWdhL3Jhdy92MTtyYXd2MaICA1NSWKoCDFNpYWdhLlJhdy5WMcoCDFNpYWdhXFJhd1xWMeICGFNpYWdhXFJhd1xWMVxHUEJNZXRhZGF0YeoCDlNpYWdhOjpSYXc6OlYxYgZwcm90bzM", [file_google_protobuf_timestamp, file_siaga_common_v1_geo, file_siaga_hazard_v1_hazard, file_siaga_raw_v1_fetch]);
+  fileDesc("ChhzaWFnYS9yYXcvdjEvbW9kZWwucHJvdG8SDHNpYWdhLnJhdy52MSKvAQoJTW9kZWxTaXRlEgoKAmlkGAEgASgJEgwKBG5hbWUYAiABKAkSDQoFcml2ZXIYAyABKAkSKQoJcmVxdWVzdGVkGAQgASgLMhYuc2lhZ2EuY29tbW9uLnYxLlBvaW50EiQKBGNlbGwYBSABKAsyFi5zaWFnYS5jb21tb24udjEuUG9pbnQSGAoLZWxldmF0aW9uX20YBiABKAFIAIgBAUIOCgxfZWxldmF0aW9uX20iyQEKE0dyaWRXZWF0aGVyRm9yZWNhc3QSJQoEbWV0YRgBIAEoCzIXLnNpYWdhLnJhdy52MS5GZXRjaE1ldGESJwoGc291cmNlGAIgASgOMhcuc2lhZ2EuaGF6YXJkLnYxLlNvdXJjZRIlCgRzaXRlGAMgASgLMhcuc2lhZ2EucmF3LnYxLk1vZGVsU2l0ZRINCgVtb2RlbBgEIAEoCRIsCgVzdGVwcxgFIAMoCzIdLnNpYWdhLnJhdy52MS5HcmlkV2VhdGhlclN0ZXAiyQQKD0dyaWRXZWF0aGVyU3RlcBIuCgp2YWxpZF90aW1lGAEgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIaCg10ZW1wZXJhdHVyZV9jGAIgASgBSACIAQESIgoVcmVsYXRpdmVfaHVtaWRpdHlfcGN0GAMgASgBSAGIAQESHQoQcHJlY2lwaXRhdGlvbl9tbRgEIAEoAUgCiAEBEhkKDHdlYXRoZXJfY29kZRgFIAEoBUgDiAEBEhwKD2Nsb3VkX2NvdmVyX3BjdBgGIAEoAUgEiAEBEhsKDndpbmRfc3BlZWRfa21oGAcgASgBSAWIAQESGgoNd2luZF9mcm9tX2RlZxgIIAEoAUgGiAEBEhoKDXdpbmRfZ3VzdF9rbWgYCSABKAFIB4gBARIhChRzdXJmYWNlX3ByZXNzdXJlX2hwYRgKIAEoAUgIiAEBEiQKF2JvdW5kYXJ5X2xheWVyX2hlaWdodF9tGAsgASgBSAmIAQFCEAoOX3RlbXBlcmF0dXJlX2NCGAoWX3JlbGF0aXZlX2h1bWlkaXR5X3BjdEITChFfcHJlY2lwaXRhdGlvbl9tbUIPCg1fd2VhdGhlcl9jb2RlQhIKEF9jbG91ZF9jb3Zlcl9wY3RCEQoPX3dpbmRfc3BlZWRfa21oQhAKDl93aW5kX2Zyb21fZGVnQhAKDl93aW5kX2d1c3Rfa21oQhcKFV9zdXJmYWNlX3ByZXNzdXJlX2hwYUIaChhfYm91bmRhcnlfbGF5ZXJfaGVpZ2h0X20ixwEKEkFpclF1YWxpdHlGb3JlY2FzdBIlCgRtZXRhGAEgASgLMhcuc2lhZ2EucmF3LnYxLkZldGNoTWV0YRInCgZzb3VyY2UYAiABKA4yFy5zaWFnYS5oYXphcmQudjEuU291cmNlEiUKBHNpdGUYAyABKAsyFy5zaWFnYS5yYXcudjEuTW9kZWxTaXRlEg0KBW1vZGVsGAQgASgJEisKBXN0ZXBzGAUgAygLMhwuc2lhZ2EucmF3LnYxLkFpclF1YWxpdHlTdGVwItADCg5BaXJRdWFsaXR5U3RlcBIuCgp2YWxpZF90aW1lGAEgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIXCgpwbTJfNV91Z20zGAIgASgBSACIAQESFgoJcG0xMF91Z20zGAMgASgBSAGIAQESIQoUY2FyYm9uX21vbm94aWRlX3VnbTMYBCABKAFIAogBARIiChVuaXRyb2dlbl9kaW94aWRlX3VnbTMYBSABKAFIA4gBARIhChRzdWxwaHVyX2Rpb3hpZGVfdWdtMxgGIAEoAUgEiAEBEhcKCm96b25lX3VnbTMYByABKAFIBYgBARIiChVhZXJvc29sX29wdGljYWxfZGVwdGgYCCABKAFIBogBARIWCglkdXN0X3VnbTMYCSABKAFIB4gBAUINCgtfcG0yXzVfdWdtM0IMCgpfcG0xMF91Z20zQhcKFV9jYXJib25fbW9ub3hpZGVfdWdtM0IYChZfbml0cm9nZW5fZGlveGlkZV91Z20zQhcKFV9zdWxwaHVyX2Rpb3hpZGVfdWdtM0INCgtfb3pvbmVfdWdtM0IYChZfYWVyb3NvbF9vcHRpY2FsX2RlcHRoQgwKCl9kdXN0X3VnbTMiygEKFlJpdmVyRGlzY2hhcmdlRm9yZWNhc3QSJQoEbWV0YRgBIAEoCzIXLnNpYWdhLnJhdy52MS5GZXRjaE1ldGESJwoGc291cmNlGAIgASgOMhcuc2lhZ2EuaGF6YXJkLnYxLlNvdXJjZRIlCgRzaXRlGAMgASgLMhcuc2lhZ2EucmF3LnYxLk1vZGVsU2l0ZRINCgVtb2RlbBgEIAEoCRIqCgVzdGVwcxgFIAMoCzIbLnNpYWdhLnJhdy52MS5EaXNjaGFyZ2VTdGVwIq0DCg1EaXNjaGFyZ2VTdGVwEi4KCnZhbGlkX2RhdGUYASABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEhoKDWRpc2NoYXJnZV9tM3MYAiABKAFIAIgBARIeChFlbnNlbWJsZV9tZWFuX20zcxgDIAEoAUgBiAEBEiAKE2Vuc2VtYmxlX21lZGlhbl9tM3MYBCABKAFIAogBARIdChBlbnNlbWJsZV9tYXhfbTNzGAUgASgBSAOIAQESHQoQZW5zZW1ibGVfbWluX20zcxgGIAEoAUgEiAEBEh0KEGVuc2VtYmxlX3AyNV9tM3MYByABKAFIBYgBARIdChBlbnNlbWJsZV9wNzVfbTNzGAggASgBSAaIAQFCEAoOX2Rpc2NoYXJnZV9tM3NCFAoSX2Vuc2VtYmxlX21lYW5fbTNzQhYKFF9lbnNlbWJsZV9tZWRpYW5fbTNzQhMKEV9lbnNlbWJsZV9tYXhfbTNzQhMKEV9lbnNlbWJsZV9taW5fbTNzQhMKEV9lbnNlbWJsZV9wMjVfbTNzQhMKEV9lbnNlbWJsZV9wNzVfbTNzIuABChlDYXRjaG1lbnRSYWluZmFsbEZvcmVjYXN0EiUKBG1ldGEYASABKAsyFy5zaWFnYS5yYXcudjEuRmV0Y2hNZXRhEicKBnNvdXJjZRgCIAEoDjIXLnNpYWdhLmhhemFyZC52MS5Tb3VyY2USJQoEc2l0ZRgDIAEoCzIXLnNpYWdhLnJhdy52MS5Nb2RlbFNpdGUSDQoFbW9kZWwYBCABKAkSEgoKY2VsbF9jb3VudBgFIAEoDRIpCgVzdGVwcxgGIAMoCzIaLnNpYWdhLnJhdy52MS5SYWluZmFsbFN0ZXAiWAoMUmFpbmZhbGxTdGVwEi4KCnZhbGlkX3RpbWUYASABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEhgKEHByZWNpcGl0YXRpb25fbW0YAiABKAFCugEKEGNvbS5zaWFnYS5yYXcudjFCCk1vZGVsUHJvdG9QAVpIZ2l0aHViLmNvbS9yYW1pcmV6elNlcnZlci9zaWFnYS9saWJzL2dvL2NvbnRyYWN0cy9nZW4vc2lhZ2EvcmF3L3YxO3Jhd3YxogIDU1JYqgIMU2lhZ2EuUmF3LlYxygIMU2lhZ2FcUmF3XFYx4gIYU2lhZ2FcUmF3XFYxXEdQQk1ldGFkYXRh6gIOU2lhZ2E6OlJhdzo6VjFiBnByb3RvMw", [file_google_protobuf_timestamp, file_siaga_common_v1_geo, file_siaga_hazard_v1_hazard, file_siaga_raw_v1_fetch]);
 
 /**
  * Titik keluaran model grid yang dipantau SIAGA: simpul grid 0,25° atau
@@ -29,15 +29,17 @@ export const file_siaga_raw_v1_model: GenFile = /*@__PURE__*/
 export type ModelSite = Message<"siaga.raw.v1.ModelSite"> & {
   /**
    * ID titik yang stabil di SIAGA: "grid:<lintang>:<bujur>" dengan dua
-   * desimal (misal "grid:-6.75:107.50") atau "river:<slug>" (misal
-   * "river:citarum-dayeuhkolot").
+   * desimal (misal "grid:-6.75:107.50"), "river:<slug>" (misal
+   * "river:citarum-dayeuhkolot"), atau "catchment:<slug>" untuk sub-DAS
+   * (misal "catchment:cikapundung").
    *
    * @generated from field: string id = 1;
    */
   id: string;
 
   /**
-   * Nama titik pantau sungai, misal "Dayeuhkolot". Kosong untuk grid.
+   * Nama titik pantau sungai atau sub-DAS, misal "Dayeuhkolot" atau
+   * "Cikapundung". Kosong untuk grid.
    *
    * @generated from field: string name = 2;
    */
@@ -58,7 +60,8 @@ export type ModelSite = Message<"siaga.raw.v1.ModelSite"> & {
   requested?: Point | undefined;
 
   /**
-   * Pusat sel model yang dijawab sumber.
+   * Pusat sel model yang dijawab sumber. Untuk sub-DAS: titik berat sel-sel
+   * yang dirata-rata (berbobot luas), sama dengan requested.
    *
    * @generated from field: siaga.common.v1.Point cell = 5;
    */
@@ -403,4 +406,87 @@ export type DischargeStep = Message<"siaga.raw.v1.DischargeStep"> & {
  */
 export const DischargeStepSchema: GenMessage<DischargeStep> = /*@__PURE__*/
   messageDesc(file_siaga_raw_v1_model, 6);
+
+/**
+ * Prakiraan hujan per jam rata-rata wilayah satu sub-DAS: rata-rata berbobot
+ * luas sel model yang menutupinya (bobot di
+ * docs/calibration/sub-das-citarum-hulu.csv), dihitung ingest dengan fungsi
+ * yang sama dengan kalibrasi ambang indeks hujan (ADR 0020–0021).
+ * Subjek NATS: raw.rain.openmeteo.
+ *
+ * @generated from message siaga.raw.v1.CatchmentRainfallForecast
+ */
+export type CatchmentRainfallForecast = Message<"siaga.raw.v1.CatchmentRainfallForecast"> & {
+  /**
+   * @generated from field: siaga.raw.v1.FetchMeta meta = 1;
+   */
+  meta?: FetchMeta | undefined;
+
+  /**
+   * @generated from field: siaga.hazard.v1.Source source = 2;
+   */
+  source: Source;
+
+  /**
+   * ID "catchment:<slug>"; name adalah nama sub-DAS, river kosong.
+   *
+   * @generated from field: siaga.raw.v1.ModelSite site = 3;
+   */
+  site?: ModelSite | undefined;
+
+  /**
+   * Model sumber, misal "ecmwf_ifs".
+   *
+   * @generated from field: string model = 4;
+   */
+  model: string;
+
+  /**
+   * Jumlah sel model yang dirata-rata.
+   *
+   * @generated from field: uint32 cell_count = 5;
+   */
+  cellCount: number;
+
+  /**
+   * Langkah per jam, urut waktu tanpa duplikat. Jam yang salah satu selnya
+   * kosong tidak dikirim, jadi deret bisa berlubang.
+   *
+   * @generated from field: repeated siaga.raw.v1.RainfallStep steps = 6;
+   */
+  steps: RainfallStep[];
+};
+
+/**
+ * Describes the message siaga.raw.v1.CatchmentRainfallForecast.
+ * Use `create(CatchmentRainfallForecastSchema)` to create a new message.
+ */
+export const CatchmentRainfallForecastSchema: GenMessage<CatchmentRainfallForecast> = /*@__PURE__*/
+  messageDesc(file_siaga_raw_v1_model, 7);
+
+/**
+ * Hujan satu jam rata-rata wilayah sub-DAS.
+ *
+ * @generated from message siaga.raw.v1.RainfallStep
+ */
+export type RainfallStep = Message<"siaga.raw.v1.RainfallStep"> & {
+  /**
+   * @generated from field: google.protobuf.Timestamp valid_time = 1;
+   */
+  validTime?: Timestamp | undefined;
+
+  /**
+   * Akumulasi hujan satu jam sebelum valid_time (mm).
+   *
+   * @generated from field: double precipitation_mm = 2;
+   */
+  precipitationMm: number;
+};
+
+/**
+ * Describes the message siaga.raw.v1.RainfallStep.
+ * Use `create(RainfallStepSchema)` to create a new message.
+ */
+export const RainfallStepSchema: GenMessage<RainfallStep> = /*@__PURE__*/
+  messageDesc(file_siaga_raw_v1_model, 8);
 

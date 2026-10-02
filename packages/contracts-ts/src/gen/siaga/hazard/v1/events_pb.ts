@@ -119,7 +119,8 @@ export enum ExpiryReason {
   UNSPECIFIED = 0,
 
   /**
-   * Masa aktif habis (gempa: 6 jam sejak kejadian; cuaca: waktu expires CAP).
+   * Masa aktif habis (gempa: 6 jam sejak kejadian; cuaca: waktu expires CAP;
+   * banjir: 24 jam sejak keluaran model terakhir di atas ambang Info).
    *
    * @generated from enum value: EXPIRY_REASON_ELAPSED = 1;
    */
