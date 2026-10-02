@@ -1,0 +1,118 @@
+# 01.20 UTC (08.20 WIB): hari UTC sebelumnya sudah ditutup (tenggang 15 menit
+# di `archive backup`). Ketiga langkah aman diulang, jadi Job yang gagal di
+# tengah cukup dibiarkan jalan lagi besok. Image distroless tanpa shell, jadi
+# tiap langkah satu container berurutan: init container berhenti di galat
+# pertama, sehingga prune tidak jalan bila backup atau verifikasi gagal.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: archive-maintenance
+spec:
+  schedule: "20 1 * * *"
+  timeZone: Etc/UTC
+  concurrencyPolicy: Forbid
+  startingDeadlineSeconds: 3600
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 3600
+      ttlSecondsAfterFinished: 604800
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: archive-maintenance
+        spec:
+          restartPolicy: Never
+          automountServiceAccountToken: false
+          enableServiceLinks: false
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65532
+            runAsGroup: 65532
+            seccompProfile:
+              type: RuntimeDefault
+          initContainers:
+            - name: backup
+              image: siaga-ingest
+              command: [/usr/local/bin/archive, backup]
+              envFrom:
+                - configMapRef:
+                    name: siaga-archive-maintenance-env
+                # ARCHIVE_BACKUP_URL dan ARCHIVE_BACKUP_S3_* (Backblaze B2, ADR 0022).
+                - secretRef:
+                    name: siaga-arsip-cadangan
+              env:
+                - name: ARCHIVE_S3_ACCESS_KEY_ID
+                  valueFrom:
+                    secretKeyRef: { name: siaga-garage, key: GARAGE_DEFAULT_ACCESS_KEY }
+                - name: ARCHIVE_S3_SECRET_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef: { name: siaga-garage, key: GARAGE_DEFAULT_SECRET_KEY }
+                # Bundel prakiraan satu hari ±100 MiB mentah; jendela zstd 32 MiB.
+                - name: GOMEMLIMIT
+                  value: 400MiB
+              resources:
+                requests: { cpu: 100m, memory: 128Mi }
+                limits: { memory: 512Mi }
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: [ALL]
+            - name: verify
+              image: siaga-ingest
+              command: [/usr/local/bin/archive, backup-verify]
+              envFrom:
+                - configMapRef:
+                    name: siaga-archive-maintenance-env
+                # ARCHIVE_BACKUP_URL dan ARCHIVE_BACKUP_S3_* (Backblaze B2, ADR 0022).
+                - secretRef:
+                    name: siaga-arsip-cadangan
+              env:
+                - name: ARCHIVE_S3_ACCESS_KEY_ID
+                  valueFrom:
+                    secretKeyRef: { name: siaga-garage, key: GARAGE_DEFAULT_ACCESS_KEY }
+                - name: ARCHIVE_S3_SECRET_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef: { name: siaga-garage, key: GARAGE_DEFAULT_SECRET_KEY }
+                # Bundel prakiraan satu hari ±100 MiB mentah; jendela zstd 32 MiB.
+                - name: GOMEMLIMIT
+                  value: 400MiB
+              resources:
+                requests: { cpu: 100m, memory: 128Mi }
+                limits: { memory: 512Mi }
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: [ALL]
+          containers:
+            - name: prune
+              image: siaga-ingest
+              command: [/usr/local/bin/archive, prune, -apply]
+              envFrom:
+                - configMapRef:
+                    name: siaga-archive-maintenance-env
+                # ARCHIVE_BACKUP_URL dan ARCHIVE_BACKUP_S3_* (Backblaze B2, ADR 0022).
+                - secretRef:
+                    name: siaga-arsip-cadangan
+              env:
+                - name: ARCHIVE_S3_ACCESS_KEY_ID
+                  valueFrom:
+                    secretKeyRef: { name: siaga-garage, key: GARAGE_DEFAULT_ACCESS_KEY }
+                - name: ARCHIVE_S3_SECRET_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef: { name: siaga-garage, key: GARAGE_DEFAULT_SECRET_KEY }
+                # Bundel prakiraan satu hari ±100 MiB mentah; jendela zstd 32 MiB.
+                - name: GOMEMLIMIT
+                  value: 400MiB
+              resources:
+                requests: { cpu: 100m, memory: 128Mi }
+                limits: { memory: 512Mi }
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: [ALL]

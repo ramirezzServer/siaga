@@ -1,0 +1,25 @@
+# archive-maintenance hanya keluar ke Garage (S3 3900) dan object storage
+# cadangan di internet (HTTPS, bukan alamat privat). Tanpa ingress.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: archive-maintenance
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: archive-maintenance
+  policyTypes: [Ingress, Egress]
+  ingress: []
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: garage
+      ports:
+        - { port: 3900, protocol: TCP }
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except: [10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 100.64.0.0/10, 169.254.0.0/16]
+      ports:
+        - { port: 443, protocol: TCP }

@@ -1,0 +1,24 @@
+# archive-maintenance: cadangan dan retensi arsip payload mentah (ADR 0022).
+# CronJob harian memakai image ingest (biner `archive`): backup hari yang sudah
+# ditutup ke object storage cadangan, verifikasi bundel dua hari terakhir, lalu
+# hapus objek Garage yang kedaluwarsa dan sudah tercatat di cadangan.
+# Tujuan dan kredensial cadangan di Secret siaga-arsip-cadangan (SOPS).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: siaga
+labels:
+  - pairs:
+      app.kubernetes.io/name: archive-maintenance
+      app.kubernetes.io/part-of: siaga
+      app.kubernetes.io/component: pipa-data
+    # Sama dengan apps/ingest: selector NetworkPolicy ditulis eksplisit.
+    includeSelectors: false
+    includeTemplates: true
+resources:
+  - cronjob.yaml
+  - networkpolicy.yaml
+configMapGenerator:
+  - name: siaga-archive-maintenance-env
+    literals:
+      # Garage di cluster, awalan sama dengan ingest.
+      - INGEST_ARCHIVE_URL=s3://siaga-arsip/raw?endpoint=http://garage:3900

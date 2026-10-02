@@ -4,10 +4,12 @@
 #   deploy/k8s/prod/secrets.enc.yaml   SopsSecret "siaga-secrets"; di cluster
 #                                      didekripsi sops-secrets-operator menjadi
 #                                      Secret biasa (siaga-db-*, siaga-garage,
-#                                      siaga-ingest, siaga-otel-collector)
+#                                      siaga-ingest, siaga-arsip-cadangan,
+#                                      siaga-otel-collector)
 #
 # Nilai yang sudah ada tidak pernah diubah; yang belum ada dibuat acak, key
-# OpenAQ/FIRMS diambil dari .env, dan kredensial Grafana Cloud ditanyakan.
+# OpenAQ/FIRMS dan tujuan cadangan arsip diambil dari .env, dan kredensial
+# Grafana Cloud ditanyakan.
 # Plaintext hanya lewat pipa ke sops, tidak pernah ditulis ke disk.
 #
 #   scripts/prod-secrets.sh             buat file / lengkapi nilai yang belum ada
@@ -182,6 +184,26 @@ for key in ["OPENAQ_API_KEY", "FIRMS_MAP_KEY"]:
         print(f"peringatan: {key} kosong (juga di .env); konektornya tidak jalan di produksi", file=sys.stderr)
 if ingest:
     templates.append({"name": "siaga-ingest", "stringData": ingest})
+
+# Tujuan cadangan arsip untuk CronJob archive-maintenance (ADR 0022). URL dari
+# .env dengan awalan /laptop/ diganti /produksi/, supaya cadangan laptop dan
+# cluster tidak berebut nomor bagian bundel yang sama.
+backup = {}
+for key in ["ARCHIVE_BACKUP_URL", "ARCHIVE_BACKUP_S3_ACCESS_KEY_ID", "ARCHIVE_BACKUP_S3_SECRET_ACCESS_KEY"]:
+    src = env.get(key, "")
+    if key == "ARCHIVE_BACKUP_URL":
+        src = src.replace("/laptop/", "/produksi/")
+    v = value("siaga-arsip-cadangan", key, lambda s=src: s, "dari .env")
+    if v:
+        backup[key] = v
+if len(backup) == 3:
+    templates.append({"name": "siaga-arsip-cadangan", "stringData": backup})
+else:
+    print(
+        "peringatan: ARCHIVE_BACKUP_* di .env belum lengkap; CronJob archive-maintenance produksi tidak bisa jalan\n"
+        "  (lihat docs/setup/backblaze-b2.md), lalu jalankan lagi make secrets-prod",
+        file=sys.stderr,
+    )
 
 # Tujuan OTLP OTel Collector (Grafana Cloud).
 col_old = old.get("siaga-otel-collector", {}).get("stringData", {})

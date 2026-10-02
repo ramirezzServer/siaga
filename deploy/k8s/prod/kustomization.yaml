@@ -1,4 +1,5 @@
-# Manifest produksi (k3s di VM ARM Oracle Always Free): pipa data, Garage,
+# Manifest produksi (k3s di VM ARM Oracle Always Free): pipa data, cadangan
+# dan retensi arsip (CronJob archive-maintenance ke Backblaze B2), Garage,
 # OTel Collector, NetworkPolicy namespace, dan secret terenkripsi SOPS
 # (secrets.enc.yaml, dibuat `make secrets-prod`, didekripsi di cluster oleh
 # sops-secrets-operator; ADR 0017). Operator itu, CloudNativePG, NATS, dan
@@ -12,6 +13,7 @@ resources:
   - ../platform/garage
   - ../platform/otel-collector
   - ../apps/ingest
+  - ../apps/archive-maintenance
   - ../apps/geo-processor
   - secrets.enc.yaml
 images:
@@ -23,6 +25,10 @@ images:
     newTag: main
 configMapGenerator:
   - name: siaga-ingest-env
+    behavior: merge
+    literals:
+      - SIAGA_ENV=produksi
+  - name: siaga-archive-maintenance-env
     behavior: merge
     literals:
       - SIAGA_ENV=produksi

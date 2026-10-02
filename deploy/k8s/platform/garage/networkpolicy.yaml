@@ -1,6 +1,7 @@
-# Garage menerima S3 hanya dari ingest dan admin API (/metrics) hanya dari OTel
-# Collector. Tanpa egress: satu node tidak bicara dengan node lain. Backup ke
-# Oracle Object Storage (fase 1e-2b-3) menambah egress sendiri.
+# Garage menerima S3 hanya dari ingest dan CronJob archive-maintenance
+# (cadangan dan retensi, ADR 0022), dan admin API (/metrics) hanya dari OTel
+# Collector. Tanpa egress: satu node tidak bicara dengan node lain, dan
+# cadangan ke object storage di luar cluster dikirim archive-maintenance.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -15,6 +16,9 @@ spec:
         - podSelector:
             matchLabels:
               app.kubernetes.io/name: ingest
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: archive-maintenance
       ports:
         - { port: 3900, protocol: TCP }
     - from:
