@@ -4,9 +4,18 @@
 //	archive verify [-archive URL] [-prefix P]           # gzip utuh dan SHA-256 cocok
 //	archive cp     -from URL [-to URL] [-prefix P]      # salin yang belum ada di tujuan
 //
-// -archive dan -to bawaan INGEST_ARCHIVE_URL; kredensial S3 dari
-// ARCHIVE_S3_ACCESS_KEY_ID dan ARCHIVE_S3_SECRET_ACCESS_KEY (dipakai untuk
-// sumber maupun tujuan S3).
+// Cadangan dan retensi (ADR 0022):
+//
+//	archive backup        [-archive URL] [-backup URL] [-connectors] [-from] [-to]
+//	archive backup-verify [-backup URL] [-from] [-to] [-all]
+//	archive restore       -from HARI [-to HARI] [-into URL] [-backup URL] [-connectors]
+//	archive prune         [-archive URL] [-backup URL] [-retention] [-apply] [-max-delete N]
+//
+// -archive, -to (cp), dan -into bawaan INGEST_ARCHIVE_URL; kredensial S3 arsip
+// dari ARCHIVE_S3_ACCESS_KEY_ID dan ARCHIVE_S3_SECRET_ACCESS_KEY (dipakai
+// untuk sumber maupun tujuan S3). -backup bawaan ARCHIVE_BACKUP_URL dengan
+// kredensial terpisah ARCHIVE_BACKUP_S3_ACCESS_KEY_ID dan
+// ARCHIVE_BACKUP_S3_SECRET_ACCESS_KEY.
 package main
 
 import (
@@ -32,10 +41,14 @@ var wib = time.FixedZone("WIB", 7*3600)
 // errCorrupt dikembalikan verify bila ada objek rusak.
 var errCorrupt = errors.New("ada objek arsip rusak")
 
-const usage = `pemakaian: archive <ls|verify|cp> [opsi]
-  ls      ringkasan arsip per konektor (-keys untuk daftar kunci)
-  verify  periksa setiap objek: kunci baku, gzip utuh, SHA-256 cocok
-  cp      salin objek yang belum ada dari -from ke -to (bawaan INGEST_ARCHIVE_URL)`
+const usage = `pemakaian: archive <ls|verify|cp|backup|backup-verify|restore|prune> [opsi]
+  ls             ringkasan arsip per konektor (-keys untuk daftar kunci)
+  verify         periksa setiap objek: kunci baku, gzip utuh, SHA-256 cocok
+  cp             salin objek yang belum ada dari -from ke -to (bawaan INGEST_ARCHIVE_URL)
+  backup         kemas hari UTC yang sudah ditutup ke cadangan (satu tar.zst per konektor per hari)
+  backup-verify  unduh bundel cadangan dan periksa setiap payload (bawaan dua hari terakhir)
+  restore        pulihkan payload dari cadangan ke arsip atau folder (-from wajib)
+  prune          hapus objek kedaluwarsa yang sudah ada di cadangan (tanpa -apply hanya menghitung)`
 
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
@@ -60,6 +73,9 @@ func run(ctx context.Context, args []string, lookup envx.Lookup, stdout, stderr 
 		SecretAccessKey: strings.TrimSpace(env.Default("ARCHIVE_S3_SECRET_ACCESS_KEY", "")),
 	}
 	cmd, rest := args[0], args[1:]
+	if handled, err := runBackupCmd(ctx, cmd, rest, env, defArchive, creds, stdout, stderr); handled {
+		return err
+	}
 	fs := flag.NewFlagSet("archive "+cmd, flag.ContinueOnError)
 	fs.SetOutput(stderr)
 	prefix := fs.String("prefix", "", "hanya kunci berawalan ini, misal bmkg-autogempa/2026/09/")

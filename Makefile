@@ -111,7 +111,7 @@ grid-list: regions-fetch ## Bangun ulang simpul grid 0,25° Open-Meteo ingest (P
 	  -grid-out ../ingest/internal/adapters/sitelist/data/grid025_$(PROVINCE).txt
 
 ##@ Pipa data
-.PHONY: ingest ingest-record geo calibrate-dedup river-snap flood-threshold rain-threshold calibration-copy archive-ls archive-verify archive-upload replay backfill-openaq
+.PHONY: ingest ingest-record geo calibrate-dedup river-snap flood-threshold rain-threshold calibration-copy archive-ls archive-verify archive-upload archive-backup archive-backup-verify archive-restore archive-prune archive-maintain backup-setup replay backfill-openaq
 ingest: ## Jalankan ingest (butuh `make up`); arsip ke Garage, status di http://127.0.0.1:8081/status
 	cd services/ingest && INGEST_ARCHIVE_URL="$(INGEST_ARCHIVE_URL)" go run ./cmd/ingest
 
@@ -129,6 +129,31 @@ archive-upload: ## Salin arsip lokal (.cache/ingest-archive) ke Garage; aman diu
 	@if [[ -d "$(LOCAL_ARCHIVE_DIR)" ]]; then \
 	  cd services/ingest && INGEST_ARCHIVE_URL="$(INGEST_ARCHIVE_URL)" go run ./cmd/archive cp -from "$(LOCAL_ARCHIVE_DIR)"; \
 	else echo "Tidak ada arsip lokal di $(LOCAL_ARCHIVE_DIR)"; fi
+
+# Cadangan dan retensi arsip (ADR 0022). Tujuan dari ARCHIVE_BACKUP_URL dan
+# ARCHIVE_BACKUP_S3_* di .env; semua perintah aman diulang.
+ARCHIVE_CMD = cd services/ingest && INGEST_ARCHIVE_URL="$(INGEST_ARCHIVE_URL)" go run ./cmd/archive
+
+archive-backup: ## Kemas hari UTC yang sudah ditutup ke cadangan (satu tar.zst per konektor per hari)
+	@$(ARCHIVE_CMD) backup $(ARGS)
+
+archive-backup-verify: ## Unduh dan periksa bundel cadangan dua hari terakhir (ARGS=-all untuk semua)
+	@$(ARCHIVE_CMD) backup-verify $(ARGS)
+
+# Contoh: make archive-restore FROM=2026-09-26 TO=2026-09-27 CONNECTORS=bmkg-prakiraan INTO=/tmp/pulih
+archive-restore: ## Pulihkan dari cadangan ke Garage atau INTO (FROM wajib, TO, CONNECTORS)
+	@$(ARCHIVE_CMD) restore -from "$(FROM)" -to "$(TO)" -connectors "$(CONNECTORS)" $(if $(INTO),-into "$(INTO)") $(ARGS)
+
+archive-prune: ## Hitung objek kedaluwarsa yang sudah dicadangkan (ARGS=-apply untuk menghapus)
+	@$(ARCHIVE_CMD) prune $(ARGS)
+
+backup-setup: ## Buat bucket + key Backblaze B2 untuk cadangan arsip dan isi ARCHIVE_BACKUP_* di .env (sekali)
+	@bash scripts/b2-setup.sh
+
+archive-maintain: ## Rawat arsip: backup, verifikasi dua hari terakhir, lalu prune -apply
+	@$(ARCHIVE_CMD) backup
+	@$(ARCHIVE_CMD) backup-verify
+	@$(ARCHIVE_CMD) prune -apply
 
 # Contoh: make replay FROM=2026-09-24 TO=2026-09-25 CONNECTORS=bmkg-autogempa,usgs-2.5-day SPEED=60
 replay: ## Putar ulang arsip Garage ke NATS (FROM, TO, CONNECTORS, SPEED; ARGS=-publish=false untuk cek saja)
@@ -201,7 +226,7 @@ test-integration: ## Test integrasi (butuh `make up migrate`; paket dijalankan b
 fuzz: ## Fuzzing singkat semua target fuzz (30 detik per target)
 	@cd services/geo-processor && for t in ./internal/domain/region:FuzzParseCode ./internal/domain/region:FuzzParseLatLngPath ./internal/adapters/cahyadsn:FuzzParseDump ./internal/domain/quake:FuzzClusteringOrderIndependent ./internal/domain/quake:FuzzClusteringInvariantsUnderCrowding ./internal/domain/quake:FuzzApplyOrderIndependent ./internal/domain/quake:FuzzLevelMonotone ./internal/domain/quake:FuzzRuleMatchSymmetric ./internal/app/quakes:FuzzServiceOrderIndependent ./internal/domain/weather:FuzzDeriveOrderIndependent ./internal/app/warnings:FuzzServiceOrderIndependent ./internal/domain/series:FuzzWeatherValidate ./internal/domain/flood:FuzzDayMaxSumMatchesCalibration ./internal/domain/flood:FuzzLevelMonotone; do \
 	  go test $${t%%:*} -run='^$$' -fuzz="^$${t##*:}\$$" -fuzztime=30s || exit 1; done
-	@cd services/ingest && for t in ./internal/domain/ratelimit:FuzzWindowBound ./internal/domain/ratelimit:FuzzPriorityHeadroom ./internal/domain/ratelimit:FuzzAvailable ./internal/domain/schedule:FuzzNextBounds ./internal/domain/forecast:FuzzOrder ./internal/domain/warning:FuzzParseReferences ./internal/adapters/bmkg:FuzzParse ./internal/adapters/bmkg:FuzzParseCAPDocuments ./internal/adapters/bmkg:FuzzParseForecastDocument ./internal/adapters/usgs:FuzzParse ./internal/adapters/openmeteo:FuzzParse ./internal/domain/airquality:FuzzClean ./internal/adapters/firms:FuzzParseFIRMS ./internal/adapters/openaq:FuzzParseOpenAQ ./internal/domain/archivekey:FuzzParse ./internal/app/replay:FuzzRunOrdered ./internal/domain/threshold:FuzzDailyMaxSum ./internal/domain/threshold:FuzzLevel; do \
+	@cd services/ingest && for t in ./internal/domain/ratelimit:FuzzWindowBound ./internal/domain/ratelimit:FuzzPriorityHeadroom ./internal/domain/ratelimit:FuzzAvailable ./internal/domain/schedule:FuzzNextBounds ./internal/domain/forecast:FuzzOrder ./internal/domain/warning:FuzzParseReferences ./internal/adapters/bmkg:FuzzParse ./internal/adapters/bmkg:FuzzParseCAPDocuments ./internal/adapters/bmkg:FuzzParseForecastDocument ./internal/adapters/usgs:FuzzParse ./internal/adapters/openmeteo:FuzzParse ./internal/domain/airquality:FuzzClean ./internal/adapters/firms:FuzzParseFIRMS ./internal/adapters/openaq:FuzzParseOpenAQ ./internal/domain/archivekey:FuzzParse ./internal/domain/archivebundle:FuzzParse ./internal/domain/retention:FuzzExpiredMonotone ./internal/app/replay:FuzzRunOrdered ./internal/domain/threshold:FuzzDailyMaxSum ./internal/domain/threshold:FuzzLevel; do \
 	  go test $${t%%:*} -run='^$$' -fuzz="^$${t##*:}\$$" -fuzztime=30s || exit 1; done
 	@cd libs/go/platform && for t in ./otelx:FuzzValidTraceParent; do \
 	  go test $${t%%:*} -run='^$$' -fuzz="^$${t##*:}\$$" -fuzztime=30s || exit 1; done

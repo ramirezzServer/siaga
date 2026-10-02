@@ -113,6 +113,8 @@ jobs:
           fz ./internal/adapters/firms FuzzParseFIRMS
           fz ./internal/adapters/openaq FuzzParseOpenAQ
           fz ./internal/domain/archivekey FuzzParse
+          fz ./internal/domain/archivebundle FuzzParse
+          fz ./internal/domain/retention FuzzExpiredMonotone
           fz ./internal/app/replay FuzzRunOrdered
           fz ./internal/domain/threshold FuzzDailyMaxSum
           fz ./internal/domain/threshold FuzzLevel

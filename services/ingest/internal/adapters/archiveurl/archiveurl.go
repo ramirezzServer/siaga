@@ -36,6 +36,7 @@ type Credentials struct {
 // Store adalah arsip yang bisa ditulis dan dibaca beserta lokasinya untuk log.
 type Store interface {
 	ports.ArchiveStore
+	ports.ArchiveDeleter
 	// Location tanpa kredensial, aman dicetak.
 	Location() string
 	// Check memastikan arsip bisa dipakai (folder bisa ditulis, bucket ada).

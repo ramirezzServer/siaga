@@ -132,6 +132,39 @@ func Run(t *testing.T, fresh func(t *testing.T) ports.ArchiveStore, opts Options
 			t.Fatalf("%d objek, ingin %d", len(got), len(want))
 		}
 	})
+	t.Run("Delete", func(t *testing.T) {
+		s := fresh(t)
+		d, ok := s.(ports.ArchiveDeleter)
+		if !ok {
+			t.Skip("store tidak bisa menghapus")
+		}
+		ctx := t.Context()
+		keep, gone := "c/2026/09/24/000000Z-aa.json.gz", "c/2026/09/25/000000Z-bb.json.gz"
+		for _, k := range []string{keep, gone} {
+			if err := s.Put(ctx, k, []byte(k)); err != nil {
+				t.Fatal(err)
+			}
+		}
+		for range 2 { // kunci yang sudah tidak ada bukan galat
+			if err := d.Delete(ctx, gone); err != nil {
+				t.Fatal(err)
+			}
+		}
+		if _, err := s.Get(ctx, gone); !errors.Is(err, ports.ErrArchiveNotFound) {
+			t.Fatalf("Get setelah Delete = %v", err)
+		}
+		if got := names(collect(t, s, "", "")); !slices.Equal(got, []string{keep}) {
+			t.Fatalf("sisa: %v", got)
+		}
+		if err := d.Delete(ctx, "tidak/pernah/ada.gz"); err != nil {
+			t.Fatal(err)
+		}
+		cctx, cancel := context.WithCancel(ctx)
+		cancel()
+		if err := d.Delete(cctx, keep); !errors.Is(err, context.Canceled) {
+			t.Fatalf("Delete dibatalkan: %v", err)
+		}
+	})
 	t.Run("ContextCanceled", func(t *testing.T) {
 		s := fresh(t)
 		if err := s.Put(t.Context(), "x/y.gz", []byte("1")); err != nil {

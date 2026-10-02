@@ -357,7 +357,7 @@ func openArchive(ctx context.Context, cfg settings, log *slog.Logger) (ports.Arc
 	checkCtx, cancel := context.WithTimeout(ctx, 15*time.Second)
 	defer cancel()
 	if err := store.Check(checkCtx); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w (Garage jalan? `make up`; kredensial ARCHIVE_S3_* benar?)", err)
 	}
 	log.Info("arsip payload aktif", slog.String("lokasi", store.Location()))
 	return store, nil

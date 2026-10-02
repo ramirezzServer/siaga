@@ -7,6 +7,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/credentials v1.20.6
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.113.4
 	github.com/aws/smithy-go v1.28.2
+	github.com/klauspost/compress v1.20.0
 	github.com/nats-io/nats.go v1.54.0
 	github.com/ramirezzServer/siaga/libs/go/contracts v0.0.0-00010101000000-000000000000
 	github.com/ramirezzServer/siaga/libs/go/platform v0.0.0-00010101000000-000000000000
@@ -35,7 +36,6 @@ require (
 	github.com/google/go-tpm v0.9.8 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.30.0 // indirect
-	github.com/klauspost/compress v1.20.0 // indirect
 	github.com/minio/highwayhash v1.0.4 // indirect
 	github.com/nats-io/jwt/v2 v2.8.2 // indirect
 	github.com/nats-io/nats-server/v2 v2.15.0 // indirect

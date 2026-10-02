@@ -30,7 +30,10 @@ type Archive struct {
 	root string
 }
 
-var _ ports.ArchiveStore = (*Archive)(nil)
+var (
+	_ ports.ArchiveStore   = (*Archive)(nil)
+	_ ports.ArchiveDeleter = (*Archive)(nil)
+)
 
 // New membuat arsip di folder root (dibuat bila belum ada).
 func New(root string) (*Archive, error) {
@@ -89,6 +92,29 @@ func (a *Archive) path(key string) (string, error) {
 		return "", fmt.Errorf("%w: %q", ErrInvalidKey, key)
 	}
 	return filepath.Join(a.root, filepath.FromSlash(key)), nil
+}
+
+// Delete menghapus file kunci; kunci yang tidak ada bukan galat. Folder
+// tanggal yang menjadi kosong ikut dihapus sampai sebelum root, supaya arsip
+// yang lama dipangkas tidak menyisakan ribuan folder kosong.
+func (a *Archive) Delete(ctx context.Context, key string) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	p, err := a.path(key)
+	if err != nil {
+		return err
+	}
+	if err := os.Remove(p); err != nil && !errors.Is(err, fs.ErrNotExist) {
+		return fmt.Errorf("menghapus %s: %w", key, err)
+	}
+	for dir := filepath.Dir(p); dir != a.root && strings.HasPrefix(dir, a.root+string(filepath.Separator)); dir = filepath.Dir(dir) {
+		// os.Remove gagal untuk folder yang masih berisi; itu tanda berhenti.
+		if os.Remove(dir) != nil {
+			break
+		}
+	}
+	return nil
 }
 
 // Get membaca isi file untuk kunci; ports.ErrArchiveNotFound bila tidak ada.

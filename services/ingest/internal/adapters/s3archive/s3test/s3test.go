@@ -1,5 +1,5 @@
 // Package s3test adalah server S3 tiruan dalam proses untuk test: satu bucket,
-// PUT/GET/HEAD objek, HEAD bucket, dan ListObjectsV2 dengan paginasi. Cukup
+// PUT/GET/HEAD/DELETE objek, HEAD bucket, dan ListObjectsV2 dengan paginasi. Cukup
 // untuk menguji adapter s3archive tanpa Docker; perilaku Garage asli diuji di
 // uji integrasi.
 package s3test
@@ -26,6 +26,9 @@ type Server struct {
 	// PageSize adalah max-keys bawaan ListObjectsV2 (S3 asli 1.000); kecil
 	// supaya paginasi ikut teruji.
 	PageSize int
+	// DenyHeadBucket meniru key yang dibatasi ke satu bucket di Backblaze B2:
+	// HEAD bucket dijawab 403 walau isi bucket boleh dibaca.
+	DenyHeadBucket bool
 
 	mu      sync.Mutex
 	objects map[string][]byte
@@ -95,12 +98,18 @@ func (s *Server) handle(w http.ResponseWriter, r *http.Request) {
 	}
 	key := strings.TrimPrefix(rest, "/")
 	switch {
+	case key == "" && r.Method == http.MethodHead && s.DenyHeadBucket:
+		w.WriteHeader(http.StatusForbidden)
 	case key == "" && r.Method == http.MethodHead:
 		w.WriteHeader(http.StatusOK)
 	case key == "" && r.Method == http.MethodGet && r.URL.Query().Get("list-type") == "2":
 		s.list(w, r)
 	case key != "" && r.Method == http.MethodPut:
 		s.put(w, r, key)
+	case key != "" && r.Method == http.MethodDelete:
+		// S3 menjawab 204 juga untuk kunci yang tidak ada.
+		delete(s.objects, key)
+		w.WriteHeader(http.StatusNoContent)
 	case key != "" && (r.Method == http.MethodGet || r.Method == http.MethodHead):
 		b, ok := s.objects[key]
 		if !ok {

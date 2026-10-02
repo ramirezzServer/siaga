@@ -192,3 +192,32 @@ func TestValidate(t *testing.T) {
 		t.Fatal("validBucket")
 	}
 }
+
+// Key Backblaze B2 yang dibatasi ke satu bucket ditolak HEAD bucket; Check
+// memakai ListObjectsV2 sebagai gantinya.
+func TestCheckBucketRestrictedKey(t *testing.T) {
+	srv := s3test.New(t, "siaga-cadangan")
+	srv.DenyHeadBucket = true
+	a, err := New(config(srv, "arsip/raw"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := a.Check(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	reqs := srv.Requests()
+	if len(reqs) != 2 || reqs[0] != "HEAD /siaga-cadangan/" || reqs[1] != "GET /siaga-cadangan/" {
+		t.Fatal(reqs)
+	}
+	// Bucket yang memang tidak ada tetap gagal.
+	b, err := New(Config{
+		Endpoint: srv.URL, Region: "garage", Bucket: "bucket-lain",
+		AccessKeyID: "GKujiujiujiujiuji", SecretAccessKey: "rahasiaujirahasiauji", HTTPClient: srv.Client(),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := b.Check(t.Context()); err == nil {
+		t.Fatal("bucket tidak ada lolos Check")
+	}
+}

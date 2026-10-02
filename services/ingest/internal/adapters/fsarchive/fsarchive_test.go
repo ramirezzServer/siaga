@@ -3,6 +3,7 @@ package fsarchive
 import (
 	"context"
 	"errors"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"testing"
@@ -112,5 +113,41 @@ func TestPutHonoursContextAndFsErrors(t *testing.T) {
 	}
 	if _, err := New(filepath.Join(root, "file", "sub")); err == nil {
 		t.Fatal("New di bawah file harus gagal")
+	}
+}
+
+func TestDeleteRemovesEmptyFolders(t *testing.T) {
+	root := t.TempDir()
+	a, err := New(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := t.Context()
+	keep, gone := "c/2026/09/24/000000Z-aa.json.gz", "c/2026/09/25/000000Z-bb.json.gz"
+	for _, k := range []string{keep, gone} {
+		if err := a.Put(ctx, k, []byte("x")); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := a.Delete(ctx, gone); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(filepath.Join(root, "c", "2026", "09", "25")); !errors.Is(err, fs.ErrNotExist) {
+		t.Fatalf("folder hari kosong masih ada: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(root, "c", "2026", "09", "24")); err != nil {
+		t.Fatalf("folder yang masih berisi ikut terhapus: %v", err)
+	}
+	if err := a.Delete(ctx, keep); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(root); err != nil {
+		t.Fatalf("root ikut terhapus: %v", err)
+	}
+	if entries, _ := os.ReadDir(root); len(entries) != 0 {
+		t.Fatalf("sisa folder: %v", entries)
+	}
+	if err := a.Delete(ctx, "../luar.gz"); !errors.Is(err, ErrInvalidKey) {
+		t.Fatalf("kunci keluar root: %v", err)
 	}
 }

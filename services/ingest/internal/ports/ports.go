@@ -95,6 +95,12 @@ type ArchiveStore interface {
 	ArchiveReader
 }
 
+// ArchiveDeleter menghapus objek arsip (retensi, ADR 0022). Menghapus kunci
+// yang tidak ada bukan galat, jadi penghapusan yang terputus aman diulang.
+type ArchiveDeleter interface {
+	Delete(ctx context.Context, key string) error
+}
+
 // Message adalah satu pesan yang siap diterbitkan.
 type Message struct {
 	Subject string

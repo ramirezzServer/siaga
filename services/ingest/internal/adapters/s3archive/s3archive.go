@@ -114,7 +114,10 @@ type Archive struct {
 	maxBytes int64
 }
 
-var _ ports.ArchiveStore = (*Archive)(nil)
+var (
+	_ ports.ArchiveStore   = (*Archive)(nil)
+	_ ports.ArchiveDeleter = (*Archive)(nil)
+)
 
 // New membuat Archive. Tidak menghubungi server; pakai Check untuk itu.
 func New(cfg Config) (*Archive, error) {
@@ -150,10 +153,45 @@ func New(cfg Config) (*Archive, error) {
 // Location mengembalikan lokasi arsip untuk log, tanpa kredensial.
 func (a *Archive) Location() string { return "s3://" + a.bucket + "/" + a.prefix }
 
-// Check memastikan bucket ada dan kredensial diterima.
+// Check memastikan bucket ada dan kredensial diterima. Key yang dibatasi ke
+// satu bucket di sebagian penyedia (misal Backblaze B2) ditolak HeadBucket
+// dengan 403 walau boleh membaca isi bucket; untuk itu Check mencoba
+// ListObjectsV2 satu kunci di awalan arsip sebelum menyatakan gagal.
 func (a *Archive) Check(ctx context.Context) error {
-	if _, err := a.client.HeadBucket(ctx, &s3.HeadBucketInput{Bucket: aws.String(a.bucket)}); err != nil {
-		return fmt.Errorf("bucket %s tidak bisa dibuka (Garage jalan? `make up`; kredensial ARCHIVE_S3_* benar?): %w", a.bucket, err)
+	_, err := a.client.HeadBucket(ctx, &s3.HeadBucketInput{Bucket: aws.String(a.bucket)})
+	if err != nil && forbidden(err) {
+		_, err = a.client.ListObjectsV2(ctx, &s3.ListObjectsV2Input{
+			Bucket: aws.String(a.bucket), Prefix: aws.String(a.prefix), MaxKeys: aws.Int32(1),
+		})
+	}
+	if err != nil {
+		return fmt.Errorf("bucket %s tidak bisa dibuka (server jalan? kredensial benar?): %w", a.bucket, err)
+	}
+	return nil
+}
+
+func forbidden(err error) bool {
+	var resp interface{ HTTPStatusCode() int }
+	if errors.As(err, &resp) && resp.HTTPStatusCode() == http.StatusForbidden {
+		return true
+	}
+	var api smithy.APIError
+	return errors.As(err, &api) && (api.ErrorCode() == "AccessDenied" || api.ErrorCode() == "Forbidden")
+}
+
+// Delete menghapus objek. S3 menjawab sukses juga untuk kunci yang tidak ada.
+func (a *Archive) Delete(ctx context.Context, key string) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	if err := validKey(key); err != nil {
+		return err
+	}
+	if _, err := a.client.DeleteObject(ctx, &s3.DeleteObjectInput{Bucket: aws.String(a.bucket), Key: aws.String(a.prefix + key)}); err != nil {
+		if notFound(err) {
+			return nil
+		}
+		return fmt.Errorf("menghapus %s: %w", key, err)
 	}
 	return nil
 }
