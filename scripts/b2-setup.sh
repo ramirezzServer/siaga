@@ -35,6 +35,22 @@ if grep -qE '^ARCHIVE_BACKUP_S3_ACCESS_KEY_ID=.+' .env; then
   exit 1
 fi
 
+# drain membuang ketikan/tempelan yang sudah menunggu di terminal sebelum
+# prompt muncul, supaya baris perintah lain yang ikut tertempel tidak
+# terbaca sebagai jawaban.
+drain() { while read -r -t 0.2 _; do :; done || true; }
+# ask membaca satu baris tidak kosong (baris kosong dari tempelan dilewati),
+# membuang spasi, tab, CR, dan LF.
+ask() {
+  local prompt=$1 reply=""
+  while [[ -z "$reply" ]]; do
+    read -rp "$prompt" reply
+    reply=$(printf '%s' "$reply" | tr -d '[:space:]')
+  done
+  printf '%s' "$reply"
+}
+
+drain
 suggest="siaga-cadangan-$(openssl rand -hex 3)"
 read -rp "Nama bucket (unik di seluruh B2, huruf kecil/angka/-) [$suggest]: " bucket
 bucket=${bucket:-$suggest}
@@ -46,8 +62,6 @@ echo "Master application key: halaman B2 → Application Keys → Generate New M
 echo "(membuat master key baru membatalkan yang lama). Key ini hanya dipakai di skrip ini."
 echo "Tempel satu per satu, lalu Enter. Isian terlihat supaya bisa dicek; spasi dan baris baru dibuang."
 
-# clean membuang spasi, tab, CR, dan LF yang sering ikut tertempel dari browser.
-clean() { printf '%s' "$1" | tr -d '[:space:]'; }
 # mask menampilkan awal dan akhir key saja untuk konfirmasi.
 mask() {
   local s=$1
@@ -58,10 +72,10 @@ mask() {
   fi
 }
 while :; do
-  read -rp "keyID master          : " master_id
-  read -rp "applicationKey master : " master_key
-  master_id=$(clean "$master_id")
-  master_key=$(clean "$master_key")
+  drain
+  master_id=$(ask "keyID master          : ")
+  drain
+  master_key=$(ask "applicationKey master : ")
   echo
   echo "  keyID          : $master_id (${#master_id} karakter)"
   echo "  applicationKey : $(mask "$master_key")"
@@ -69,10 +83,14 @@ while :; do
     echo "  peringatan: keyID biasanya 12 karakter heksadesimal (master) atau 25 karakter"
   ((${#master_key} >= 30)) ||
     echo "  peringatan: applicationKey biasanya 31 karakter; mungkin terpotong saat ditempel"
-  read -rp "Sudah benar? [Y = lanjut / n = isi ulang / q = batal] " ok
+  drain
+  ok=""
+  until [[ "$ok" =~ ^[yYnNqQ]$ ]]; do
+    read -rp "Sudah benar? ketik y (lanjut), n (isi ulang), atau q (batal): " ok
+  done
   case "$ok" in
-    [nN]*) continue ;;
-    [qQ]*)
+    [nN]) continue ;;
+    [qQ])
       echo "dibatalkan"
       exit 1
       ;;
@@ -117,8 +135,9 @@ echo "Yang akan dibuat di akun B2 (region $region):"
 ((create_bucket)) && echo "  - bucket privat $bucket (SSE-B2, tanpa Object Lock)"
 echo "  - application key $KEY_NAME: hanya bucket $bucket, awalan $PREFIX,"
 echo "    hak listBuckets,listFiles,readFiles,writeFiles (tanpa deleteFiles)"
-read -rp "Lanjut? [y/N] " ok
-[[ "$ok" == [yYoO]* ]] || {
+drain
+read -rp "Lanjut? ketik y untuk membuat, selain itu batal: " ok
+[[ "$ok" =~ ^[yY]$ ]] || {
   echo "dibatalkan"
   exit 1
 }
