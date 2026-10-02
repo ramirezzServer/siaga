@@ -25,7 +25,7 @@ B2 dipilih karena bisa dibuat tanpa kartu kredit: 10 GB pertama gratis dan API k
    make backup-setup   # scripts/b2-setup.sh
    ```
 
-   Skrip menanyakan nama bucket (bawaan `siaga-cadangan-<acak>`, harus unik di seluruh B2), keyID master, dan applicationKey master (tidak tampil di layar). Sebelum membuat apa pun ia menampilkan rencananya dan meminta konfirmasi. Yang dibuat:
+   Skrip menanyakan nama bucket (bawaan `siaga-cadangan-<acak>`, harus unik di seluruh B2), keyID master, dan applicationKey master. Isian terlihat supaya tempelan bisa dicek (spasi dan baris baru dibuang, ringkasan menampilkan panjang dan ujung key lalu meminta konfirmasi); jalankan `clear` setelah selesai. Sebelum membuat apa pun skrip menampilkan rencananya dan meminta konfirmasi lagi. Yang dibuat:
 
    - bucket **privat** dengan enkripsi SSE-B2, tanpa Object Lock;
    - application key `siaga-cadangan-laptop` yang hanya berlaku untuk bucket itu dan awalan `arsip/`, dengan hak `listBuckets,listFiles,readFiles,writeFiles`. Tanpa `deleteFiles`: key yang bocor tidak bisa menghapus cadangan.

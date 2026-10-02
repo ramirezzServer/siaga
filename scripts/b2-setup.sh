@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Menyiapkan cadangan arsip payload mentah di Backblaze B2 (ADR 0022):
 #
-#   1. login sementara dengan master application key (prompt tersembunyi,
-#      tidak disimpan; sesi CLI di folder sementara yang dihapus di akhir)
+#   1. login sementara dengan master application key (isian terlihat dan
+#      dikonfirmasi; tidak disimpan; sesi CLI di folder sementara yang dihapus
+#      di akhir)
 #   2. bucket privat dengan enkripsi SSE-B2, tanpa Object Lock
 #   3. application key yang hanya berlaku untuk bucket itu dan awalan arsip/,
 #      dengan hak listBuckets,listFiles,readFiles,writeFiles (tanpa deleteFiles:
@@ -43,21 +44,61 @@ if [[ ! "$bucket" =~ ^[a-z0-9][a-z0-9-]{4,48}[a-z0-9]$ ]]; then
 fi
 echo "Master application key: halaman B2 → Application Keys → Generate New Master Application Key"
 echo "(membuat master key baru membatalkan yang lama). Key ini hanya dipakai di skrip ini."
-read -rp "keyID master: " master_id
-read -rsp "applicationKey master (tidak ditampilkan): " master_key
-echo
+echo "Tempel satu per satu, lalu Enter. Isian terlihat supaya bisa dicek; spasi dan baris baru dibuang."
+
+# clean membuang spasi, tab, CR, dan LF yang sering ikut tertempel dari browser.
+clean() { printf '%s' "$1" | tr -d '[:space:]'; }
+# mask menampilkan awal dan akhir key saja untuk konfirmasi.
+mask() {
+  local s=$1
+  if ((${#s} <= 8)); then
+    printf '%d karakter' "${#s}"
+  else
+    printf '%s…%s (%d karakter)' "${s:0:4}" "${s: -4}" "${#s}"
+  fi
+}
+while :; do
+  read -rp "keyID master          : " master_id
+  read -rp "applicationKey master : " master_key
+  master_id=$(clean "$master_id")
+  master_key=$(clean "$master_key")
+  echo
+  echo "  keyID          : $master_id (${#master_id} karakter)"
+  echo "  applicationKey : $(mask "$master_key")"
+  [[ "$master_id" =~ ^[0-9a-f]{12}$|^[0-9a-f]{25}$ ]] ||
+    echo "  peringatan: keyID biasanya 12 karakter heksadesimal (master) atau 25 karakter"
+  ((${#master_key} >= 30)) ||
+    echo "  peringatan: applicationKey biasanya 31 karakter; mungkin terpotong saat ditempel"
+  read -rp "Sudah benar? [Y = lanjut / n = isi ulang / q = batal] " ok
+  case "$ok" in
+    [nN]*) continue ;;
+    [qQ]*)
+      echo "dibatalkan"
+      exit 1
+      ;;
+    *) break ;;
+  esac
+done
+echo "(Setelah selesai, jalankan 'clear' supaya key tidak tertinggal di layar.)"
 
 session=$(mktemp -d)
 trap 'rm -rf "$session"' EXIT
 export B2_ACCOUNT_INFO="$session/akun.sqlite"
 
-# Output authorize memuat key dan token, jadi hanya s3endpoint yang diambil.
-endpoint=$(B2_APPLICATION_KEY_ID="$master_id" B2_APPLICATION_KEY="$master_key" "$B2" account authorize 2>/dev/null |
-  python3 -c 'import json, sys; print(json.load(sys.stdin)["s3endpoint"])') || {
-  echo "login B2 gagal: periksa keyID dan applicationKey master" >&2
+# Keluaran authorize memuat key dan token, jadi hanya s3endpoint yang diambil.
+# Galat b2 (stderr) ditampilkan dengan key disamarkan.
+if ! auth=$(B2_APPLICATION_KEY_ID="$master_id" B2_APPLICATION_KEY="$master_key" "$B2" account authorize 2>"$session/galat"); then
+  err=$(<"$session/galat")
+  err=${err//"$master_key"/***}
+  echo "login B2 gagal: ${err:-tanpa pesan dari b2}" >&2
+  echo "Periksa keyID dan applicationKey master (buat master key baru bila ragu), lalu jalankan lagi." >&2
+  exit 1
+fi
+endpoint=$(AUTH="$auth" python3 -c 'import json, os; print(json.loads(os.environ["AUTH"])["s3endpoint"])' 2>/dev/null) || {
+  echo "keluaran 'b2 account authorize' tidak dikenali (versi CLI b2: $("$B2" version 2>/dev/null || echo ?))" >&2
   exit 1
 }
-unset master_key
+unset master_key auth
 region=${endpoint#https://s3.}
 region=${region%%.*}
 if [[ ! "$region" =~ ^[a-z]+-[a-z]+-[0-9]+$ ]]; then
