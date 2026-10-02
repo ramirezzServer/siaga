@@ -6,6 +6,7 @@ import (
 	"context"
 	"io"
 	"log/slog"
+	"maps"
 	"os"
 	"slices"
 	"testing"
@@ -22,7 +23,10 @@ import (
 	"github.com/ramirezzServer/siaga/libs/go/contracts/streams"
 	"github.com/ramirezzServer/siaga/libs/go/platform/natsx"
 	"github.com/ramirezzServer/siaga/libs/go/platform/natsx/natstest"
+	"github.com/ramirezzServer/siaga/services/geo-processor/internal/adapters/calibration"
+	"github.com/ramirezzServer/siaga/services/geo-processor/internal/domain/flood"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/domain/quake"
+	"github.com/ramirezzServer/siaga/services/geo-processor/internal/domain/series"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/domain/weather"
 )
 
@@ -67,6 +71,14 @@ func TestEndToEnd(t *testing.T) {
 			`DELETE FROM ts.hotspot WHERE region_code = '98.01.01.2001'`,
 			`DELETE FROM ts.series WHERE site_id IN ('adm4:98.01.01.2001', 'grid:-6.75:107.00', 'river:uji-e2e', 'openaq:980001')`,
 			`DELETE FROM ts.site WHERE id IN ('adm4:98.01.01.2001', 'grid:-6.75:107.00', 'river:uji-e2e', 'openaq:980001')`,
+			// Banjir: hanya titik uji; ambang asli diselaraskan ulang saat geo-processor start.
+			`DELETE FROM hazard.flood_site WHERE site_id IN ('river:uji-e2e', 'catchment:uji-e2e')`,
+			`DELETE FROM hazard.event WHERE kind = 'flood' AND source_event_id IN ('river:uji-e2e', 'catchment:uji-e2e')`,
+			`DELETE FROM ref.discharge_threshold WHERE site_id = 'river:uji-e2e'`,
+			`DELETE FROM ref.rainfall_threshold WHERE site_id = 'catchment:uji-e2e'`,
+			`DELETE FROM ts.weather_forecast WHERE site_id = 'catchment:uji-e2e'`,
+			`DELETE FROM ts.series WHERE site_id = 'catchment:uji-e2e'`,
+			`DELETE FROM ts.site WHERE id = 'catchment:uji-e2e'`,
 		} {
 			if _, err := pg.Exec(ctx, q); err != nil {
 				t.Fatal(err)
@@ -76,7 +88,10 @@ func TestEndToEnd(t *testing.T) {
 	cleanup()
 	seedRegions(ctx, t, dbURL)
 
-	cfg := settings{databaseURL: dbURL, natsURL: natsURL, logLevel: slog.LevelInfo, rules: quake.DefaultRules(), weather: weather.DefaultPolicy()}
+	cfg := settings{
+		databaseURL: dbURL, natsURL: natsURL, logLevel: slog.LevelInfo, rules: quake.DefaultRules(), weather: weather.DefaultPolicy(),
+		flood: flood.DefaultPolicy(), thresholds: e2eThresholds,
+	}
 	svcCtx, stop := context.WithCancel(ctx)
 	done := make(chan error, 1)
 	go func() { done <- serve(svcCtx, cfg, quiet) }()
@@ -187,6 +202,7 @@ func TestEndToEnd(t *testing.T) {
 
 	checkWeather(ctx, t, js)
 	checkSeries(ctx, t, js, dbURL)
+	checkFlood(ctx, t, js, dbURL)
 	checkObservations(ctx, t, js, dbURL)
 
 	stop()
@@ -490,4 +506,112 @@ func checkObservations(ctx context.Context, t *testing.T, js jetstream.JetStream
 		t.Fatalf("stasiun %q di %q, %v", provider, region, err)
 	}
 	t.Logf("pengukuran: 2 sensor stasiun di %s, 1 titik panas VIIRS", region)
+}
+
+// e2eThresholds adalah ambang asli ditambah dua titik uji: debit
+// river:uji-e2e (Info 5, Waspada 8, Siaga 9, Bahaya 10 m³/s) dan indeks hujan
+// catchment:uji-e2e (3/6/24 jam: 5/10/20/30 mm).
+func e2eThresholds(p flood.Policy) (flood.Calibration, error) {
+	cal, err := calibration.Load(p)
+	if err != nil {
+		return cal, err
+	}
+	river, err := p.Discharge(flood.DischargeRow{
+		SiteID: "river:uji-e2e", River: "Sungai Uji", Name: "Titik Uji", Cell: series.Point{Lat: -6.85, Lon: 107.03},
+		P50: 1, Climatology: flood.Set{5, 8, 9, 10}, SeamlessRatio: 1,
+	})
+	if err != nil {
+		return cal, err
+	}
+	cal.Discharge[river.SiteID] = river
+	var rows []flood.RainfallRow
+	for _, h := range flood.Windows {
+		rows = append(rows, flood.RainfallRow{SiteID: "catchment:uji-e2e", Name: "Sub-DAS Uji", Hours: h, P50: 1, Levels: flood.Set{5, 10, 20, 30}})
+	}
+	rain, err := p.Rainfall(rows)
+	if err != nil {
+		return cal, err
+	}
+	maps.Copy(cal.Rainfall, rain)
+	return cal, nil
+}
+
+// checkFlood menguji jalur raw.flood.openmeteo dan raw.rain.openmeteo →
+// hazard.flood.*: debit titik uji dari checkSeries (8,8 hari ini = Waspada,
+// 9,4 besok = Siaga) dan hujan sub-DAS uji (21 mm dalam 3 jam: Siaga di
+// ketiga jendela, jadi jendela 24 jam yang dilaporkan) masing-masing membuka
+// satu kejadian, dan hujannya tersimpan sebagai deret cuaca titik catchment.
+func checkFlood(ctx context.Context, t *testing.T, js jetstream.JetStream, dbURL string) {
+	t.Helper()
+	now := time.Now().UTC().Truncate(time.Minute)
+	start := now.Truncate(24 * time.Hour).Add(-24 * time.Hour)
+	loc := &commonv1.Point{Latitude: -6.85, Longitude: 107.03}
+	rain := &rawv1.CatchmentRainfallForecast{
+		Meta:   &rawv1.FetchMeta{Connector: "openmeteo-hujan", FetchedAt: timestamppb.New(now), ArchiveKey: "openmeteo-hujan/k.json.gz"},
+		Source: hazardv1.Source_SOURCE_OPEN_METEO, Model: "ecmwf_ifs", CellCount: 2,
+		Site: &rawv1.ModelSite{Id: "catchment:uji-e2e", Name: "Sub-DAS Uji", Requested: loc, Cell: loc},
+	}
+	for h := range 48 {
+		v := 0.0
+		if h >= 30 && h < 33 {
+			v = 7
+		}
+		rain.Steps = append(rain.Steps, &rawv1.RainfallStep{ValidTime: timestamppb.New(start.Add(time.Duration(h) * time.Hour)), PrecipitationMm: v})
+	}
+	b, err := proto.Marshal(rain)
+	if err != nil {
+		t.Fatal(err)
+	}
+	msg := nats.NewMsg("raw.rain.openmeteo")
+	msg.Data = b
+	msg.Header.Set(jetstream.MsgIDHeader, "rain-1")
+	if _, err := js.PublishMsg(ctx, msg); err != nil {
+		t.Fatal(err)
+	}
+
+	pg := mustPool(ctx, t, dbURL)
+	defer pg.Close()
+	created := map[string]*hazardv1.Hazard{}
+	deadline := time.Now().Add(30 * time.Second)
+	for {
+		if st, err := js.Stream(ctx, streams.Hazard.Name); err == nil {
+			info, _ := st.Info(ctx)
+			for seq := uint64(1); info != nil && seq <= info.State.LastSeq; seq++ {
+				m, err := st.GetMsg(ctx, seq)
+				if err != nil || m.Subject != "hazard.flood.created" {
+					continue
+				}
+				var c hazardv1.HazardCreated
+				if err := proto.Unmarshal(m.Data, &c); err != nil {
+					t.Fatal(err)
+				}
+				created[c.GetHazard().GetSourceEventId()] = c.GetHazard()
+			}
+		}
+		var stored int
+		_ = pg.QueryRow(ctx, `SELECT count(*) FROM ts.weather_forecast WHERE site_id = 'catchment:uji-e2e' AND precipitation_mm IS NOT NULL`).Scan(&stored)
+		if created["river:uji-e2e"] != nil && created["catchment:uji-e2e"] != nil && stored == 48 {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("hazard.flood.* tidak lengkap dalam 30 detik: %d kejadian, %d jam hujan tersimpan", len(created), stored)
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+	river, basin := created["river:uji-e2e"], created["catchment:uji-e2e"]
+	if river.GetLevel() != hazardv1.AlertLevel_ALERT_LEVEL_SIAGA || river.GetFlood().GetIndicator() != hazardv1.FloodIndicator_FLOOD_INDICATOR_DISCHARGE ||
+		river.GetFlood().GetDays()[0].GetLevel() != hazardv1.AlertLevel_ALERT_LEVEL_WASPADA || river.GetFlood().GetRiver() != "Sungai Uji" {
+		t.Fatalf("debit %v", river)
+	}
+	if basin.GetLevel() != hazardv1.AlertLevel_ALERT_LEVEL_SIAGA || basin.GetFlood().GetIndicator() != hazardv1.FloodIndicator_FLOOD_INDICATOR_RAINFALL_INDEX ||
+		basin.GetFlood().GetMaxLevel() != hazardv1.AlertLevel_ALERT_LEVEL_SIAGA || basin.GetFlood().GetDays()[0].GetWindowHours() != 24 {
+		t.Fatalf("indeks hujan %v", basin)
+	}
+	var kind string
+	var thresholds int
+	if err := pg.QueryRow(ctx, `SELECT kind, (SELECT count(*) FROM ref.discharge_threshold) FROM ts.site WHERE id = 'catchment:uji-e2e'`).Scan(&kind, &thresholds); err != nil ||
+		kind != "catchment" || thresholds != 39 {
+		t.Fatalf("titik %q, %d ambang debit, %v", kind, thresholds, err)
+	}
+	t.Logf("banjir: %s (%s), %s (%s)", river.GetTitle(), river.GetLevel(), basin.GetTitle(), basin.GetLevel())
 }

@@ -95,6 +95,8 @@ jobs:
           fz ./internal/domain/weather FuzzDeriveOrderIndependent
           fz ./internal/app/warnings FuzzServiceOrderIndependent
           fz ./internal/domain/series FuzzWeatherValidate
+          fz ./internal/domain/flood FuzzDayMaxSumMatchesCalibration
+          fz ./internal/domain/flood FuzzLevelMonotone
           cd ../ingest
           fz ./internal/domain/ratelimit FuzzWindowBound
           fz ./internal/domain/ratelimit FuzzPriorityHeadroom
@@ -112,6 +114,8 @@ jobs:
           fz ./internal/adapters/openaq FuzzParseOpenAQ
           fz ./internal/domain/archivekey FuzzParse
           fz ./internal/app/replay FuzzRunOrdered
+          fz ./internal/domain/threshold FuzzDailyMaxSum
+          fz ./internal/domain/threshold FuzzLevel
           cd ../../libs/go/platform
           fz ./otelx FuzzValidTraceParent
 

@@ -111,6 +111,10 @@ var (
 		Durable: "geo-processor-flood-openmeteo", Filter: "raw.flood.openmeteo",
 		Description: "geo-processor: debit sungai GloFAS ke ts.river_discharge",
 	}
+	RainOpenMeteoConsumer = ConsumerSpec{
+		Durable: "geo-processor-rain-openmeteo", Filter: "raw.rain.openmeteo",
+		Description: "geo-processor: hujan sub-DAS ECMWF IFS ke ts.weather_forecast",
+	}
 	AirQualityOpenAQConsumer = ConsumerSpec{
 		Durable: "geo-processor-aq-openaq", Filter: "raw.aq.openaq",
 		Description: "geo-processor: nilai sensor stasiun OpenAQ ke ts.aq_observation",
@@ -118,6 +122,16 @@ var (
 	FireFIRMSConsumer = ConsumerSpec{
 		Durable: "geo-processor-fire-firms", Filter: "raw.fire.firms",
 		Description: "geo-processor: titik panas NASA FIRMS ke ts.hotspot",
+	}
+	// Potensi banjir: consumer terpisah dari penyimpanan deret waktu, jadi
+	// kegagalan salah satunya tidak menahan yang lain (ADR 0021).
+	FloodDischargeConsumer = ConsumerSpec{
+		Durable: "geo-processor-hazard-flood-discharge", Filter: "raw.flood.openmeteo",
+		Description: "geo-processor: potensi banjir dari debit GloFAS (hazard.flood.*)",
+	}
+	FloodRainConsumer = ConsumerSpec{
+		Durable: "geo-processor-hazard-flood-rain", Filter: "raw.rain.openmeteo",
+		Description: "geo-processor: indikasi potensi banjir dari indeks hujan sub-DAS (hazard.flood.*)",
 	}
 )
 

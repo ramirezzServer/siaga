@@ -51,6 +51,9 @@ const (
 	SiteRiver  SiteKind = "river"
 	// SiteStation adalah stasiun pengukur, ID "openaq:<id lokasi>".
 	SiteStation SiteKind = "station"
+	// SiteCatchment adalah sub-DAS indeks hujan, ID "catchment:<slug>"; nilai
+	// deretnya rata-rata wilayah beberapa sel model (ADR 0021).
+	SiteCatchment SiteKind = "catchment"
 )
 
 // ModelBMKG adalah nama model untuk prakiraan BMKG per kelurahan/desa.
@@ -74,6 +77,7 @@ var (
 	gridID  = regexp.MustCompile(`^grid:-?[0-9]{1,2}\.[0-9]{2}:-?[0-9]{1,3}\.[0-9]{2}$`)
 	riverID = regexp.MustCompile(`^river:[a-z0-9]+(-[a-z0-9]+)*$`)
 	stnID   = regexp.MustCompile(`^openaq:[1-9][0-9]{0,11}$`)
+	basinID = regexp.MustCompile(`^catchment:[a-z0-9]+(-[a-z0-9]+)*$`)
 	adm4    = regexp.MustCompile(`^[0-9]{2}\.[0-9]{2}\.[0-9]{2}\.[0-9]{4}$`)
 	model   = regexp.MustCompile(`^[a-z0-9_]{1,40}$`)
 )
@@ -94,6 +98,8 @@ func KindOf(id string) (SiteKind, bool) {
 		return SiteRiver, true
 	case stnID.MatchString(id):
 		return SiteStation, true
+	case basinID.MatchString(id):
+		return SiteCatchment, true
 	default:
 		return "", false
 	}
@@ -139,11 +145,14 @@ func (s Site) validate() []error {
 	if (s.Kind == SiteRiver) != (s.River != "") || (s.Kind == SiteRiver && s.Name == "") {
 		errs = append(errs, errors.New("titik pantau sungai wajib bernama dan menyebut sungai; titik lain tidak"))
 	}
+	if s.Kind == SiteCatchment && s.Name == "" {
+		errs = append(errs, errors.New("sub-DAS wajib bernama"))
+	}
 	switch {
 	case s.Kind == SiteRegion && "adm4:"+s.RegionCode != s.ID:
 		errs = append(errs, fmt.Errorf("kode wilayah %q tidak cocok dengan ID %s", s.RegionCode, s.ID))
 	case s.Kind != SiteRegion && s.RegionCode != "":
-		errs = append(errs, errors.New("kode wilayah titik grid, sungai, dan stasiun dihitung penyimpanan, bukan diisi"))
+		errs = append(errs, errors.New("kode wilayah titik grid, sungai, sub-DAS, dan stasiun dihitung penyimpanan, bukan diisi"))
 	case s.RegionCode != "" && !adm4.MatchString(s.RegionCode):
 		errs = append(errs, fmt.Errorf("kode wilayah %q bukan adm4", s.RegionCode))
 	}
@@ -179,7 +188,7 @@ func (r Run) validate(now time.Time) []error {
 		}
 	case SourceOpenMeteo:
 		if r.Site.Kind == SiteRegion || r.Site.Kind == SiteStation || r.Dataset == AirQualityObs {
-			bad("Open-Meteo hanya keluaran model per simpul grid atau titik sungai")
+			bad("Open-Meteo hanya keluaran model per simpul grid, titik sungai, atau sub-DAS")
 		}
 	case SourceOpenAQ:
 		if r.Dataset != AirQualityObs || r.Site.Kind != SiteStation || r.Model != ModelSensor {

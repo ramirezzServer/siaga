@@ -119,6 +119,37 @@ func TestDecodeModelRuns(t *testing.T) {
 	}
 }
 
+func TestDecodeRainfall(t *testing.T) {
+	loc := &commonv1.Point{Latitude: -6.82, Longitude: 107.62}
+	m := &rawv1.CatchmentRainfallForecast{
+		Meta: meta(), Source: hazardv1.Source_SOURCE_OPEN_METEO, Model: "ecmwf_ifs", CellCount: 3,
+		Site: &rawv1.ModelSite{Id: "catchment:cikapundung", Name: "Cikapundung", Requested: loc, Cell: loc},
+		Steps: []*rawv1.RainfallStep{
+			{ValidTime: timestamppb.New(day), PrecipitationMm: 0},
+			{ValidTime: timestamppb.New(day.Add(time.Hour)), PrecipitationMm: 4.25},
+		},
+	}
+	run, err := DecodeRainfall(marshal(t, m))
+	if err != nil || run.Validate(now) != nil {
+		t.Fatalf("%+v %v %v", run, err, run.Validate(now))
+	}
+	if run.Site.Kind != series.SiteCatchment || run.Model != "ecmwf_ifs" || run.Dataset != series.Weather ||
+		len(run.Steps) != 2 || *run.Steps[0].PrecipitationMM != 0 || *run.Steps[1].PrecipitationMM != 4.25 || run.Steps[1].TemperatureC != nil {
+		t.Fatalf("%+v", run)
+	}
+	m.Site.Id = "river:citarum-nanjung"
+	if _, err := DecodeRainfall(marshal(t, m)); !errors.Is(err, series.ErrInvalid) {
+		t.Fatalf("hujan di titik sungai: %v", err)
+	}
+	m.Site.Id, m.CellCount = "catchment:cikapundung", 0
+	if _, err := DecodeRainfall(marshal(t, m)); !errors.Is(err, series.ErrInvalid) {
+		t.Fatalf("tanpa jumlah sel: %v", err)
+	}
+	if _, err := DecodeRainfall([]byte{0xff, 0xff, 0xff}); !errors.Is(err, series.ErrInvalid) {
+		t.Fatal(err)
+	}
+}
+
 func TestDecodeCorrupt(t *testing.T) {
 	bad := []byte{0xff, 0xff, 0xff}
 	if _, err := DecodeRegionForecast(bad); !errors.Is(err, series.ErrInvalid) {

@@ -1,7 +1,8 @@
 // Package rawseries mendekode event raw deret waktu menjadi nilai domain
 // geo-processor: raw.forecast.bmkg (RegionForecast), raw.forecast.openmeteo
 // (GridWeatherForecast), raw.aq.openmeteo (AirQualityForecast),
-// raw.flood.openmeteo (RiverDischargeForecast), raw.aq.openaq
+// raw.flood.openmeteo (RiverDischargeForecast), raw.rain.openmeteo
+// (CatchmentRainfallForecast), raw.aq.openaq
 // (AirQualityObservation), dan raw.fire.firms (FireDetection). Validasi
 // dilakukan use case; di sini hanya penerjemahan. Payload yang rusak
 // membungkus series.ErrInvalid.
@@ -129,6 +130,30 @@ func DecodeDischarge(data []byte) (series.DischargeRun, error) {
 			Min:       s.EnsembleMinM3S,
 			P25:       s.EnsembleP25M3S,
 			P75:       s.EnsembleP75M3S,
+		})
+	}
+	return run, nil
+}
+
+// DecodeRainfall membaca hujan per jam rata-rata wilayah satu sub-DAS.
+// Hasilnya prakiraan cuaca yang hanya berisi hujan, disimpan di
+// ts.weather_forecast seperti deret cuaca lain.
+func DecodeRainfall(data []byte) (series.WeatherRun, error) {
+	var m rawv1.CatchmentRainfallForecast
+	if err := unmarshal(data, &m); err != nil {
+		return series.WeatherRun{}, err
+	}
+	run := series.WeatherRun{Run: modelRun(m.GetSource(), m.GetSite(), m.GetModel(), m.GetMeta(), series.Weather)}
+	if run.Site.Kind != series.SiteCatchment {
+		return series.WeatherRun{}, fmt.Errorf("%w: hujan sub-DAS untuk titik %q", series.ErrInvalid, m.GetSite().GetId())
+	}
+	if m.GetCellCount() == 0 {
+		return series.WeatherRun{}, fmt.Errorf("%w: hujan sub-DAS %s tanpa jumlah sel", series.ErrInvalid, run.Site.ID)
+	}
+	for _, s := range m.GetSteps() {
+		run.Steps = append(run.Steps, series.WeatherStep{
+			ValidTime:       ts(s.GetValidTime()),
+			PrecipitationMM: val(s.GetPrecipitationMm()),
 		})
 	}
 	return run, nil

@@ -1,9 +1,12 @@
 // Command geo-processor mengonsumsi event raw.* dari NATS JetStream,
 // mengelompokkan laporan BMKG dan USGS menjadi kejadian gempa, menyusun pesan
-// CAP BMKG menjadi kejadian cuaca, menghitung wilayah terdampak, menyimpannya
+// CAP BMKG menjadi kejadian cuaca, menilai debit sungai dan indeks hujan
+// sub-DAS terhadap ambang banjir, menghitung wilayah terdampak, menyimpannya
 // di schema hazard, dan menerbitkan hazard.* lewat outbox transaksional.
-// Prakiraan cuaca, kualitas udara, dan debit sungai, nilai sensor stasiun
-// kualitas udara, dan titik panas satelit disimpan ke hypertable schema ts.
+// Prakiraan cuaca, kualitas udara, debit sungai, dan hujan sub-DAS, nilai
+// sensor stasiun kualitas udara, dan titik panas satelit disimpan ke
+// hypertable schema ts. Ambang banjir disematkan ke binary dan diselaraskan
+// ke schema ref saat start.
 //
 // Konfigurasi lewat environment variable; lihat config() di bawah.
 package main
@@ -33,6 +36,7 @@ import (
 	"github.com/ramirezzServer/siaga/libs/go/platform/logx"
 	"github.com/ramirezzServer/siaga/libs/go/platform/natsx"
 	"github.com/ramirezzServer/siaga/libs/go/platform/otelx"
+	"github.com/ramirezzServer/siaga/services/geo-processor/internal/adapters/calibration"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/adapters/hazardpb"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/adapters/httpstatus"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/adapters/natsjs"
@@ -42,10 +46,12 @@ import (
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/adapters/rawweather"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/adapters/telemetry"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/app/consume"
+	"github.com/ramirezzServer/siaga/services/geo-processor/internal/app/floods"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/app/quakes"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/app/relay"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/app/timeseries"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/app/warnings"
+	"github.com/ramirezzServer/siaga/services/geo-processor/internal/domain/flood"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/domain/hotspot"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/domain/quake"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/domain/series"
@@ -72,6 +78,9 @@ type settings struct {
 	logLevel    slog.Level
 	rules       quake.Rules
 	weather     weather.Policy
+	flood       flood.Policy
+	// thresholds memuat ambang banjir (bawaan: yang disematkan ke binary).
+	thresholds func(flood.Policy) (flood.Calibration, error)
 }
 
 func config(lookup envx.Lookup) (settings, error) {
@@ -82,6 +91,8 @@ func config(lookup envx.Lookup) (settings, error) {
 		httpAddr:    env.Default("GEO_HTTP_ADDR", "127.0.0.1:8082"),
 		rules:       quake.DefaultRules(),
 		weather:     weather.DefaultPolicy(),
+		flood:       flood.DefaultPolicy(),
+		thresholds:  calibration.Load,
 	}
 	var errs []error
 	level, err := logx.ParseLevel(env.Default("LOG_LEVEL", "info"))
@@ -213,6 +224,39 @@ func serve(ctx context.Context, cfg settings, log *slog.Logger) error {
 	if err != nil {
 		return err
 	}
+	cal, err := cfg.thresholds(cfg.flood)
+	if err != nil {
+		return fmt.Errorf("ambang banjir: %w", err)
+	}
+	fsvc, err := floods.New(postgres.NewFloodStore(pool), hazardpb.FloodEncoder{}, cfg.flood, cal, time.Now)
+	if err != nil {
+		return err
+	}
+	syncCtx, cancelSync := context.WithTimeout(ctx, 30*time.Second)
+	synced, err := fsvc.SyncThresholds(syncCtx)
+	cancelSync()
+	if err != nil {
+		return fmt.Errorf("menyelaraskan ambang banjir: %w", err)
+	}
+	log.Info("ambang banjir diselaraskan", slog.Int("titik_debit", len(cal.Discharge)), slog.Int("sub_das", len(cal.Rainfall)),
+		slog.Int("baru", synced.Inserted), slog.Int("berubah", synced.Updated), slog.Int("dihapus", synced.Deleted))
+	floodOutcome := func(res floods.Result, err error) (consume.Outcome, error) {
+		return consume.Outcome{Changed: res.Changed, Created: res.Created, Updated: res.Updated, Ended: res.Ended}, err
+	}
+	floodDischarge, err := consume.New(rawseries.DecodeDischarge, func(ctx context.Context, r series.DischargeRun) (consume.Outcome, error) {
+		res, err := fsvc.Discharge(ctx, r)
+		return floodOutcome(res, err)
+	}, []error{series.ErrInvalid, flood.ErrInvalid}, consume.DefaultOptions(), time.Now)
+	if err != nil {
+		return err
+	}
+	floodRain, err := consume.New(rawseries.DecodeRainfall, func(ctx context.Context, r series.WeatherRun) (consume.Outcome, error) {
+		res, err := fsvc.Rainfall(ctx, r)
+		return floodOutcome(res, err)
+	}, []error{series.ErrInvalid, flood.ErrInvalid}, consume.DefaultOptions(), time.Now)
+	if err != nil {
+		return err
+	}
 	tsvc := timeseries.New(postgres.NewSeriesStore(pool), time.Now)
 	forecastBMKG, err := seriesHandler(rawseries.DecodeRegionForecast, tsvc.Weather)
 	if err != nil {
@@ -227,6 +271,10 @@ func serve(ctx context.Context, cfg settings, log *slog.Logger) error {
 		return err
 	}
 	discharge, err := seriesHandler(rawseries.DecodeDischarge, tsvc.Discharge)
+	if err != nil {
+		return err
+	}
+	rain, err := seriesHandler(rawseries.DecodeRainfall, tsvc.Weather)
 	if err != nil {
 		return err
 	}
@@ -245,8 +293,11 @@ func serve(ctx context.Context, cfg settings, log *slog.Logger) error {
 		{spec: natsjs.ForecastOpenMeteoConsumer, handler: forecastGrid},
 		{spec: natsjs.AirQualityOpenMeteoConsumer, handler: airQuality},
 		{spec: natsjs.FloodOpenMeteoConsumer, handler: discharge},
+		{spec: natsjs.RainOpenMeteoConsumer, handler: rain},
 		{spec: natsjs.AirQualityOpenAQConsumer, handler: stations},
 		{spec: natsjs.FireFIRMSConsumer, handler: hotspots},
+		{spec: natsjs.FloodDischargeConsumer, handler: floodDischarge},
+		{spec: natsjs.FloodRainConsumer, handler: floodRain},
 	}
 
 	durables := make([]string, len(consumers))
@@ -267,8 +318,11 @@ func serve(ctx context.Context, cfg settings, log *slog.Logger) error {
 			natsjs.ForecastOpenMeteoConsumer.Durable:   forecastGrid.Snapshot,
 			natsjs.AirQualityOpenMeteoConsumer.Durable: airQuality.Snapshot,
 			natsjs.FloodOpenMeteoConsumer.Durable:      discharge.Snapshot,
+			natsjs.RainOpenMeteoConsumer.Durable:       rain.Snapshot,
 			natsjs.AirQualityOpenAQConsumer.Durable:    stations.Snapshot,
 			natsjs.FireFIRMSConsumer.Durable:           hotspots.Snapshot,
+			natsjs.FloodDischargeConsumer.Durable:      floodDischarge.Snapshot,
+			natsjs.FloodRainConsumer.Durable:           floodRain.Snapshot,
 		},
 		Relay: outbox.Snapshot,
 		Backlog: func(ctx context.Context) (telemetry.Backlog, error) {
@@ -303,10 +357,16 @@ func serve(ctx context.Context, cfg settings, log *slog.Logger) error {
 				natsjs.ForecastOpenMeteoConsumer.Durable:   forecastGrid.Snapshot(),
 				natsjs.AirQualityOpenMeteoConsumer.Durable: airQuality.Snapshot(),
 				natsjs.FloodOpenMeteoConsumer.Durable:      discharge.Snapshot(),
+				natsjs.RainOpenMeteoConsumer.Durable:       rain.Snapshot(),
 				natsjs.AirQualityOpenAQConsumer.Durable:    stations.Snapshot(),
 				natsjs.FireFIRMSConsumer.Durable:           hotspots.Snapshot(),
 			},
+			"flood_consumers": map[string]consume.Stats{
+				natsjs.FloodDischargeConsumer.Durable: floodDischarge.Snapshot(),
+				natsjs.FloodRainConsumer.Durable:      floodRain.Snapshot(),
+			},
 			"outbox": outbox.Snapshot(), "rules": cfg.rules, "weather_policy": cfg.weather,
+			"flood_calibration": floodStatus(cal),
 		}
 	}
 	if cfg.httpAddr != "" {
@@ -342,6 +402,7 @@ func serve(ctx context.Context, cfg settings, log *slog.Logger) error {
 	}
 	wg.Go(func() { svc.RunExpiry(ctx, 30*time.Second, 100, expired("quake")) })
 	wg.Go(func() { wsvc.RunExpiry(ctx, 30*time.Second, 100, expired("weather")) })
+	wg.Go(func() { fsvc.RunExpiry(ctx, time.Minute, 100, expired("flood")) })
 	for _, c := range consumers {
 		wg.Go(func() {
 			if err := consumeLoop(ctx, js, c, outbox.Wake, log, func() { consumersReady.Add(1) }); err != nil {
@@ -357,6 +418,26 @@ func serve(ctx context.Context, cfg settings, log *slog.Logger) error {
 	wg.Wait()
 	log.Info("geo-processor berhenti")
 	return nil
+}
+
+// floodStatus merangkum ambang banjir untuk /status: jumlah titik, periode
+// klimatologi, dan titik yang ambangnya dikoreksi atau dibatasi.
+func floodStatus(cal flood.Calibration) map[string]any {
+	corrected, capped := map[string]float64{}, map[string]string{}
+	for id, t := range cal.Discharge {
+		if t.Correction != 1 {
+			corrected[id] = t.Correction
+		}
+		if t.MaxLevel < 4 {
+			capped[id] = flood.Label(t.MaxLevel)
+		}
+	}
+	period := func(p flood.Period) string { return p.From.Format(time.DateOnly) + ".." + p.To.Format(time.DateOnly) }
+	return map[string]any{
+		"discharge_sites": len(cal.Discharge), "discharge_period": period(cal.DischargeSource.Period),
+		"catchments": len(cal.Rainfall), "rainfall_period": period(cal.RainfallSource.Period),
+		"corrected": corrected, "capped": capped,
+	}
 }
 
 // seriesHandler membuat handler consumer deret waktu: pesan yang melanggar

@@ -63,10 +63,19 @@ func dischargeRun() DischargeRun {
 	}}
 }
 
+func rainRun() WeatherRun {
+	r := gridRun(Weather)
+	loc := Point{Lat: -6.82, Lon: 107.62}
+	r.Site = Site{ID: "catchment:cikapundung", Kind: SiteCatchment, Name: "Cikapundung", Location: loc}
+	r.Model, r.Cell = "ecmwf_ifs", loc
+	return WeatherRun{Run: r, Steps: []WeatherStep{{ValidTime: now, PrecipitationMM: f(4.25)}}}
+}
+
 func TestValidRunsPass(t *testing.T) {
 	for name, err := range map[string]error{
 		"cuaca grid": weatherRun().Validate(now), "cuaca BMKG": bmkgRun().Validate(now),
 		"udara": airRun().Validate(now), "debit": dischargeRun().Validate(now),
+		"hujan sub-DAS": rainRun().Validate(now),
 	} {
 		if err != nil {
 			t.Errorf("%s: %v", name, err)
@@ -177,15 +186,34 @@ func TestDischargeInvariants(t *testing.T) {
 	}
 }
 
+func TestCatchmentSite(t *testing.T) {
+	r := rainRun()
+	r.Site.Name = ""
+	if err := r.Validate(now); !errors.Is(err, ErrInvalid) {
+		t.Fatalf("sub-DAS tanpa nama: %v", err)
+	}
+	r = rainRun()
+	r.Site.River = "Citarum"
+	if err := r.Validate(now); !errors.Is(err, ErrInvalid) {
+		t.Fatalf("sub-DAS dengan sungai: %v", err)
+	}
+	d := dischargeRun()
+	d.Site = rainRun().Site
+	if err := d.Validate(now); !errors.Is(err, ErrInvalid) {
+		t.Fatalf("debit di sub-DAS: %v", err)
+	}
+}
+
 func TestKindOf(t *testing.T) {
 	for id, want := range map[string]SiteKind{
 		"adm4:32.73.01.1001": SiteRegion, "grid:-6.75:107.50": SiteGrid, "river:citarum-nanjung": SiteRiver,
+		"catchment:cikapundung": SiteCatchment,
 	} {
 		if got, ok := KindOf(id); !ok || got != want {
 			t.Errorf("%s: %s %v", id, got, ok)
 		}
 	}
-	for _, bad := range []string{"", "adm4:32.73.01", "grid:x", "river:A", "sensor:1", strings.Repeat("river:a", 20)} {
+	for _, bad := range []string{"", "adm4:32.73.01", "grid:x", "river:A", "sensor:1", strings.Repeat("river:a", 20), "catchment:", "catchment:Ciwidey"} {
 		if _, ok := KindOf(bad); ok {
 			t.Errorf("%q seharusnya tidak valid", bad)
 		}
