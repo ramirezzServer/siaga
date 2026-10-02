@@ -4,7 +4,7 @@ Tanggal: 2026-09-26 · Status: diterima
 
 ## Konteks
 
-Setelah fase 1e-2b-1 (ADR 0016), ingest dan geo-processor punya image dan manifest, tetapi di cluster keduanya belum lengkap: `INGEST_ARCHIVE_URL` dan `OTEL_EXPORTER_OTLP_ENDPOINT` kosong karena Garage dan OTel Collector baru ada di Compose lite, key OpenAQ/FIRMS hanya bisa masuk lewat `scripts/dev-secrets.sh` di laptop, dan NetworkPolicy baru membatasi dua layanan itu. Dokumen arsitektur menetapkan: Garage di cluster, metrik/log/trace produksi ke Grafana Cloud free tier lewat OpenTelemetry, secret terenkripsi di repo dengan SOPS + age dan didekripsi hanya di cluster, dan NetworkPolicy default deny. Fase 1e-2b-2 (ADR ini) menutup bagian itu; retensi dan backup arsip menyusul di 1e-2b-3.
+Setelah fase 1e-2b-1 (ADR 0016), ingest dan geo-processor punya image dan manifest, tetapi di cluster keduanya belum lengkap: `INGEST_ARCHIVE_URL` dan `OTEL_EXPORTER_OTLP_ENDPOINT` kosong karena Garage dan OTel Collector baru ada di Compose lite, key OpenAQ/FIRMS hanya bisa masuk lewat `scripts/dev-secrets.sh` di laptop, dan NetworkPolicy baru membatasi dua layanan itu. Dokumen arsitektur menetapkan: Garage di cluster, metrik/log/trace produksi ke Grafana Cloud free tier lewat OpenTelemetry, secret terenkripsi di repo dengan SOPS + age dan didekripsi hanya di cluster, dan NetworkPolicy default deny. Fase 1e-2b-2 (ADR ini) menutup bagian itu; retensi dan backup arsip menyusul di 1e-2b-3 (ADR 0022: CronJob `archive-maintenance` ke Backblaze B2, Secret `siaga-arsip-cadangan`).
 
 ## Keputusan
 

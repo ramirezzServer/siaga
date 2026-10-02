@@ -8,12 +8,13 @@
 
 Nama Secret dan key sama di k3d dan produksi:
 
-| Secret                 | Key                                                                                                                         | Dipakai                        |
-| ---------------------- | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------ |
-| `siaga-db-<layanan>`   | `username`, `password` (basic-auth)                                                                                         | CloudNativePG, geo-processor   |
-| `siaga-garage`         | `GARAGE_RPC_SECRET`, `GARAGE_ADMIN_TOKEN`, `GARAGE_METRICS_TOKEN`, `GARAGE_DEFAULT_ACCESS_KEY`, `GARAGE_DEFAULT_SECRET_KEY` | Garage, ingest, OTel Collector |
-| `siaga-ingest`         | `OPENAQ_API_KEY`, `FIRMS_MAP_KEY` (opsional)                                                                                | ingest                         |
-| `siaga-otel-collector` | `OTLP_UPSTREAM_ENDPOINT`, `OTLP_UPSTREAM_AUTHORIZATION`                                                                     | OTel Collector                 |
+| Secret                 | Key                                                                                                                                                            | Dipakai                        |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ |
+| `siaga-db-<layanan>`   | `username`, `password` (basic-auth)                                                                                                                            | CloudNativePG, geo-processor   |
+| `siaga-garage`         | `GARAGE_RPC_SECRET`, `GARAGE_ADMIN_TOKEN`, `GARAGE_METRICS_TOKEN`, `GARAGE_DEFAULT_ACCESS_KEY`, `GARAGE_DEFAULT_SECRET_KEY`                                    | Garage, ingest, OTel Collector |
+| `siaga-ingest`         | `OPENAQ_API_KEY`, `FIRMS_MAP_KEY` (opsional)                                                                                                                   | ingest                         |
+| `siaga-arsip-cadangan` | `ARCHIVE_BACKUP_URL`, `ARCHIVE_BACKUP_S3_ACCESS_KEY_ID`, `ARCHIVE_BACKUP_S3_SECRET_ACCESS_KEY` (dari `.env`, awalan `/laptop/` menjadi `/produksi/`, ADR 0022) | CronJob archive-maintenance    |
+| `siaga-otel-collector` | `OTLP_UPSTREAM_ENDPOINT`, `OTLP_UPSTREAM_AUTHORIZATION`                                                                                                        | OTel Collector                 |
 
 ## Alat
 
@@ -38,7 +39,7 @@ Skrip ini:
 
 1. membuat kunci age di `~/.config/sops/age/keys.txt` bila belum ada. **Simpan salinan isinya di password manager**: tanpa kunci itu secret produksi tidak bisa dibuka lagi (sampai kunci cluster ditambahkan di fase 2);
 2. mengisi public key di `.sops.yaml` (menggantikan placeholder);
-3. membuat password dan token acak, mengambil `OPENAQ_API_KEY`/`FIRMS_MAP_KEY` dari `.env`, dan menanyakan kredensial Grafana Cloud untuk Collector produksi. Buat token **baru** khusus produksi (misal `siaga-produksi`), jangan memakai token laptop;
+3. membuat password dan token acak, mengambil `OPENAQ_API_KEY`/`FIRMS_MAP_KEY` dan tujuan cadangan arsip `ARCHIVE_BACKUP_*` (docs/setup/backblaze-b2.md) dari `.env`, dan menanyakan kredensial Grafana Cloud untuk Collector produksi. Buat token **baru** khusus produksi (misal `siaga-produksi`), jangan memakai token laptop;
 4. mengenkripsi semuanya ke `deploy/k8s/prod/secrets.enc.yaml`. Plaintext tidak pernah ditulis ke disk.
 
 Menjalankan ulang aman: nilai yang sudah ada tidak diubah, hanya yang belum ada yang dilengkapi. Commit `deploy/k8s/prod/secrets.enc.yaml` dan `.sops.yaml`.

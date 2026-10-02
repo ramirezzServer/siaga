@@ -2,9 +2,55 @@
 
 Dokumen ini adalah titik lanjut untuk sesi kerja berikutnya, termasuk chat baru dengan asisten AI. Perbarui setiap akhir sesi.
 
-## Status: Fase 1e-3b-2b ditulis asisten (2026-10-02), menunggu verifikasi WSL; berikutnya 1e-2b-3
+## Status: Fase 1e-2b-3 ditulis asisten (2026-10-02), menunggu verifikasi WSL; berikutnya 1e-3c
 
-Fase 0 sampai 1e-3b-2a ter-commit dan terverifikasi (1e-3b-2a di `5e54c80`, `d75fdf3`, `c0f4545`; CI fase itu belum dicek). Fase 1e dipecah: **1e-1** arsip Garage + replay, **1e-2a** OpenTelemetry + dashboard, **1e-2b** deploy (**1e-2b-1** image + CI + manifest, **1e-2b-2** Garage dan Collector di cluster, SOPS, default deny, **1e-2b-3** retensi dan backup arsip), **1e-3** backfill + kalibrasi. 1e-3 dipecah lagi: **1e-3a** pengisian ulang OpenAQ, replay prakiraan BMKG + OpenAQ, peta pemeriksaan titik sungai, **1e-3b** reanalisis GloFAS → ambang banjir → `hazard.flood.*` (**1e-3b-1** pemilihan sel dari reanalisis; **1e-3b-2a** alat ambang banjir dan ambang indeks hujan 7 sub-DAS; **1e-3b-2b** konektor hujan sub-DAS, ambang di geo-processor, `hazard.flood.*`, bagian ini), **1e-3c** arsip FIRMS SP → ambang titik api → `hazard.fire.*`, set berlabel T4, radius dirasakan, replay CAP.
+Fase 0 sampai 1e-3b-2b ter-commit dan terverifikasi, CI hijau (1e-3b-2b di `8848fc8..ee75b44`). Fase 1e dipecah: **1e-1** arsip Garage + replay, **1e-2a** OpenTelemetry + dashboard, **1e-2b** deploy (**1e-2b-1** image + CI + manifest, **1e-2b-2** Garage dan Collector di cluster, SOPS, default deny, **1e-2b-3** retensi dan backup arsip), **1e-3** backfill + kalibrasi. 1e-3 dipecah lagi: **1e-3a** pengisian ulang OpenAQ, replay prakiraan BMKG + OpenAQ, peta pemeriksaan titik sungai, **1e-3b** reanalisis GloFAS → ambang banjir → `hazard.flood.*` (**1e-3b-1** pemilihan sel dari reanalisis; **1e-3b-2a** alat ambang banjir dan ambang indeks hujan 7 sub-DAS; **1e-3b-2b** konektor hujan sub-DAS, ambang di geo-processor, `hazard.flood.*`, bagian ini), **1e-3c** arsip FIRMS SP → ambang titik api → `hazard.fire.*`, set berlabel T4, radius dirasakan, replay CAP.
+
+### Fase 1e-2b-3: retensi arsip dan cadangan harian ke Backblaze B2
+
+Keputusan lengkap di ADR 0022. Oracle Object Storage diganti Backblaze B2 karena pendaftaran Oracle gagal terus di verifikasi kartu; tujuan cadangan berupa URL S3 generik, jadi bisa pindah ke Oracle nanti. Ukuran arsip diukur dulu dengan `ukur-arsip.sh` (titipan): 25 Sep–2 Okt 67.860 objek / 95,0 MiB, `bmkg-prakiraan` ±94% objek dan ±72% byte, proyeksi 24 jam ±37 MiB/hari (±13 GiB/tahun) tanpa retensi.
+
+| Bagian   | Isi                                                                                                                                                                                                                                                                                                                                                                                                           | Terverifikasi di workspace asisten                                                                                                                                                                                                  |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Domain   | `domain/archivebundle` (kunci `<konektor>/<YYYY>/<MM>/<DD>.p<n>.tar.zst` + `.p<n>.n<objek>.idx.json.zst`, indeks dengan SHA-256 payload dan bundel, validasi), `domain/retention` (aturan per konektor dalam hari UTC, minimum 8 hari, konektor tanpa aturan disimpan selamanya; bawaan prakiraan 14, USGS dan Open-Meteo cuaca/udara 30, sungai/hujan 90)                                                    | Coverage 95,6% dan 100%; `FuzzParse` (kunci kanonik), `FuzzExpiredMonotone`                                                                                                                                                         |
+| Use case | `app/archivebackup`: `Backup` (hari UTC yang sudah ditutup, tenggang 15 menit; hari yang jumlah objeknya sama dengan nama indeks dilewati tanpa unduhan; objek baru jadi bagian berikutnya; bundel dibaca ulang sebelum indeks ditulis; pecah di 48 MiB), `Verify`, `Restore` (gzip identik byte per byte), `Prune` (hapus hanya kunci yang ada di indeks cadangan hari itu, dry-run bawaan, batas per jalan) | Coverage 90,5%; titik galat di setiap langkah, bundel/indeks diubah atau hilang, bagian terlambat, bundel yatim tidak ditimpa                                                                                                       |
+| Adapter  | `ports.ArchiveDeleter` (fsarchive juga menghapus folder tanggal kosong, s3archive `DeleteObject`), subtest Delete di `archivetest` (ikut jalan terhadap Garage asli di job CI `archive`), `s3archive.Check` jatuh ke `ListObjectsV2` bila `HeadBucket` 403 (key B2 terbatas bucket), S3 tiruan `DenyHeadBucket`                                                                                               | Test adapter `-race`                                                                                                                                                                                                                |
+| Perintah | `archive backup`, `backup-verify` (bawaan dua hari terakhir, `-all`), `restore` (`-from` wajib, `-into`), `prune` (`-apply`, `-retention`, `-max-delete`); env `ARCHIVE_BACKUP_URL`, `ARCHIVE_BACKUP_S3_*`, `ARCHIVE_RETENTION`; `make archive-backup`, `archive-backup-verify`, `archive-restore`, `archive-prune`, `archive-maintain`, `backup-setup`                                                       | Arsip asli 1 Okt (13.416 objek, 20,0 MiB gzip, 128,4 MiB mentah) → 15 bundel 2,4 MiB dalam ±5 dtk; jalan ulang 0 bagian (±0,1 dtk); verify 13.416 objek utuh; restore ke folder: kunci sama dan 13.416 berkas identik byte per byte |
+| B2       | `scripts/b2-setup.sh`: master key lewat prompt tersembunyi, sesi CLI `b2` di folder sementara, bucket privat SSE-B2, key hanya bucket itu + awalan `arsip/` dengan `listBuckets,listFiles,readFiles,writeFiles` (tanpa hapus), ditulis ke `.env` tanpa dicetak; panduan `docs/setup/backblaze-b2.md`                                                                                                          | Skrip diuji dengan CLI `b2` tiruan (urutan perintah, `.env` mode 600, berhenti bila key sudah terisi); shellcheck bersih. Sintaks CLI dicek di source `Backblaze/B2_Command_Line_Tool`                                              |
+| Cluster  | CronJob `archive-maintenance` (01.20 UTC, init container backup → verify → prune, image ingest), NetworkPolicy (Garage 3900 + HTTPS internet), izin masuk Garage, Secret `siaga-arsip-cadangan` dari `make secrets-prod` (awalan `/laptop/` → `/produksi/`)                                                                                                                                                   | kustomize 5.7.1 + kubeconform 0.7.0 strict (lokal 32, prod 28 resource valid); `prod-secrets.sh` diuji dengan sops 3.13.3 + age 1.3.2 (isi terdekripsi benar, jalan kedua tidak berubah)                                            |
+| Repo     | ADR 0022 (catatan di ADR 0014 dan 0017), README, `.env.example`, `docs/setup/secrets.md`, fuzz baru di Makefile dan CI, `klauspost/compress` jadi dependensi langsung (versi dan `go.sum` sama)                                                                                                                                                                                                               | golangci-lint 2.13.2 bersih, semua test ingest `-race`, prettier                                                                                                                                                                    |
+
+Zstd dengan jendela 32 MiB dipilih setelah membandingkan: gzip -9 per tar ±9,8 MiB, zstd 2,4 MiB untuk hari yang sama (USGS 3,5 MiB → 32 KiB karena feed 2 harinya berulang). Proyeksi B2 bila 24 jam: ±2 GiB/tahun, jadi tidak ada lifecycle di B2 (ditinjau di 8 GB). Lifecycle Garage v2.3.0 sebenarnya ada (`Expiration` + `Prefix`), tetapi tidak bisa mensyaratkan objek sudah dicadangkan.
+
+### Verifikasi yang perlu dijalankan di WSL (1e-2b-3)
+
+```bash
+bash "/mnt/c/KULIAH/PROJECT CODE/siaga-titipan/terapkan-fase-1e-2b-3.sh"   # salin, cek hash, make check, commit
+git push
+make test-integration      # TestGarage kini juga menguji Delete ke Garage asli
+make k8s-check             # overlay prod kini berisi CronJob archive-maintenance
+```
+
+Lalu sekali, ikuti `docs/setup/backblaze-b2.md`: Caps & Alerts B2 ke $0, `pipx install b2`, buat master key, `make env`, `make backup-setup`. Setelah itu:
+
+```bash
+make archive-backup          # hari 24 Sep–1 Okt (UTC) ke B2
+make archive-backup-verify ARGS=-all
+make archive-prune           # dry-run; 2 Okt belum ada yang kedaluwarsa (arsip mulai 24 Sep):
+                             # prakiraan mulai dipangkas 9 Okt, USGS dan Open-Meteo cuaca/udara 25 Okt
+make archive-restore FROM=2026-09-26 TO=2026-09-26 CONNECTORS=bmkg-prakiraan INTO=/tmp/pulih
+INGEST_ARCHIVE_URL=/tmp/pulih make replay FROM=2026-09-26 TO=2026-09-27 CONNECTORS=bmkg-prakiraan ARGS="-publish=false -strict"
+```
+
+Yang dilaporkan: ringkasan `archive-backup` (jumlah bagian, ukuran total bundel), hasil verify, pemakaian bucket di web B2, hasil replay dari folder pulihan, dan CI. Prune pertama yang benar-benar menghapus terjadi ±9 Okt lewat `make archive-maintain`; periksa dulu keluarannya (kolom "belum dicadangkan" harus 0). Mulai sekarang `make archive-maintain` dijalankan setiap memulai sesi (catat juga di `MULAI-LAGI.md` titipan).
+
+### Temuan yang perlu ditindaklanjuti (1e-2b-3)
+
+- **Belum ada metrik cadangan di dashboard.** `archive` mencetak laporan saja; status CronJob di produksi terlihat dari Job yang gagal. Bila perlu, tambah metrik OTel (umur cadangan terakhir per konektor) saat fase 8.
+- **Key B2 laptop dipakai juga untuk Secret produksi** sampai bootstrap fase 2; saat itu buat key kedua khusus cluster dengan `KEY_NAME=siaga-cadangan-produksi TARGET=produksi bash scripts/b2-setup.sh` (kosongkan dulu baris `ARCHIVE_BACKUP_*`, atau jalankan di salinan `.env`).
+- **Oracle Always Free juga rencana VM produksi fase 2**; kegagalan verifikasi kartu membuat rencana itu berisiko. Perlu dicari alternatif VM gratis sebelum fase 2.
+- Batas gratis B2 tidak konsisten antar-dokumen resmi (halaman harga 2026: Class B/C gratis; artikel bantuan 2022: 2.500/hari). Rancangan memakai yang lebih ketat; tinjau pemakaian di web B2 setelah seminggu.
+- `backup-verify` tanpa `-connectors` mendaftar seluruh cadangan (±12 ribu kunci/tahun bila 24 jam); masih murah, tetapi bisa dibatasi per hari bila Class C menjadi masalah.
 
 ### Fase 1e-3b-2b: kejadian banjir dari debit GloFAS dan indeks hujan sub-DAS
 
@@ -22,7 +68,16 @@ Keputusan lengkap di ADR 0021 (melanjutkan ADR 0020 butir 4, 5, 8, 9). Koreksi b
 
 Ambang asli (dari commit `c0f4545`) dinilai terhadap prakiraan `ecmwf_ifs` asli 2026-10-02: Cirasea Waspada 4 Okt (3 jam 11,3 mm), Cihaur Waspada 4–5 Okt (24 jam ±27 mm), Citarik dan Cikapundung Info, tiga sub-DAS lain di bawah Info. Prakiraan debit asli belum dinilai (Open-Meteo hanya terjangkau lewat browser).
 
-### Verifikasi yang perlu dijalankan di WSL (1e-3b-2b)
+### Verifikasi di WSL (1e-3b-2b)
+
+Terverifikasi 2026-10-02: commit `8848fc8..ee75b44` di-push, CI hijau. `make check`, `make up migrate` (00007), `make test-integration` lulus; `make flood-threshold` dari cache 0 panggilan.
+
+- Uji `bandung-2021`: Majalaya, Dayeuhkolot, dan Nanjung semuanya Bahaya pada 2021-05-24.
+- Setelah ingest + geo dijalankan ulang 2 Okt 11.47 WIB: Cirasea dan Cihaur Waspada (puncak 4 Okt), Cikapundung dan Citarik Info; belum ada kejadian debit (musim kemarau, tidak ada titik ≥ p80).
+- Query verifikasi sesuai: Nanjung koreksi 0,87 (Siaga 329,5 m³/s), hilir Jatiluhur/Karawang/muara `max_level` 3, 21 ambang hujan, 7 sub-DAS `ecmwf_ifs` di `ts.series`, 38 titik sungai dinilai di `hazard.flood_site`.
+- ingest dan geo-processor dibiarkan jalan terus di WSL dengan kode terbaru.
+
+Langkah yang dijalankan (untuk referensi):
 
 ```bash
 bash "/mnt/c/KULIAH/PROJECT CODE/siaga-titipan/terapkan-fase-1e-3b-2b.sh"   # salin, cek hash, make check, commit
@@ -45,8 +100,6 @@ SELECT site_id, model, last_fetched_at FROM ts.series WHERE site_id LIKE 'catchm
 SELECT e.status, e.level, f.indicator, f.site_id, f.outlook_level, f.peak_date, e.expires_at
   FROM hazard.event e JOIN hazard.flood f ON f.event_id = e.id ORDER BY e.updated_at DESC LIMIT 20;
 ```
-
-Yang dilaporkan: hasil uji `bandung-2021` di `ambang-banjir.md` (Majalaya, Dayeuhkolot, Nanjung), kejadian banjir yang aktif (harapan dari prakiraan 2 Okt: Cirasea dan Cihaur Waspada, Citarik dan Cikapundung Info, bila prakiraan belum berubah), isi DLQ (harus kosong), dan CI.
 
 Saat consumer banjir pertama kali jalan, stream `RAW` dibaca dari awal (7 hari): keluaran debit lama yang mencapai Info membuka kejadian yang langsung berakhir (`created` lalu `expired`), jadi wajar ada beberapa kejadian `expired` bertanggal lampau.
 
@@ -362,6 +415,7 @@ Kontrak `siaga.raw.v1`, stream `RAW`/`HAZARD`, layanan ingest dengan konektor BM
 - Versi alat: Go 1.27.1 (minimum bahasa 1.26, ADR 0005), Node 22, pnpm 10.28.0 lewat corepack, golangci-lint 2.13.2, gitleaks 8.30.1.
 - **DNS WSL**: DNS tunneling WSL (resolver `10.255.255.254`) tidak jalan di laptop ini. `/etc/wsl.conf` berisi `[network] generateResolvConf = false`, dan `/etc/resolv.conf` tetap berisi `nameserver 1.1.1.1`, `nameserver 8.8.8.8`, `options use-vc`. Bila `go mod download`, `docker pull`, atau ingest tiba-tiba timeout setelah WSL dijalankan ulang, cek dulu isi `/etc/resolv.conf`.
 - **Docker Desktop**: sebelum `wsl --shutdown`, Quit Docker Desktop dulu. Kalau tidak, integrasi WSL Docker gagal dengan "Catastrophic failure" saat WSL hidup lagi.
+- Cadangan arsip: akun Backblaze B2 (region US West); bucket dan key dibuat `make backup-setup` (docs/setup/backblaze-b2.md). Master key B2 tidak disimpan di repo atau `.env`.
 - Jaringan laptop bisa berpindah (Wi-Fi ke paket data); koneksi WSL bisa putus beberapa jam tanpa galat yang jelas (celah data 26 Sep 20.42–22.55 WIB). Celah OpenAQ ditutup dengan `make backfill-openaq`; sumber lain (prakiraan, Open-Meteo) memperbarui diri di polling berikutnya.
 
 ## Utang kecil yang diketahui
@@ -386,11 +440,11 @@ Target demo fase 1: dashboard Grafana berisi data live semua sumber.
 - [x] **1e-2a** OpenTelemetry di ingest dan geo-processor (trace lewat header `traceparent` NATS dan kolom outbox, metrik sumber/kuota/antrean/latensi/query, log OTLP), Grafana lokal `make obs-up` dan dashboard pipa data, panduan Grafana Cloud (ADR 0015). Terverifikasi di WSL; dashboard jalan di Grafana Cloud.
 - [x] **1e-2b-1** Image ingest dan geo-processor (satu Dockerfile, amd64 + arm64, distroless nonroot), job CI `images` (uji asap, Trivy, push GHCR + SBOM + cosign di `main`) dan `manifests`, manifest Kustomize ingest + geo-processor + Job migrasi dengan overlay local/prod, panel keterlambatan dashboard tanpa jeda ekspor (ADR 0016). Terverifikasi di WSL; CI hijau dan paket GHCR publik.
 - [x] **1e-2b-2** Garage satu node di cluster (ingest mengarsipkan langsung), OTel Collector `otelcol-k8s` (satu-satunya pemegang token Grafana Cloud, scrape metrik NATS dan Garage), secret produksi dalam satu `SopsSecret` terenkripsi age (`make secrets-prod`, sops-secrets-operator di fase 2), NetworkPolicy default deny namespace, baris dashboard platform (ADR 0017). Terverifikasi di WSL; CI hijau.
-- [ ] **1e-2b-3** (setelah ±2026-10-02, seminggu data arsip) retensi arsip (lifecycle Garage) dan backup Garage ke Oracle Object Storage. Bahan: ukuran arsip di temuan 1e-3a.
+- [ ] **1e-2b-3** Retensi arsip per konektor lewat `archive prune` yang hanya menghapus objek yang sudah dicadangkan, cadangan harian ke Backblaze B2 (bukan Oracle: pendaftaran gagal di verifikasi kartu) sebagai satu `tar.zst` + indeks per konektor per hari, `backup-verify`, `restore`, CronJob `archive-maintenance`, `make backup-setup` (ADR 0022). Kode ditulis asisten; menunggu verifikasi WSL dan pembuatan bucket/key B2.
 - [x] **1e-3a** Pengisian ulang jam OpenAQ (`backfill openaq`, nilai mentah, maks 7 hari), replay prakiraan BMKG dan OpenAQ dengan konteks dari isi payload (`MultiFeed`, `PartialFeed`), peta GeoJSON pemeriksaan titik sungai, panel "Target scrape" abu-abu saat kosong (ADR 0018). Terverifikasi di WSL.
 - [x] **1e-3b-1** river-snap memilih sel dari debit rata-rata reanalisis `consolidated_v4` 2020-07..2022-06 dengan cache, titik uji, dan batas kuota berbobot (ADR 0019); 14 titik ditetapkan dari penelusuran debit sel GloFAS. Terverifikasi di WSL.
 - [x] **1e-3b-2a** `make flood-threshold` (persentil debit harian reanalisis `consolidated_v4` 1997–2024 per titik, uji kejadian tercatat, rasio bias `seamless_v4`) dan `make rain-threshold` (7 sub-DAS Citarum Hulu dari HydroBASINS, puncak harian akumulasi hujan 3/6/24 jam arsip ECMWF IFS 2017–2024) (ADR 0020). Terverifikasi di WSL; ambang asli di `c0f4545`.
-- [ ] **1e-3b-2b** Konektor hujan sub-DAS (`ecmwf_ifs`, 47 sel, tiap 3 jam), ambang di geo-processor (skema `ref`, constraint DB), tingkat debit median + p75 (naik paling banyak satu) dan indeks hujan (maks Siaga), `hazard.flood.created|updated|expired` dengan kedaluwarsa 24 jam (ADR 0020 butir 4, 5, 8, 9; ADR 0021). Kode ditulis asisten; menunggu verifikasi WSL.
+- [x] **1e-3b-2b** Konektor hujan sub-DAS (`ecmwf_ifs`, 47 sel, tiap 3 jam), ambang di geo-processor (skema `ref`, constraint DB), tingkat debit median + p75 (naik paling banyak satu) dan indeks hujan (maks Siaga), `hazard.flood.created|updated|expired` dengan kedaluwarsa 24 jam (ADR 0020 butir 4, 5, 8, 9; ADR 0021). Terverifikasi di WSL; CI hijau.
 - [ ] **1e-3c** Arsip FIRMS standar (SP) → ambang titik api → `hazard.fire.*`; set berlabel T4 dan kalibrasi radius dirasakan dari arsip gempa; replay CAP (pasangkan dokumen id/en dengan entri RSS).
 
 Catatan tertunda (dari sesi 28 Sep, di luar fase):
@@ -431,6 +485,8 @@ Workspace cloud asisten tidak bisa menjangkau `proxy.golang.org`, `go.dev`, atau
 - Sesi 1e-3b-2a: workspace dimulai ulang tanpa Go dan clone; Go 1.27.1 dibangun ulang dari tag (bootstrap Go 1.24.7 bawaan, ±6 menit), protobuf-go v1.36.12 di-clone, modul lain di `go.mod` ingest/platform diganti folder berisi `go.mod` kosong lewat `go.work` sementara (`GOPROXY=off GOSUMDB=off`; jangan pakai `GOFLAGS=-mod=mod`, ditolak di workspace mode). Hanya paket yang tidak butuh NATS/OTel/AWS yang bisa dikompilasi dan di-lint. Open-Meteo, HydroSHEDS, dan Overpass dijangkau lewat browser bawaan desktop app (`javascript_tool`, fetch dari halaman situs yang mengizinkan CORS); hasil besar diolah di browser dan hanya ringkasannya dibawa ke workspace.
 
 - Sesi 1e-3b-2b: modul Go dari `modcache-siaga.tgz` (titipan 28 Sep, 659 MB) dipecah di shell desktop app (`split -b 300M`, folder `modcache-pecahan/`), tiap bagian di-stage ke workspace, disambung, lalu dipakai sebagai `GOPROXY=file://…/cache/download GOSUMDB=off GOTOOLCHAIN=local`; semua modul (pgx, goose, nats, OTel) terkompilasi, jadi seluruh test dan golangci-lint bisa dijalankan. `ekspor-modcache.sh` di titipan kini langsung menulis pecahan ≤ 300 MB plus `SHA256SUMS` ke `modcache-pecahan/` (jalankan ulang hanya bila `go.mod` berubah); `modcache-siaga.tgz` utuh tidak dibutuhkan lagi. PostgreSQL 16 + PostGIS + TimescaleDB di workspace dipakai untuk test integrasi (`TestEndToEnd` dengan nats-server dalam proses). Prakiraan hujan asli 47 sel diambil lewat browser bawaan (`javascript_tool`, fetch dari tab open-meteo.com) dan disimpan sebagai rekaman test.
+
+- Sesi 1e-2b-3: workspace baru; Go 1.27.1 dibangun dari tag (bootstrap Go 1.24.7, ±6 menit), modul dari `modcache-pecahan/` (tiga bagian di-stage, disambung, `GOPROXY=file://… GOSUMDB=off GOTOOLCHAIN=local`; `GOFLAGS` dikosongkan). Rilis GitHub yang dipakai: golangci-lint 2.13.2, kustomize 5.7.1, kubeconform 0.7.0 (skema dari raw.githubusercontent.com terjangkau), sops 3.13.3, age 1.3.2. Source Garage v2.3.0 dari mirror `deuxfleurs-org/garage` (sparse checkout `src/api`, `src/model`, `doc/book`) untuk memastikan dukungan lifecycle; source CLI `Backblaze/B2_Command_Line_Tool` untuk sintaks `key create`/`bucket create` dan keluaran `account authorize`. Dokumen backblaze.com terjangkau lewat WebFetch. Rasio kompresi diukur dengan sampel satu hari UTC penuh (`ukur-arsip.sh` menulis `sampel-arsip-<tgl>.tar` ke titipan).
 
 Karena itu `go.sum` dari asisten tidak dipakai: patch tidak menyertakan `go.sum`/`go.work.sum`, dan `make deps` di WSL yang membuatnya.
 
