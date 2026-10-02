@@ -2,8 +2,11 @@
 # Jendela beberapa hari di sekitar tanggal kejadian; titik = slug titik pantau yang dilewati banjir (dipisah titik koma).
 # Model: consolidated_v4 (reanalisis, 1997-01-01..2025-05-31) atau seamless_v4 (bawaan API, untuk kejadian setelah reanalisis).
 # Tambahkan kejadian cekungan Bandung dengan tanggal dan sumber berita yang pasti, lalu `make flood-threshold` (ADR 0020).
-# 3 kejadian
+# bandung-2021: banjir 24 Mei 2021 malam di Dayeuhkolot, Baleendah, Sapan–Tegalluar, dan tol Purbaleunyi arah Cileunyi;
+# hari hujan 24 jam terbesar Citarik, Ciwidey, dan Ciminyak 2017–2024 (ambang-hujan-sub-das.md).
+# 4 kejadian
 id,titik,dari,sampai,model,sumber
 garut-2016,cimanuk-garut;cimanuk-hulu-jatigede,2016-09-18,2016-09-24,consolidated_v4,https://id.wikipedia.org/wiki/Cimanuk
 bekasi-2025,bekasi-cileungsi;bekasi-cikeas;bekasi-p2c;bekasi-kota,2025-02-28,2025-03-07,consolidated_v4,https://itb.ac.id/berita/dosen-meteorologi-itb-ungkap-fakta-banjir-bekasi-2025-tanggul-tak-lagi-cukup/62288
 pamanukan-2026,cipunagara-subang;cipunagara-pamanukan,2026-01-15,2026-02-03,seamless_v4,https://bandung.kompas.com/read/2026/01/30/100452978/darurat-banjir-subang-sungai-cipunagara-meluap-warga-pamanukan-takut-tanggul
+bandung-2021,citarum-majalaya;citarum-dayeuhkolot;citarum-nanjung,2021-05-22,2021-05-27,consolidated_v4,https://www.pikiran-rakyat.com/bandung-raya/pr-011955150/update-banjir-bandung-25-mei-2021-baleendah-tol-purbaleunyi-dan-4-titik-lainnya-masih-digenangi-air

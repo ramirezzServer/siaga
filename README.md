@@ -2,7 +2,7 @@
 
 Platform ketahanan wilayah Jawa Barat: peringatan dini bencana (gempa, cuaca ekstrem, banjir, titik api) dan pemantauan serta prediksi kualitas udara (NAPAS) dalam satu peta real-time. Proyek portofolio independen, bukan layanan resmi BMKG, BNPB, atau BPBD. Selaras dengan SDGs 3, 11, dan 13.
 
-> Status: **Fase 1 (pipa data), irisan 1e-2b**. Belum ada aplikasi yang bisa dibuka di browser. Yang sudah jalan: ingest menarik data gempa BMKG dan USGS, peringatan dini cuaca BMKG (CAP), prakiraan cuaca BMKG per kelurahan/desa Jawa Barat, prakiraan cuaca dan kualitas udara (CAMS) per simpul grid 0,25° dan debit 38 titik pantau sungai (GloFAS) dari Open-Meteo, nilai sensor stasiun kualitas udara OpenAQ, dan titik panas satelit NASA FIRMS, lalu menerbitkannya ke NATS JetStream. geo-processor menggabungkan laporan gempa kedua sumber menjadi satu kejadian (deduplikasi terkalibrasi), menyusun rantai pesan CAP menjadi satu kejadian cuaca, memperkirakan kelurahan/desa terdampak, menerbitkan `hazard.quake.*` serta `hazard.weather.*`, dan menyimpan semua prakiraan, nilai sensor, dan titik panas ke hypertable TimescaleDB schema `ts`.
+> Status: **Fase 1 (pipa data), irisan 1e-2b**. Belum ada aplikasi yang bisa dibuka di browser. Yang sudah jalan: ingest menarik data gempa BMKG dan USGS, peringatan dini cuaca BMKG (CAP), prakiraan cuaca BMKG per kelurahan/desa Jawa Barat, prakiraan cuaca dan kualitas udara (CAMS) per simpul grid 0,25°, debit 38 titik pantau sungai (GloFAS), dan hujan per jam 7 sub-DAS Citarum Hulu (ECMWF IFS) dari Open-Meteo, nilai sensor stasiun kualitas udara OpenAQ, dan titik panas satelit NASA FIRMS, lalu menerbitkannya ke NATS JetStream. geo-processor menggabungkan laporan gempa kedua sumber menjadi satu kejadian (deduplikasi terkalibrasi), menyusun rantai pesan CAP menjadi satu kejadian cuaca, memperkirakan kelurahan/desa terdampak, menilai debit dan indeks hujan terhadap ambang persentil historis menjadi kejadian banjir (ADR 0020–0021), menerbitkan `hazard.quake.*`, `hazard.weather.*`, serta `hazard.flood.*`, dan menyimpan semua prakiraan, nilai sensor, dan titik panas ke hypertable TimescaleDB schema `ts`.
 
 ## Dokumen
 
@@ -24,12 +24,13 @@ make seed             # migrasi + import 6.612 wilayah Jawa Barat
 make adm4-list        # (opsional) bangun ulang daftar kode desa untuk sapuan prakiraan
 make grid-list        # (opsional) bangun ulang simpul grid 0,25° Open-Meteo
 make ingest           # tarik BMKG, USGS, Open-Meteo, OpenAQ, FIRMS ke NATS, arsip mentah ke Garage (status: :8081/status)
-make geo              # gempa + cuaca → hazard.*, deret waktu → ts.* (status: :8082/status)
+make geo              # gempa + cuaca + banjir → hazard.*, deret waktu → ts.* (status: :8082/status)
 make check            # lint + test
 make calibrate-dedup  # ukur ambang deduplikasi dengan katalog historis BMKG + USGS
 make river-snap       # pilih sel GloFAS untuk 38 titik pantau sungai dari reanalisis 2020–2022 (±4.300 panggilan sekali, lalu dari cache), peta cek .cache/titik-sungai.geojson
 make flood-threshold  # ambang banjir 38 titik dari reanalisis GloFAS 1997–2024 + uji banjir tercatat (±3.100 panggilan sekali, lalu dari cache)
 make rain-threshold   # ambang indeks hujan 7 sub-DAS Citarum Hulu dari arsip ECMWF IFS 2017–2024 (±1.000 panggilan sekali)
+                      # keduanya menyalin hasil ke geo-processor (make calibration-copy); ambang dimuat saat geo-processor start
 make archive-ls       # isi arsip payload mentah per konektor; archive-verify memeriksa integritasnya
 make replay FROM=2026-09-24 TO=2026-09-25   # putar ulang arsip ke NATS, urut waktu ambil asli
 make backfill-openaq FROM=2026-09-26 TO=2026-09-27   # isi ulang jam OpenAQ yang terlewat (maks ±7 hari)

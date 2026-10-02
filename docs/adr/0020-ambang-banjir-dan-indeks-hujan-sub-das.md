@@ -1,6 +1,6 @@
 # 0020. Ambang banjir persentil dan indeks hujan sub-DAS
 
-Tanggal: 2026-10-01 · Status: diterima
+Tanggal: 2026-10-01 · Status: diterima (butir 4 dilanjutkan ADR 0021)
 
 ## Konteks
 
@@ -21,7 +21,7 @@ Sebelum kode ditulis, sumber asli dicek 2026-10-01 dari browser di laptop penggu
 1. **Ambang debit = persentil debit harian reanalisis `consolidated_v4` 1997-01-01 sampai 2024-12-31** (10.227 hari, 28 tahun kalender penuh) di sel setiap titik pantau, dihitung `make flood-threshold` (`cmd/flood-threshold`, use case `app/floodthreshold`, fungsi murni `domain/threshold`). Persentil memakai interpolasi linear (metode 7 Hyndman–Fan, sama dengan NumPy). Ambang harus naik tegas dan positif; sel yang hampir selalu nol ditolak. Januari–Mei 2025 sengaja di luar periode supaya banjir Bekasi Maret 2025 menjadi uji di luar sampel. Keluaran `docs/calibration/ambang-banjir-32.csv` (dibaca geo-processor di 1e-3b-2b) dan laporan `ambang-banjir.md`.
 2. **Pengambilan deret historis memakai pola river-snap** (ADR 0019) yang dipisah ke `app/reanalysis`: cache per sel di `.cache/<alat>/<model>-<variabel>-<dari>-<sampai>.json` (disimpan setelah tiap request), titik uji satu sel saat cache kosong (`ErrEmpty`), batas kuota berbobot (≤ 200 panggilan dan ≤ 400 ribu nilai per request, 400 panggilan per menit, `-max-calls`), `cell_selection=nearest`, dan pemeriksaan satuan, jumlah langkah, sel yang dijawab (≤ 0,001° dari yang diminta), serta kelengkapan (≥ 99% langkah berisi, `ErrCoverage`). Jalan pertama ±2.780 panggilan untuk klimatologi.
 3. **Uji terhadap kejadian tercatat** dari `docs/calibration/banjir-tercatat.csv` (Garut 2016 di dalam sampel, Bekasi 2025 di luar sampel, Pamanukan 2026 dengan `seamless_v4`). Laporan mencantumkan puncak debit di jendela kejadian dan tingkat yang dicapai. Kejadian cekungan Bandung ditambahkan ke CSV setelah tanggal dan sumbernya pasti.
-4. **Bias data pembanding diukur, belum dikoreksi.** `flood-threshold` juga meminta `seamless_v4` 2022-08-01..2024-12-31 (±240 panggilan) dan menulis rasio p98 seamless/reanalisis per titik (`rasio_p98_seamless`). Ambang tetap dari reanalisis, seperti GloFAS sendiri yang menghitung ambang periode ulang dari reanalisis. Koreksi (misal ambang × rasio untuk titik di bawah 0,9) diputuskan di 1e-3b-2b setelah rasio 38 titik terlihat.
+4. **Bias data pembanding diukur, belum dikoreksi.** `flood-threshold` juga meminta `seamless_v4` 2022-08-01..2024-12-31 (±240 panggilan) dan menulis rasio p98 seamless/reanalisis per titik (`rasio_p98_seamless`). Ambang tetap dari reanalisis, seperti GloFAS sendiri yang menghitung ambang periode ulang dari reanalisis. Koreksi (misal ambang × rasio untuk titik di bawah 0,9) diputuskan di 1e-3b-2b setelah rasio 38 titik terlihat. _Diputuskan di ADR 0021 butir 1: hanya rasio di bawah 0,90 yang dikoreksi (saat ini Nanjung), dan tiga titik hilir Jatiluhur dibatasi Siaga._
 5. **Pembanding prakiraan (untuk geo-processor, 1e-3b-2b).** Untuk setiap hari prakiraan dari hari ini sampai +3 hari (tanggal UTC GloFAS):
    - tingkat dasar dari **median ensemble** (≥ 50% anggota);
    - bila **p75 ensemble** (≥ 25% anggota) mencapai tingkat lebih tinggi, tingkat naik **paling banyak satu**, dengan teks "kemungkinan";

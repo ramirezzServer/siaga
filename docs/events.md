@@ -24,38 +24,42 @@ Pemilik adalah satu-satunya layanan yang membuat dan memperbarui konfigurasi str
 
 ## Consumer
 
-| Consumer (durable)                 | Stream | Filter                   | Layanan       | Ack                         |
-| ---------------------------------- | ------ | ------------------------ | ------------- | --------------------------- |
-| `geo-processor-quake`              | `RAW`  | `raw.quake.>`            | geo-processor | eksplisit, `AckWait` 30 dtk |
-| `geo-processor-weather`            | `RAW`  | `raw.weather.>`          | geo-processor | eksplisit, `AckWait` 30 dtk |
-| `geo-processor-forecast-bmkg`      | `RAW`  | `raw.forecast.bmkg`      | geo-processor | eksplisit, `AckWait` 30 dtk |
-| `geo-processor-forecast-openmeteo` | `RAW`  | `raw.forecast.openmeteo` | geo-processor | eksplisit, `AckWait` 30 dtk |
-| `geo-processor-aq-openmeteo`       | `RAW`  | `raw.aq.openmeteo`       | geo-processor | eksplisit, `AckWait` 30 dtk |
-| `geo-processor-flood-openmeteo`    | `RAW`  | `raw.flood.openmeteo`    | geo-processor | eksplisit, `AckWait` 30 dtk |
-| `geo-processor-aq-openaq`          | `RAW`  | `raw.aq.openaq`          | geo-processor | eksplisit, `AckWait` 30 dtk |
-| `geo-processor-fire-firms`         | `RAW`  | `raw.fire.firms`         | geo-processor | eksplisit, `AckWait` 30 dtk |
+| Consumer (durable)                     | Stream | Filter                   | Layanan       | Ack                         |
+| -------------------------------------- | ------ | ------------------------ | ------------- | --------------------------- |
+| `geo-processor-quake`                  | `RAW`  | `raw.quake.>`            | geo-processor | eksplisit, `AckWait` 30 dtk |
+| `geo-processor-weather`                | `RAW`  | `raw.weather.>`          | geo-processor | eksplisit, `AckWait` 30 dtk |
+| `geo-processor-forecast-bmkg`          | `RAW`  | `raw.forecast.bmkg`      | geo-processor | eksplisit, `AckWait` 30 dtk |
+| `geo-processor-forecast-openmeteo`     | `RAW`  | `raw.forecast.openmeteo` | geo-processor | eksplisit, `AckWait` 30 dtk |
+| `geo-processor-aq-openmeteo`           | `RAW`  | `raw.aq.openmeteo`       | geo-processor | eksplisit, `AckWait` 30 dtk |
+| `geo-processor-flood-openmeteo`        | `RAW`  | `raw.flood.openmeteo`    | geo-processor | eksplisit, `AckWait` 30 dtk |
+| `geo-processor-rain-openmeteo`         | `RAW`  | `raw.rain.openmeteo`     | geo-processor | eksplisit, `AckWait` 30 dtk |
+| `geo-processor-aq-openaq`              | `RAW`  | `raw.aq.openaq`          | geo-processor | eksplisit, `AckWait` 30 dtk |
+| `geo-processor-fire-firms`             | `RAW`  | `raw.fire.firms`         | geo-processor | eksplisit, `AckWait` 30 dtk |
+| `geo-processor-hazard-flood-discharge` | `RAW`  | `raw.flood.openmeteo`    | geo-processor | eksplisit, `AckWait` 30 dtk |
+| `geo-processor-hazard-flood-rain`      | `RAW`  | `raw.rain.openmeteo`     | geo-processor | eksplisit, `AckWait` 30 dtk |
 
-Consumer deret waktu satu per subjek karena tiap subjek membawa jenis pesan yang berbeda; semuanya menulis ke hypertable schema `ts` (ADR 0012, 0013). Consumer baru membaca stream `RAW` dari awal (retensi 7 hari), jadi prakiraan BMKG yang terbit sejak fase 1c ikut tersimpan.
+Consumer deret waktu satu per subjek karena tiap subjek membawa jenis pesan yang berbeda; semuanya menulis ke hypertable schema `ts` (ADR 0012, 0013). Penilaian banjir memakai consumer sendiri di subjek yang sama, jadi kegagalan penyimpanan deret dan penilaian bahaya tidak saling menahan (ADR 0021). Consumer baru membaca stream `RAW` dari awal (retensi 7 hari), jadi prakiraan BMKG yang terbit sejak fase 1c ikut tersimpan.
 
 Batas percobaan diatur aplikasi, bukan server (`MaxDeliver = -1`): galat sementara dicoba ulang dengan jeda 1, 5, 15, 30 detik; pesan yang rusak, melanggar invarian, atau gagal 5 kali disalin ke `dlq.<layanan>` lalu dihentikan (`Term`). Lihat ADR 0007.
 
 ## Subjek
 
-| Subjek                   | Pesan                                 | Penerbit      | Stream   |
-| ------------------------ | ------------------------------------- | ------------- | -------- |
-| `raw.quake.bmkg`         | `siaga.raw.v1.QuakeReport`            | ingest        | `RAW`    |
-| `raw.quake.usgs`         | `siaga.raw.v1.QuakeReport`            | ingest        | `RAW`    |
-| `raw.weather.bmkg`       | `siaga.raw.v1.WeatherWarning`         | ingest        | `RAW`    |
-| `raw.forecast.bmkg`      | `siaga.raw.v1.RegionForecast`         | ingest        | `RAW`    |
-| `raw.forecast.openmeteo` | `siaga.raw.v1.GridWeatherForecast`    | ingest        | `RAW`    |
-| `raw.aq.openmeteo`       | `siaga.raw.v1.AirQualityForecast`     | ingest        | `RAW`    |
-| `raw.flood.openmeteo`    | `siaga.raw.v1.RiverDischargeForecast` | ingest        | `RAW`    |
-| `raw.aq.openaq`          | `siaga.raw.v1.AirQualityObservation`  | ingest        | `RAW`    |
-| `raw.fire.firms`         | `siaga.raw.v1.FireDetection`          | ingest        | `RAW`    |
-| `hazard.<jenis>.created` | `siaga.hazard.v1.HazardCreated`       | geo-processor | `HAZARD` |
-| `hazard.<jenis>.updated` | `siaga.hazard.v1.HazardUpdated`       | geo-processor | `HAZARD` |
-| `hazard.<jenis>.expired` | `siaga.hazard.v1.HazardExpired`       | geo-processor | `HAZARD` |
-| `dlq.<layanan>`          | payload asli, apa adanya              | konsumen      | `DLQ`    |
+| Subjek                   | Pesan                                    | Penerbit      | Stream   |
+| ------------------------ | ---------------------------------------- | ------------- | -------- |
+| `raw.quake.bmkg`         | `siaga.raw.v1.QuakeReport`               | ingest        | `RAW`    |
+| `raw.quake.usgs`         | `siaga.raw.v1.QuakeReport`               | ingest        | `RAW`    |
+| `raw.weather.bmkg`       | `siaga.raw.v1.WeatherWarning`            | ingest        | `RAW`    |
+| `raw.forecast.bmkg`      | `siaga.raw.v1.RegionForecast`            | ingest        | `RAW`    |
+| `raw.forecast.openmeteo` | `siaga.raw.v1.GridWeatherForecast`       | ingest        | `RAW`    |
+| `raw.aq.openmeteo`       | `siaga.raw.v1.AirQualityForecast`        | ingest        | `RAW`    |
+| `raw.flood.openmeteo`    | `siaga.raw.v1.RiverDischargeForecast`    | ingest        | `RAW`    |
+| `raw.rain.openmeteo`     | `siaga.raw.v1.CatchmentRainfallForecast` | ingest        | `RAW`    |
+| `raw.aq.openaq`          | `siaga.raw.v1.AirQualityObservation`     | ingest        | `RAW`    |
+| `raw.fire.firms`         | `siaga.raw.v1.FireDetection`             | ingest        | `RAW`    |
+| `hazard.<jenis>.created` | `siaga.hazard.v1.HazardCreated`          | geo-processor | `HAZARD` |
+| `hazard.<jenis>.updated` | `siaga.hazard.v1.HazardUpdated`          | geo-processor | `HAZARD` |
+| `hazard.<jenis>.expired` | `siaga.hazard.v1.HazardExpired`          | geo-processor | `HAZARD` |
+| `dlq.<layanan>`          | payload asli, apa adanya                 | konsumen      | `DLQ`    |
 
 `<jenis>`: `quake`, `weather`, `flood`, `fire`, `aq`. `aq.*`, `report.*`, `notify.*` ditambahkan di fase 3–4.
 
@@ -69,6 +73,7 @@ Event `raw.*` adalah satu record dari satu feed sumber, sudah divalidasi dan wak
 - **Peringatan cuaca** (`raw.weather.bmkg`): satu event per pesan CAP BMKG (Alert, Update, Cancel) dengan teks bahasa Indonesia wajib dan bahasa Inggris bila tersedia; ID record = identifier CAP. Hanya provinsi di `INGEST_CAP_PROVINCES` (default `32`) yang diambil; pesan latihan, uji, draft, `Ack`, dan `Error` tidak diteruskan. Terjemahan yang datang belakangan terbit ulang sebagai revisi (ADR 0009).
 - **Prakiraan cuaca** (`raw.forecast.bmkg`): satu event per kelurahan/desa (kode adm4) berisi 20 langkah per 3 jam; ID record = kode adm4. Hanya prakiraan yang isinya berubah yang terbit.
 - **Keluaran model grid Open-Meteo** (`raw.forecast.openmeteo`, `raw.aq.openmeteo`, `raw.flood.openmeteo`): satu event per titik pantau (`site.id` = `grid:<lintang>:<bujur>` atau `river:<slug>`), berisi semua langkah jendela yang diminta (cuaca dan udara per jam dari 00.00 UTC hari ini sampai +3 hari, debit harian 4 hari lalu sampai +9 hari). `site.cell` adalah pusat sel model yang dijawab sumber; field kosong berarti model tidak memberi nilai. Hanya titik yang isinya berubah yang terbit; waktu terbit keluaran di `ts.*` adalah `meta.fetched_at` (ADR 0011, 0012).
+- **Hujan sub-DAS** (`raw.rain.openmeteo`, konektor `openmeteo-hujan`): satu event per sub-DAS Citarum Hulu (`site.id` = `catchment:<slug>`), berisi hujan per jam rata-rata wilayah (rata-rata berbobot luas 47 sel `ecmwf_ifs`, `cell_selection=nearest`) dari 00.00 UTC kemarin sampai +3 hari. Jam yang salah satu selnya kosong tidak dikirim. `site.cell` = `site.requested` = titik berat sel; `cell_count` = jumlah sel yang dirata-rata. Rata-ratanya dihitung dengan fungsi yang sama dengan kalibrasi ambang indeks hujan (ADR 0020–0021).
 - **Pengukuran stasiun OpenAQ** (`raw.aq.openaq`): satu event per stasiun (`station.id` = `openaq:<ID lokasi>`) berisi nilai terbaru setiap sensor parameter SIAGA (`pm25`, `pm10`, `no2`, `o3`, `so2`, `co`) dalam satuan sumber (`µg/m³`, `ppm`, `ppb`), urut ID sensor. Nilai yang lebih tua dari 1 hari tidak dikirim. Stasiun hanya diambil ulang bila `datetimeLast`-nya berubah, dan hanya terbit bila isinya berubah (ADR 0013). Pengisian ulang jam yang terlewat (`backfill openaq`) menerbitkan satu event per nilai mentah (satu sensor) dengan `meta.connector = openaq-jam`; waktu ukur adalah akhir periode, sama dengan polling (ADR 0018).
 - **Titik panas FIRMS** (`raw.fire.firms`): satu event per deteksi (`id` = `<produk>:<yyyymmddThhmm>:<lintang>:<bujur>`, lima desimal) dari produk NRT VIIRS SNPP, NOAA-20, NOAA-21, dan MODIS dalam kotak Jawa Barat, jendela 2 hari. Keyakinan MODIS dipetakan ke kelas (< 30 rendah, 30–79 nominal, >= 80 tinggi) dan persentase aslinya ikut dikirim (ADR 0013).
 - **USGS** hanya diteruskan untuk gempa di kotak Indonesia (lintang −12..7, bujur 94..142). Flag `tsunami` USGS tidak dipakai karena bukan peringatan.
@@ -80,7 +85,8 @@ Event `hazard.*` adalah keadaan kejadian ternormalisasi, diterbitkan geo-process
 - **ID kejadian gempa** adalah UUIDv8 dari SHA-256 (sumber, ID sumber) laporan pertama yang membentuk kejadian. ID tidak berubah walau sumber utama berganti (misal USGS datang lebih dulu, lalu BMKG menjadi sumber utama).
 - **ID kejadian cuaca** adalah UUIDv8 dari SHA-256 (penerbit, identifier) pendiri rantai CAP: pesan dengan waktu kirim paling awal di antara pesan dan semua `references`-nya. Satu rantai Alert → Update → Cancel adalah satu kejadian, apa pun urutan kedatangannya (ADR 0010). Area kejadian ada di `area_geojson` (MultiPolygon hasil gabungan poligon BMKG), detailnya di `weather`.
 - **ID pesan** = `<id kejadian>:r<revisi>`. `Hazard.revision` dan `HazardExpired.revision` naik satu setiap kali isi berubah; konsumen mengabaikan revisi yang lebih kecil dari yang sudah dimiliki. Pesan raw yang diproses ulang tidak menghasilkan event baru.
-- **Transisi**: `created` saat kejadian baru, `updated` saat isi atau tingkat berubah (termasuk koreksi sesudah kedaluwarsa), `expired` saat masa aktif habis (`ELAPSED`, gempa 6 jam, cuaca sesuai `expires` CAP), digabung ke kejadian lain (`MERGED`, dengan `merged_into_hazard_id`), atau sumber menarik laporannya (`RETRACTED`, termasuk CAP Cancel). Kejadian yang sudah berakhir bisa aktif lagi lewat `updated` (misal pembaruan CAP yang berlaku lagi); konsumen selalu menerima `created` lebih dulu.
+- **Transisi**: `created` saat kejadian baru, `updated` saat isi atau tingkat berubah (termasuk koreksi sesudah kedaluwarsa), `expired` saat masa aktif habis (`ELAPSED`, gempa 6 jam, cuaca sesuai `expires` CAP), digabung ke kejadian lain (`MERGED`, dengan `merged_into_hazard_id`), atau sumber menarik laporannya (`RETRACTED`, termasuk CAP Cancel). Banjir: `ELAPSED` 24 jam setelah keluaran terakhir di atas ambang. Kejadian yang sudah berakhir bisa aktif lagi lewat `updated` (misal pembaruan CAP yang berlaku lagi); konsumen selalu menerima `created` lebih dulu.
+- **ID kejadian banjir** adalah UUIDv8 dari SHA-256 (ID titik, `meta.fetched_at` keluaran yang membuka kejadian). Satu titik pantau sungai (`river:<slug>`, debit GloFAS) atau sub-DAS (`catchment:<slug>`, indeks hujan) punya paling banyak satu kejadian aktif: dibuka keluaran pertama yang mencapai ambang Info di hari ini sampai +3 hari (tanggal UTC), `updated` di setiap keluaran yang lebih baru, tingkat mengikuti keluaran terbaru (paling rendah Info selama aktif), dan `expired` 24 jam setelah keluaran terakhir yang mencapai Info. Keluaran yang tidak lebih baru dari yang terakhir dinilai diabaikan. Detail di `flood` (penilaian per hari, ambang efektif, `max_level`); `source_event_id` = ID titik. Indeks hujan paling tinggi Siaga dan titik di hilir Waduk Jatiluhur juga dibatasi Siaga. Kejadian banjir belum punya area dan wilayah terdampak (ADR 0021).
 - **Wilayah terdampak** di `impacted_regions` dibatasi 100 kelurahan/desa (gempa: terdekat; cuaca: bagian luas tercakup terbesar, minimal `WEATHER_MIN_COVERAGE`); jumlah lengkapnya di `impacted_region_count` dan daftar lengkapnya di tabel `hazard.impact_region`.
 - **Tingkat** (`level`) adalah tingkat tertinggi di wilayah pantauan. Tingkat per lokasi pengguna dihitung alert-engine (fase 3).
 
