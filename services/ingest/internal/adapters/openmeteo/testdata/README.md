@@ -9,3 +9,4 @@ Direkam 2026-09-24 sekitar 12.40 UTC dengan `ambil-sampel-1d.sh` (fase 1d), jend
 | `udara-grid-4.json` | Sama untuk kualitas udara CAMS global |
 | `sungai-3.json` | Debit GloFAS harian (4 hari lalu + 10 hari ke depan, statistik ensemble) untuk titik perkiraan Majalaya, Dayeuhkolot, Nanjung |
 | `galat-lintang.json`, `galat-variabel.json` | Isi respons HTTP 400 |
+| `hujan-sub-das-47.json` | Hujan per jam `models=ecmwf_ifs`, `cell_selection=nearest` di 47 sel sub-DAS Citarum Hulu, 2026-10-01 sampai 2026-10-05 (diambil 2026-10-02 sekitar 01.10 UTC lewat browser; disusun ulang dari nilai per sel, jumlah per sel dicocokkan dengan respons asli) |

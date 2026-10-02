@@ -1,11 +1,14 @@
 // Package sitelist menyediakan titik pantau keluaran model grid per
-// provinsi: simpul grid 0,25° untuk cuaca dan kualitas udara, dan titik pantau
-// sungai untuk debit. Keduanya disematkan ke binary seperti daftar adm4
+// provinsi: simpul grid 0,25° untuk cuaca dan kualitas udara, titik pantau
+// sungai untuk debit, dan sub-DAS beserta sel model dan bobotnya untuk
+// indeks hujan. Semuanya disematkan ke binary seperti daftar adm4
 // (regionlist), jadi ingest tidak membaca schema layanan lain.
 //
 // Daftar grid dibuat `make grid-list` dari data batas wilayah yang sama dengan
 // ref.region. Daftar sungai berasal dari PRD (bagian Sungai yang dipantau)
 // dengan koordinat pusat sel GloFAS terpilih (docs/calibration/titik-sungai.md).
+// Daftar sub-DAS adalah salinan persis docs/calibration/sub-das-citarum-hulu.csv
+// (diperiksa test; salin ulang dengan `make calibration-copy`).
 package sitelist
 
 import (
@@ -21,6 +24,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/ramirezzServer/siaga/services/ingest/internal/domain/catchment"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/domain/series"
 )
 
@@ -55,6 +59,45 @@ func Rivers(province string) ([]series.Site, error) {
 		return nil, fmt.Errorf("%w: sungai %q", ErrUnknownProvince, province)
 	}
 	return ParseRivers(b)
+}
+
+// Catchments mengembalikan sub-DAS indeks hujan satu provinsi. Provinsi tanpa
+// daftar sub-DAS mengembalikan ErrUnknownProvince.
+func Catchments(province string) ([]catchment.Basin, error) {
+	b, err := data.ReadFile("data/catchments_" + province + ".csv")
+	if err != nil {
+		return nil, fmt.Errorf("%w: sub-DAS %q", ErrUnknownProvince, province)
+	}
+	return catchment.Parse(bytes.NewReader(b))
+}
+
+// Lists adalah semua titik Open-Meteo beberapa provinsi.
+type Lists struct {
+	Grid, Rivers []series.Site
+	Catchments   []catchment.Basin
+}
+
+// ForProvinces menggabungkan daftar titik provinsi-provinsi, urut seperti
+// argumen. Grid dan sungai wajib ada untuk setiap provinsi; sub-DAS hanya
+// untuk provinsi yang punya daftarnya (saat ini 32).
+func ForProvinces(provinces []string) (Lists, error) {
+	var out Lists
+	for _, p := range provinces {
+		g, err := Grid(p)
+		if err != nil {
+			return Lists{}, err
+		}
+		r, err := Rivers(p)
+		if err != nil {
+			return Lists{}, err
+		}
+		c, err := Catchments(p)
+		if err != nil && !errors.Is(err, ErrUnknownProvince) {
+			return Lists{}, err
+		}
+		out.Grid, out.Rivers, out.Catchments = append(out.Grid, g...), append(out.Rivers, r...), append(out.Catchments, c...)
+	}
+	return out, nil
 }
 
 // ParseGrid membaca daftar simpul "lintang,bujur" satu per baris. Baris

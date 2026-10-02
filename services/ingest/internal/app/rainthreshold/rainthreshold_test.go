@@ -11,6 +11,7 @@ import (
 
 	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/openmeteo/openmeteotest"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/app/reanalysis"
+	"github.com/ramirezzServer/siaga/services/ingest/internal/domain/catchment"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/domain/series"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/domain/threshold"
 )
@@ -32,7 +33,7 @@ func storm(_, lon float64, day time.Time, step int) float64 {
 }
 
 func TestCompute(t *testing.T) {
-	basins, err := ReadBasins(strings.NewReader(`# uji
+	basins, err := catchment.Parse(strings.NewReader(`# uji
 subdas,nama,sel_lat,sel_lon,bobot
 uji,Uji,-7.0,107.5,0.5
 uji,Uji,-7.0,107.6,0.5
@@ -44,7 +45,7 @@ lain,Lain,-7.0,107.5,1
 	src := Source("https://archive.test/v1/archive", DefaultModel, DefaultFrom, DefaultTo)
 	f := &openmeteotest.Fake{Value: storm}
 	l := &reanalysis.Loader{Fetch: f, Clock: &openmeteotest.Clock{}, Cache: reanalysis.NewCache(src)}
-	cells := Cells(basins)
+	cells := catchment.Cells(basins)
 	if len(cells) != 2 {
 		t.Fatalf("%v", cells)
 	}
@@ -122,27 +123,6 @@ func sameSet(a, b threshold.Set) bool {
 	return true
 }
 
-func TestReadBasinsErrors(t *testing.T) {
-	head := "subdas,nama,sel_lat,sel_lon,bobot\n"
-	for name, body := range map[string]string{
-		"header": "a,b\n",
-		"kosong": head,
-		"angka":  head + "a,A,x,107,1\n",
-		"slug":   head + "Sub DAS,A,-7,107,1\n",
-		"nama":   head + "a, ,-7,107,1\n",
-		"lokasi": head + "a,A,40,107,1\n",
-		"bobot":  head + "a,A,-7,107,0\n",
-		"jumlah": head + "a,A,-7,107,0.6\na,A,-7.1,107,0.3\n",
-		"ganda":  head + "a,A,-7,107,0.5\na,A,-7.00001,107,0.5\n",
-		"beda":   head + "a,A,-7,107,0.5\na,B,-7.1,107,0.5\n",
-		"kolom":  head + "a,A,-7,107\n",
-	} {
-		if _, err := ReadBasins(strings.NewReader(body)); err == nil {
-			t.Errorf("%s harus ditolak", name)
-		}
-	}
-}
-
 // TestRepoBasins memastikan daftar sub-DAS di repo utuh.
 func TestRepoBasins(t *testing.T) {
 	f, err := os.Open("../../../../../docs/calibration/sub-das-citarum-hulu.csv")
@@ -150,7 +130,7 @@ func TestRepoBasins(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer func() { _ = f.Close() }()
-	basins, err := ReadBasins(f)
+	basins, err := catchment.Parse(f)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -160,11 +140,11 @@ func TestRepoBasins(t *testing.T) {
 		ids[i] = b.ID
 		rows += len(b.Cells)
 	}
-	if strings.Join(ids, ",") != "cirasea,cisangkuy,ciwidey,citarik,ciminyak,cihaur,cikapundung" || rows != 79 || len(Cells(basins)) != 47 {
-		t.Fatalf("%v, %d baris, %d sel", ids, rows, len(Cells(basins)))
+	if strings.Join(ids, ",") != "cirasea,cisangkuy,ciwidey,citarik,ciminyak,cihaur,cikapundung" || rows != 79 || len(catchment.Cells(basins)) != 47 {
+		t.Fatalf("%v, %d baris, %d sel", ids, rows, len(catchment.Cells(basins)))
 	}
 	src := Source(DefaultArchiveURL, DefaultModel, DefaultFrom, DefaultTo)
-	if calls := float64(len(Cells(basins))) * src.Weight(); calls > 1000 {
+	if calls := float64(len(catchment.Cells(basins))) * src.Weight(); calls > 1000 {
 		t.Fatalf("±%.0f panggilan", calls)
 	}
 }

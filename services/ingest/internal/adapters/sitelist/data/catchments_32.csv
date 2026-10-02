@@ -1,0 +1,98 @@
+# Tujuh sub-DAS Citarum Hulu untuk indeks hujan (PRD, Anak sungai di zona fokus Bandung Raya dan Batas kemampuan data).
+# Poligon = gabungan unit HydroBASINS v1c level 12 (HydroSHEDS, Lehner & Grill 2013, https://www.hydrosheds.org; atribusi wajib).
+# Unit dikelompokkan menurut topologi NEXT_DOWN dan dicocokkan dengan alur sungai OSM (Overpass, 2026-10-01). Outlet: unit 5120207670
+# di Waduk Saguling, luas hulu 2.205 km² (Walungan: 2.123 km²).
+#
+# Cirasea      408.9 km²  unit 5120669570 5120208150 5120208070 5120208080 5120208020; alur utama Citarum dari Situ Cisanti sampai Dayeuhkolot
+# Citarik      526.1 km²  unit 5120669370 5120208090 5120208030 5120207920 5120207880; termasuk Cikeruh, Cidurian, Cipamokolan, dan Cicadas (bermuara bersama Cikeruh di unit 5120208030)
+# Cisangkuy    290.5 km²  unit 5120208110 5120669650; dari Situ Cileunca, bermuara di Baleendah
+# Cikapundung  154.0 km²  unit 5120208000; dari Bukit Tunggul melewati Kota Bandung
+# Ciwidey      285.4 km²  unit 5120208050 5120208060; dari Gunung Patuha, termasuk sisi selatan Citarum Dayeuhkolot–Nanjung
+# Cihaur       302.9 km²  unit 5120207760 5120207770 5120207520 5120207490; Cimahi, Cibeureum, Cisangkan dari Tangkuban Parahu sampai Curug Jompong, termasuk sisi utara Waduk Saguling
+# Ciminyak     237.1 km²  unit 5120207720 5120207610 5120207670; dari Gununghalu ke Waduk Saguling, termasuk sisi selatan waduk
+#
+# Sel = pusat sel model ecmwf_ifs Open-Meteo (minta dengan cell_selection=nearest; cek 2026-10-01: 100 dari 100 titik sampel
+# jatuh ke sel terdekat yang sama, dan arsip menjawab sel yang sama untuk pusat sel). Bobot = bagian luas sub-DAS yang sel
+# terdekatnya sel itu, dari sampel kisi 0,01° berbobot cos(lintang); jumlah per sub-DAS 1 (±0,002, pembulatan 4 desimal).
+# Sel yang sama bisa dipakai lebih dari satu sub-DAS. Diubah manual hanya bila pembagian sub-DAS berubah (ADR 0020).
+# 79 baris, 47 sel unik
+subdas,nama,sel_lat,sel_lon,bobot
+cirasea,Cirasea,-6.9244,107.6813,0.0091
+cirasea,Cirasea,-6.9947,107.6202,0.0667
+cirasea,Cirasea,-6.9947,107.6962,0.1182
+cirasea,Cirasea,-6.9947,107.7721,0.0242
+cirasea,Cirasea,-7.0650,107.6351,0.0576
+cirasea,Cirasea,-7.0650,107.7112,0.1697
+cirasea,Cirasea,-7.0650,107.7872,0.0636
+cirasea,Cirasea,-7.1353,107.6500,0.1121
+cirasea,Cirasea,-7.1353,107.7261,0.1515
+cirasea,Cirasea,-7.1353,107.8022,0.0545
+cirasea,Cirasea,-7.2056,107.6650,0.1272
+cirasea,Cirasea,-7.2056,107.7411,0.0454
+cisangkuy,Cisangkuy,-6.9947,107.5443,0.0172
+cisangkuy,Cisangkuy,-6.9947,107.6202,0.0644
+cisangkuy,Cisangkuy,-7.0650,107.5591,0.1760
+cisangkuy,Cisangkuy,-7.0650,107.6351,0.1374
+cisangkuy,Cisangkuy,-7.1353,107.4979,0.0558
+cisangkuy,Cisangkuy,-7.1353,107.5740,0.2189
+cisangkuy,Cisangkuy,-7.1353,107.6500,0.0815
+cisangkuy,Cisangkuy,-7.2056,107.5127,0.1030
+cisangkuy,Cisangkuy,-7.2056,107.5888,0.1287
+cisangkuy,Cisangkuy,-7.2056,107.6650,0.0172
+ciwidey,Ciwidey,-6.9244,107.6054,0.0255
+ciwidey,Ciwidey,-6.9947,107.4683,0.0511
+ciwidey,Ciwidey,-6.9947,107.5443,0.1362
+ciwidey,Ciwidey,-6.9947,107.6202,0.0426
+ciwidey,Ciwidey,-7.0650,107.4071,0.0723
+ciwidey,Ciwidey,-7.0650,107.4831,0.1957
+ciwidey,Ciwidey,-7.0650,107.5591,0.0596
+ciwidey,Ciwidey,-7.1353,107.4218,0.2085
+ciwidey,Ciwidey,-7.1353,107.4979,0.1744
+ciwidey,Ciwidey,-7.2056,107.4365,0.0213
+ciwidey,Ciwidey,-7.2056,107.5127,0.0128
+citarik,Citarik,-6.8541,107.5906,0.0047
+citarik,Citarik,-6.8541,107.6664,0.0679
+citarik,Citarik,-6.8541,107.7422,0.1007
+citarik,Citarik,-6.8541,107.8180,0.0328
+citarik,Citarik,-6.9244,107.6054,0.0141
+citarik,Citarik,-6.9244,107.6813,0.1171
+citarik,Citarik,-6.9244,107.7572,0.1312
+citarik,Citarik,-6.9244,107.8330,0.0749
+citarik,Citarik,-6.9244,107.9089,0.0351
+citarik,Citarik,-6.9947,107.6962,0.0281
+citarik,Citarik,-6.9947,107.7721,0.1101
+citarik,Citarik,-6.9947,107.8481,0.1311
+citarik,Citarik,-6.9947,107.9240,0.0258
+citarik,Citarik,-7.0650,107.7872,0.0796
+citarik,Citarik,-7.0650,107.8632,0.0351
+citarik,Citarik,-7.1353,107.8022,0.0117
+ciminyak,Ciminyak,-6.8541,107.3631,0.0156
+ciminyak,Ciminyak,-6.8541,107.4389,0.0156
+ciminyak,Ciminyak,-6.9244,107.3777,0.1719
+ciminyak,Ciminyak,-6.9244,107.4536,0.1563
+ciminyak,Ciminyak,-6.9244,107.5295,0.0104
+ciminyak,Ciminyak,-6.9947,107.3165,0.0052
+ciminyak,Ciminyak,-6.9947,107.3924,0.2656
+ciminyak,Ciminyak,-6.9947,107.4683,0.2240
+ciminyak,Ciminyak,-7.0650,107.3311,0.0052
+ciminyak,Ciminyak,-7.0650,107.4071,0.1042
+ciminyak,Ciminyak,-7.0650,107.4831,0.0260
+cihaur,Cihaur,-6.7135,107.5610,0.0163
+cihaur,Cihaur,-6.7838,107.5758,0.1184
+cihaur,Cihaur,-6.7838,107.6515,0.0245
+cihaur,Cihaur,-6.8541,107.4389,0.1306
+cihaur,Cihaur,-6.8541,107.5148,0.1755
+cihaur,Cihaur,-6.8541,107.5906,0.1388
+cihaur,Cihaur,-6.9244,107.4536,0.0775
+cihaur,Cihaur,-6.9244,107.5295,0.2245
+cihaur,Cihaur,-6.9244,107.6054,0.0245
+cihaur,Cihaur,-6.9947,107.4683,0.0082
+cihaur,Cihaur,-6.9947,107.5443,0.0612
+cikapundung,Cikapundung,-6.7838,107.6515,0.1955
+cikapundung,Cikapundung,-6.7838,107.7273,0.0827
+cikapundung,Cikapundung,-6.8541,107.5906,0.1504
+cikapundung,Cikapundung,-6.8541,107.6664,0.1579
+cikapundung,Cikapundung,-6.8541,107.7422,0.0902
+cikapundung,Cikapundung,-6.9244,107.6054,0.2406
+cikapundung,Cikapundung,-6.9244,107.6813,0.0150
+cikapundung,Cikapundung,-6.9947,107.6202,0.0677

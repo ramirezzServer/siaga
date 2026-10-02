@@ -133,8 +133,9 @@ func TestPlan(t *testing.T) {
 	for _, j := range jobs {
 		byName[j.Poller.Name()] = j.Interval
 	}
-	if len(jobs) != 8 || len(sweepers) != 1 || byName["bmkg-cap"] != 2*time.Minute ||
-		byName["openmeteo-cuaca"] != time.Hour || byName["openmeteo-udara"] != time.Hour || byName["openmeteo-sungai"] != 6*time.Hour {
+	if len(jobs) != 9 || len(sweepers) != 1 || byName["bmkg-cap"] != 2*time.Minute ||
+		byName["openmeteo-cuaca"] != time.Hour || byName["openmeteo-udara"] != time.Hour || byName["openmeteo-sungai"] != 6*time.Hour ||
+		byName["openmeteo-hujan"] != 3*time.Hour {
 		t.Fatalf("%d job, %d sapuan: %v", len(jobs), len(sweepers), byName)
 	}
 	st := sweepers[0].Snapshot()
@@ -202,17 +203,24 @@ func TestOpenMeteoQuota(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// Satu lokasi = satu panggilan: semua permintaan ≤ 14 hari dan ≤ 10
+	// variabel (bobot Open-Meteo max(1, hari/14 × variabel/10), temuan 1e-1).
 	var perDay, burst float64
+	byName := map[string]float64{}
 	for _, c := range specs {
 		sites := float64(c.conn.(interface{ Sites() int }).Sites())
-		perDay += sites * float64(24*time.Hour) / float64(c.interval)
+		calls := sites * float64(24*time.Hour) / float64(c.interval)
+		perDay += calls
 		burst += sites
+		byName[c.conn.Name()] = calls
 		if c.budget != "openmeteo" {
 			t.Fatalf("%s memakai anggaran %s", c.conn.Name(), c.budget)
 		}
 	}
-	if perDay > 6000 || burst > 300 {
-		t.Fatalf("Open-Meteo %.0f lokasi/hari, %.0f lokasi sekaligus", perDay, burst)
+	// Cuaca dan udara 70 simpul × 24, sungai 38 × 4, hujan sub-DAS 47 sel × 8
+	// (ADR 0020 butir 8): 3.888 dari 10.000 per hari, sisanya untuk kalibrasi.
+	if perDay > 6000 || burst > 300 || perDay != 3888 || byName["openmeteo-hujan"] != 376 {
+		t.Fatalf("Open-Meteo %.0f lokasi/hari (%v), %.0f lokasi sekaligus", perDay, byName, burst)
 	}
 	s, _ = config(lookup(map[string]string{"INGEST_OPENMETEO_PROVINCES": ","}))
 	if specs, err := openMeteoConnectors(s, time.Now); err != nil || len(specs) != 0 {
@@ -241,7 +249,7 @@ func TestPlanKeyedSources(t *testing.T) {
 	for _, j := range jobs {
 		byName[j.Poller.Name()] = j.Interval
 	}
-	if len(jobs) != 13 || byName["openaq-stasiun"] != 15*time.Minute || byName["firms-viirs-snpp-nrt"] != 30*time.Minute ||
+	if len(jobs) != 14 || byName["openaq-stasiun"] != 15*time.Minute || byName["firms-viirs-snpp-nrt"] != 30*time.Minute ||
 		byName["firms-modis-nrt"] != 30*time.Minute {
 		t.Fatalf("%d job: %v", len(jobs), byName)
 	}

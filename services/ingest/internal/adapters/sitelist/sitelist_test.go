@@ -1,7 +1,9 @@
 package sitelist
 
 import (
+	"bytes"
 	"errors"
+	"os"
 	"strings"
 	"testing"
 )
@@ -28,6 +30,33 @@ func TestEmbeddedLists(t *testing.T) {
 		if _, err := Rivers(p); !errors.Is(err, ErrUnknownProvince) {
 			t.Error(err)
 		}
+		if _, err := Catchments(p); !errors.Is(err, ErrUnknownProvince) {
+			t.Error(err)
+		}
+	}
+	basins, err := Catchments("32")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(basins) != 7 || basins[6].SiteID() != "catchment:cikapundung" {
+		t.Fatalf("%d sub-DAS, terakhir %+v", len(basins), basins[len(basins)-1])
+	}
+}
+
+// TestCatchmentsMatchCalibration memastikan salinan daftar sub-DAS sama persis
+// dengan sumbernya, jadi konektor memakai sel dan bobot yang sama dengan
+// kalibrasi ambang.
+func TestCatchmentsMatchCalibration(t *testing.T) {
+	src, err := os.ReadFile("../../../../../docs/calibration/sub-das-citarum-hulu.csv")
+	if err != nil {
+		t.Fatal(err)
+	}
+	embedded, err := data.ReadFile("data/catchments_32.csv")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(src, embedded) {
+		t.Fatal("data/catchments_32.csv berbeda dari docs/calibration/sub-das-citarum-hulu.csv; jalankan make calibration-copy")
 	}
 }
 
@@ -70,5 +99,21 @@ func TestParseRiversErrors(t *testing.T) {
 		if _, err := ParseRivers([]byte(body)); err == nil {
 			t.Errorf("%s: seharusnya gagal", name)
 		}
+	}
+}
+
+func TestForProvinces(t *testing.T) {
+	l, err := ForProvinces([]string{"32"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(l.Grid) != 70 || len(l.Rivers) != 38 || len(l.Catchments) != 7 {
+		t.Fatalf("%d grid, %d sungai, %d sub-DAS", len(l.Grid), len(l.Rivers), len(l.Catchments))
+	}
+	if _, err := ForProvinces([]string{"32", "99"}); !errors.Is(err, ErrUnknownProvince) {
+		t.Fatal(err)
+	}
+	if l, err := ForProvinces(nil); err != nil || len(l.Grid)+len(l.Rivers)+len(l.Catchments) != 0 {
+		t.Fatalf("%+v %v", l, err)
 	}
 }

@@ -9,7 +9,8 @@
 // (bmkg-prakiraan, raw.forecast.bmkg), dan Open-Meteo: cuaca grid 0,25°
 // (openmeteo-cuaca, raw.forecast.openmeteo), kualitas udara CAMS
 // (openmeteo-udara, raw.aq.openmeteo), debit sungai GloFAS
-// (openmeteo-sungai, raw.flood.openmeteo); stasiun kualitas udara OpenAQ
+// (openmeteo-sungai, raw.flood.openmeteo), hujan sub-DAS Citarum Hulu ECMWF
+// IFS (openmeteo-hujan, raw.rain.openmeteo); stasiun kualitas udara OpenAQ
 // (openaq-stasiun, raw.aq.openaq) dan titik panas NASA FIRMS
 // (firms-*, raw.fire.firms). Dua yang terakhir butuh key gratis
 // (OPENAQ_API_KEY, FIRMS_MAP_KEY); tanpa key, konektornya tidak dijalankan.
@@ -64,7 +65,6 @@ import (
 	"github.com/ramirezzServer/siaga/services/ingest/internal/app/sweep"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/domain/area"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/domain/forecast"
-	"github.com/ramirezzServer/siaga/services/ingest/internal/domain/series"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/ports"
 )
 
@@ -239,10 +239,13 @@ func connectors(s settings) []connectorSpec {
 }
 
 // Interval Open-Meteo (dokumen arsitektur): grid cuaca dan udara tiap jam,
-// titik pantau sungai tiap 6 jam (GloFAS diperbarui sekali sehari).
+// titik pantau sungai tiap 6 jam (GloFAS diperbarui sekali sehari), hujan
+// sub-DAS tiap 3 jam (ECMWF IFS diperbarui empat kali sehari; ADR 0020
+// butir 8).
 const (
 	openMeteoGridInterval  = time.Hour
 	openMeteoFloodInterval = 6 * time.Hour
+	openMeteoRainInterval  = 3 * time.Hour
 )
 
 // openMeteoConnectors membuat konektor Open-Meteo untuk provinsi yang
@@ -251,35 +254,36 @@ func openMeteoConnectors(s settings, now func() time.Time) ([]connectorSpec, err
 	if len(s.openMeteoProvinces) == 0 {
 		return nil, nil
 	}
-	var grid, rivers []series.Site
-	for _, p := range s.openMeteoProvinces {
-		g, err := sitelist.Grid(p)
-		if err != nil {
-			return nil, err
-		}
-		r, err := sitelist.Rivers(p)
-		if err != nil {
-			return nil, err
-		}
-		grid, rivers = append(grid, g...), append(rivers, r...)
-	}
-	weather, err := openmeteo.NewWeatherConnector(s.openMeteoWeatherURL, grid, now)
+	lists, err := sitelist.ForProvinces(s.openMeteoProvinces)
 	if err != nil {
 		return nil, err
 	}
-	air, err := openmeteo.NewAirQualityConnector(s.openMeteoAirURL, grid, now)
+	weather, err := openmeteo.NewWeatherConnector(s.openMeteoWeatherURL, lists.Grid, now)
 	if err != nil {
 		return nil, err
 	}
-	flood, err := openmeteo.NewDischargeConnector(s.openMeteoFloodURL, rivers, now)
+	air, err := openmeteo.NewAirQualityConnector(s.openMeteoAirURL, lists.Grid, now)
 	if err != nil {
 		return nil, err
 	}
-	return []connectorSpec{
+	flood, err := openmeteo.NewDischargeConnector(s.openMeteoFloodURL, lists.Rivers, now)
+	if err != nil {
+		return nil, err
+	}
+	out := []connectorSpec{
 		{conn: weather, interval: openMeteoGridInterval, budget: "openmeteo"},
 		{conn: air, interval: openMeteoGridInterval, budget: "openmeteo"},
 		{conn: flood, interval: openMeteoFloodInterval, budget: "openmeteo"},
-	}, nil
+	}
+	if len(lists.Catchments) > 0 {
+		// Endpoint sama dengan cuaca grid (Forecast API), model ecmwf_ifs.
+		rain, err := openmeteo.NewRainConnector(s.openMeteoWeatherURL, lists.Catchments, now)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, connectorSpec{conn: rain, interval: openMeteoRainInterval, budget: "openmeteo"})
+	}
+	return out, nil
 }
 
 // Interval polling RSS peringatan dini (dokumen arsitektur: 2 menit).

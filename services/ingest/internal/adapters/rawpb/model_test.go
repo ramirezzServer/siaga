@@ -89,6 +89,39 @@ func TestAirQualityAndDischargeEvents(t *testing.T) {
 	}
 }
 
+func TestCatchmentRainfallEvent(t *testing.T) {
+	basin := series.Site{ID: "catchment:cikapundung", Name: "Cikapundung", Requested: series.LatLon{Lat: -6.82, Lon: 107.62}}
+	s := seriesOf(series.RainfallSpec, basin, pf(4.25))
+	s.Cell = basin.Requested
+	ev, err := NewCatchmentRainfallEvent(s, 3)
+	if err != nil {
+		t.Fatal(err)
+	}
+	m := ev.(*ModelEvent).Message().(*rawv1.CatchmentRainfallForecast)
+	if ev.Subject() != "raw.rain.openmeteo" || ev.Key() != "catchment:cikapundung" || m.GetCellCount() != 3 ||
+		len(m.GetSteps()) != 1 || m.GetSteps()[0].GetPrecipitationMm() != 4.25 || m.GetSource() != hazardv1.Source_SOURCE_OPEN_METEO {
+		t.Fatalf("%v", m)
+	}
+	b, err := ev.Encode(ports.FetchMeta{Connector: "openmeteo-hujan", FetchedAt: time.Date(2026, 10, 2, 1, 0, 0, 0, time.UTC)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var back rawv1.CatchmentRainfallForecast
+	if err := proto.Unmarshal(b, &back); err != nil || back.GetMeta().GetConnector() != "openmeteo-hujan" {
+		t.Fatalf("%v %v", err, back.GetMeta())
+	}
+	s.Values[0][0] = nil
+	if ev, err := NewCatchmentRainfallEvent(s, 3); err != nil || len(ev.(*ModelEvent).Message().(*rawv1.CatchmentRainfallForecast).GetSteps()) != 0 {
+		t.Fatalf("langkah kosong dilewati: %v", err)
+	}
+	if _, err := NewCatchmentRainfallEvent(s, 0); err == nil {
+		t.Fatal("jumlah sel nol harus ditolak")
+	}
+	if _, err := NewCatchmentRainfallEvent(seriesOf(series.WeatherSpec, gridSite, pf(1)), 1); err == nil {
+		t.Fatal("deret cuaca sebagai hujan sub-DAS harus ditolak")
+	}
+}
+
 func TestModelEventRejectsShapeMismatch(t *testing.T) {
 	s := seriesOf(series.WeatherSpec, gridSite, pf(1))
 	if _, err := NewAirQualityEvent(s); err == nil {

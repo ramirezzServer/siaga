@@ -44,7 +44,6 @@ import (
 	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/usgs"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/app/replay"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/app/stations"
-	"github.com/ramirezzServer/siaga/services/ingest/internal/domain/series"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/ports"
 )
 
@@ -163,31 +162,30 @@ func feeds(provinces []string) ([]replay.Feed, error) {
 		bmkg.NewForecastSource(bmkg.DefaultForecastURL).Replay(),
 		openaq.NewReplayFeed(stations.DefaultOptions().MaxAge))
 	if len(provinces) > 0 {
-		var grid, rivers []series.Site
-		for _, p := range provinces {
-			g, err := sitelist.Grid(p)
-			if err != nil {
-				return nil, err
-			}
-			r, err := sitelist.Rivers(p)
-			if err != nil {
-				return nil, err
-			}
-			grid, rivers = append(grid, g...), append(rivers, r...)
-		}
-		weather, err := openmeteo.NewWeatherConnector(openmeteo.DefaultWeatherURL, grid, time.Now)
+		lists, err := sitelist.ForProvinces(provinces)
 		if err != nil {
 			return nil, err
 		}
-		air, err := openmeteo.NewAirQualityConnector(openmeteo.DefaultAirURL, grid, time.Now)
+		weather, err := openmeteo.NewWeatherConnector(openmeteo.DefaultWeatherURL, lists.Grid, time.Now)
 		if err != nil {
 			return nil, err
 		}
-		flood, err := openmeteo.NewDischargeConnector(openmeteo.DefaultFloodURL, rivers, time.Now)
+		air, err := openmeteo.NewAirQualityConnector(openmeteo.DefaultAirURL, lists.Grid, time.Now)
+		if err != nil {
+			return nil, err
+		}
+		flood, err := openmeteo.NewDischargeConnector(openmeteo.DefaultFloodURL, lists.Rivers, time.Now)
 		if err != nil {
 			return nil, err
 		}
 		out = append(out, weather, air, flood)
+		if len(lists.Catchments) > 0 {
+			rain, err := openmeteo.NewRainConnector(openmeteo.DefaultWeatherURL, lists.Catchments, time.Now)
+			if err != nil {
+				return nil, err
+			}
+			out = append(out, rain)
+		}
 	}
 	for _, p := range firms.NewParsers() {
 		out = append(out, p)

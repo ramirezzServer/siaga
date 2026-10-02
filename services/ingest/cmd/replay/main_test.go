@@ -193,7 +193,7 @@ func TestReplayFlags(t *testing.T) {
 	if err := run(t.Context(), []string{"-list"}, lookup(nil), &out, io.Discard); err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{"bmkg-autogempa", "usgs-2.5-day", "openmeteo-sungai", "firms-modis-nrt", "bmkg-prakiraan", "openaq-stasiun"} {
+	for _, want := range []string{"bmkg-autogempa", "usgs-2.5-day", "openmeteo-sungai", "openmeteo-hujan", "firms-modis-nrt", "bmkg-prakiraan", "openaq-stasiun"} {
 		if !strings.Contains(out.String(), want+"\n") {
 			t.Errorf("-list tanpa %s:\n%s", want, out.String())
 		}

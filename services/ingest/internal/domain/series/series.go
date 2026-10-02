@@ -98,6 +98,16 @@ var (
 			{Name: "dust", Unit: "μg/m³", Min: 0, Max: 50000},
 		},
 	}
+	// RainfallSpec adalah hujan per jam rata-rata wilayah sub-DAS (konektor
+	// openmeteo-hujan). Titik sub-DAS tidak punya sel tunggal: "sel" adalah
+	// titik berat sel-sel yang dirata-rata, sama dengan titik yang diminta.
+	RainfallSpec = Spec{
+		Dataset: Weather, Step: time.Hour, MaxSteps: 24 * 7,
+		MaxPast: 2 * day, MaxFuture: 6 * day, MaxCellOffset: 0,
+		Vars: []Var{
+			{Name: "precipitation", Unit: "mm", Min: 0, Max: 300},
+		},
+	}
 	DischargeSpec = Spec{
 		Dataset: Discharge, Step: day, MaxSteps: 31,
 		MaxPast: 10 * day, MaxFuture: 20 * day, MaxCellOffset: 0.1,
@@ -136,6 +146,7 @@ type Site struct {
 var (
 	gridID  = regexp.MustCompile(`^grid:(-?[0-9]{1,2}\.[0-9]{2}):(-?[0-9]{1,3}\.[0-9]{2})$`)
 	riverID = regexp.MustCompile(`^river:[a-z0-9]+(-[a-z0-9]+)*$`)
+	basinID = regexp.MustCompile(`^catchment:[a-z0-9]+(-[a-z0-9]+)*$`)
 	model   = regexp.MustCompile(`^[a-z0-9_]{1,40}$`)
 )
 
@@ -146,6 +157,9 @@ func GridID(p LatLon) string {
 
 // RiverID membentuk ID titik pantau sungai dari slug, misal "river:citarum-dayeuhkolot".
 func RiverID(slug string) string { return "river:" + slug }
+
+// CatchmentID membentuk ID titik sub-DAS dari slug, misal "catchment:cikapundung".
+func CatchmentID(slug string) string { return "catchment:" + slug }
 
 // ValidSiteID melaporkan apakah id berformat ID titik yang dikenal. ID grid
 // harus cocok persis dengan koordinat yang dibulatkan ke GridDecimals.
@@ -158,7 +172,7 @@ func ValidSiteID(id string) bool {
 		lon, err2 := strconv.ParseFloat(m[2], 64)
 		return err1 == nil && err2 == nil && GridID(LatLon{lat, lon}) == id
 	}
-	return riverID.MatchString(id)
+	return riverID.MatchString(id) || basinID.MatchString(id)
 }
 
 // Series adalah deret waktu satu titik dari satu model. Values[v][i] adalah

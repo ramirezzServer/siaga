@@ -9,20 +9,18 @@
 package rainthreshold
 
 import (
-	"bytes"
 	"cmp"
 	"encoding/csv"
-	"errors"
 	"fmt"
 	"io"
 	"math"
-	"regexp"
 	"slices"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/ramirezzServer/siaga/services/ingest/internal/app/reanalysis"
+	"github.com/ramirezzServer/siaga/services/ingest/internal/domain/catchment"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/domain/series"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/domain/threshold"
 )
@@ -48,10 +46,6 @@ var Windows = []int{3, 6, 24}
 // tahun, jadi persentil 99,5 masih ditopang ±13 hari.
 const MinDays = 2555
 
-// WeightTolerance adalah selisih terbesar jumlah bobot sel satu sub-DAS dari
-// 1 (bobot ditulis 4 desimal).
-const WeightTolerance = 0.002
-
 // Source mengembalikan sumber hujan per jam model untuk periode from..to.
 func Source(endpoint, model string, from, to time.Time) reanalysis.Source {
 	return reanalysis.Source{
@@ -60,104 +54,9 @@ func Source(endpoint, model string, from, to time.Time) reanalysis.Source {
 	}
 }
 
-// Basin adalah satu sub-DAS: sel model yang menutupinya dan bagian luasnya.
-type Basin struct {
-	ID, Name string
-	Cells    []series.LatLon
-	Weights  []float64
-}
-
-var slug = regexp.MustCompile(`^[a-z0-9]+(-[a-z0-9]+)*$`)
-
-// ReadBasins membaca CSV subdas,nama,sel_lat,sel_lon,bobot (baris komentar
-// # dilewati), satu baris per sel per sub-DAS.
-func ReadBasins(r io.Reader) ([]Basin, error) {
-	const header = "subdas,nama,sel_lat,sel_lon,bobot"
-	raw, err := io.ReadAll(r)
-	if err != nil {
-		return nil, err
-	}
-	var body bytes.Buffer
-	for line := range strings.SplitSeq(string(raw), "\n") {
-		if t := strings.TrimSpace(line); t != "" && !strings.HasPrefix(t, "#") {
-			body.WriteString(line)
-			body.WriteByte('\n')
-		}
-	}
-	cr := csv.NewReader(&body)
-	cr.FieldsPerRecord = 5
-	recs, err := cr.ReadAll()
-	if err != nil {
-		return nil, fmt.Errorf("CSV sub-DAS: %w", err)
-	}
-	if len(recs) == 0 || strings.Join(recs[0], ",") != header {
-		return nil, fmt.Errorf("header CSV sub-DAS harus %s", header)
-	}
-	var out []Basin
-	index := map[string]int{}
-	for _, rec := range recs[1:] {
-		lat, err1 := strconv.ParseFloat(rec[2], 64)
-		lon, err2 := strconv.ParseFloat(rec[3], 64)
-		w, err3 := strconv.ParseFloat(rec[4], 64)
-		if err := errors.Join(err1, err2, err3); err != nil {
-			return nil, fmt.Errorf("sub-DAS %s: %w", rec[0], err)
-		}
-		cell := series.LatLon{Lat: lat, Lon: lon}
-		switch {
-		case !slug.MatchString(rec[0]) || strings.TrimSpace(rec[1]) == "":
-			return nil, fmt.Errorf("sub-DAS %q: id bukan slug atau nama kosong", rec[0])
-		case !series.InIndonesia(cell):
-			return nil, fmt.Errorf("sub-DAS %s: sel %v,%v di luar Indonesia", rec[0], lat, lon)
-		case !(w > 0 && w <= 1):
-			return nil, fmt.Errorf("sub-DAS %s: bobot %v di luar (0, 1]", rec[0], w)
-		}
-		i, ok := index[rec[0]]
-		if !ok {
-			i = len(out)
-			index[rec[0]] = i
-			out = append(out, Basin{ID: rec[0], Name: strings.TrimSpace(rec[1])})
-		}
-		b := &out[i]
-		if b.Name != strings.TrimSpace(rec[1]) {
-			return nil, fmt.Errorf("sub-DAS %s: nama berbeda antarbaris", rec[0])
-		}
-		if slices.Contains(b.Cells, reanalysis.Key(cell)) {
-			return nil, fmt.Errorf("sub-DAS %s: sel %v,%v ganda", rec[0], lat, lon)
-		}
-		b.Cells = append(b.Cells, reanalysis.Key(cell))
-		b.Weights = append(b.Weights, w)
-	}
-	for _, b := range out {
-		total := 0.0
-		for _, w := range b.Weights {
-			total += w
-		}
-		if math.Abs(total-1) > WeightTolerance {
-			return nil, fmt.Errorf("sub-DAS %s: jumlah bobot %.4f, harus 1", b.ID, total)
-		}
-	}
-	if len(out) == 0 {
-		return nil, errors.New("CSV sub-DAS kosong")
-	}
-	return out, nil
-}
-
-// Cells mengembalikan sel unik semua sub-DAS, urutan tetap.
-func Cells(basins []Basin) []series.LatLon {
-	var out []series.LatLon
-	for _, b := range basins {
-		for _, c := range b.Cells {
-			if !slices.Contains(out, c) {
-				out = append(out, c)
-			}
-		}
-	}
-	return out
-}
-
 // Result adalah ambang satu sub-DAS untuk satu jendela akumulasi.
 type Result struct {
-	Basin      Basin
+	Basin      catchment.Basin
 	Hours      int
 	Thresholds threshold.Set
 	// Valid adalah jumlah hari berisi.
@@ -172,20 +71,17 @@ const TopDays = 5
 
 // Compute menghitung ambang setiap sub-DAS dan jendela dari deret hujan per
 // jam setiap sel (kunci reanalysis.Key).
-func Compute(src reanalysis.Source, basins []Basin, data map[series.LatLon][]float64) ([]Result, error) {
+func Compute(src reanalysis.Source, basins []catchment.Basin, data map[series.LatLon][]float64) ([]Result, error) {
 	var out []Result
 	for _, b := range basins {
-		cells := make([][]float64, len(b.Cells))
-		for i, c := range b.Cells {
-			vs, ok := data[reanalysis.Key(c)]
-			if !ok || len(vs) != src.Steps() {
+		for _, c := range b.Cells {
+			if vs, ok := data[reanalysis.Key(c)]; !ok || len(vs) != src.Steps() {
 				return nil, fmt.Errorf("sub-DAS %s: deret sel %v,%v tidak ada", b.ID, c.Lat, c.Lon)
 			}
-			cells[i] = vs
 		}
-		areal, err := threshold.WeightedMean(cells, b.Weights)
+		areal, err := b.Areal(data)
 		if err != nil {
-			return nil, fmt.Errorf("sub-DAS %s: %w", b.ID, err)
+			return nil, err
 		}
 		for _, h := range Windows {
 			daily := threshold.DailyMaxSum(areal, h)

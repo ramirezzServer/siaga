@@ -17,7 +17,7 @@ import (
 
 // ModelEvent adalah satu pesan Protobuf raw sebagai ports.Event: deret satu
 // titik keluaran model grid (raw.forecast.openmeteo, raw.aq.openmeteo,
-// raw.flood.openmeteo), pengukuran stasiun (raw.aq.openaq), atau deteksi
+// raw.flood.openmeteo, raw.rain.openmeteo), pengukuran stasiun (raw.aq.openaq), atau deteksi
 // titik panas (raw.fire.firms).
 type ModelEvent struct {
 	subject string
@@ -132,6 +132,33 @@ func NewDischargeEvent(s series.Series) (ports.Event, error) {
 	}
 	return newModelEvent(streams.KindFlood, s.Site.ID, msg, func(m proto.Message, meta *rawv1.FetchMeta) {
 		m.(*rawv1.RiverDischargeForecast).Meta = meta
+	})
+}
+
+// NewCatchmentRainfallEvent membangun raw.rain.openmeteo dari deret hujan
+// rata-rata wilayah satu sub-DAS yang sudah lolos Validate dengan
+// series.RainfallSpec. cells adalah jumlah sel model yang dirata-rata.
+func NewCatchmentRainfallEvent(s series.Series, cells int) (ports.Event, error) {
+	col, err := columns(s, series.RainfallSpec)
+	if err != nil {
+		return nil, err
+	}
+	if cells <= 0 || cells > math.MaxUint32 {
+		return nil, fmt.Errorf("deret %s: jumlah sel %d tidak valid", s.Site.ID, cells)
+	}
+	msg := &rawv1.CatchmentRainfallForecast{
+		Source: hazardv1.Source_SOURCE_OPEN_METEO, Site: site(s), Model: s.Model, CellCount: uint32(cells),
+		Steps: make([]*rawv1.RainfallStep, 0, len(s.Times)),
+	}
+	for i, t := range s.Times {
+		v := col("precipitation", i)
+		if v == nil {
+			continue // RainfallSpec hanya satu variabel, jadi Compact sudah membuang langkah kosong
+		}
+		msg.Steps = append(msg.Steps, &rawv1.RainfallStep{ValidTime: timestamppb.New(t), PrecipitationMm: *v})
+	}
+	return newModelEvent(streams.KindRain, s.Site.ID, msg, func(m proto.Message, meta *rawv1.FetchMeta) {
+		m.(*rawv1.CatchmentRainfallForecast).Meta = meta
 	})
 }
 

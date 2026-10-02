@@ -27,6 +27,7 @@ import (
 	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/sysclock"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/app/rainthreshold"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/app/reanalysis"
+	"github.com/ramirezzServer/siaga/services/ingest/internal/domain/catchment"
 )
 
 func main() {
@@ -61,7 +62,7 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	basins, err := rainthreshold.ReadBasins(bf)
+	basins, err := catchment.Parse(bf)
 	_ = bf.Close()
 	if err != nil {
 		return err
@@ -79,7 +80,7 @@ func run() error {
 		Progress:   func(done, total int) { fmt.Fprintf(os.Stderr, "  request %d/%d\n", done, total) },
 		Checkpoint: func(c *reanalysis.Cache) error { return reanalysiscache.Save(path, c) },
 	}
-	cells := rainthreshold.Cells(basins)
+	cells := catchment.Cells(basins)
 	plan := loader.Plan(cells)
 	fmt.Fprintf(os.Stderr, "%s: %d sub-DAS, %d sel, %d dari cache %s, perlu ±%.0f panggilan Open-Meteo\n",
 		src, len(basins), plan.Cells, plan.Cached, path, math.Ceil(plan.Calls))

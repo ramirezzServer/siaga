@@ -90,7 +90,10 @@ func TestSiteIDs(t *testing.T) {
 	if id := RiverID("citarum-dayeuhkolot"); !ValidSiteID(id) {
 		t.Fatal(id)
 	}
-	for _, bad := range []string{"grid:-6.750:107.50", "grid:-06.75:107.50", "river:Citarum", "river:", "adm4:32.73.01.1001", strings.Repeat("river:a", 20)} {
+	if id := CatchmentID("cikapundung"); id != "catchment:cikapundung" || !ValidSiteID(id) {
+		t.Fatal(id)
+	}
+	for _, bad := range []string{"grid:-6.750:107.50", "grid:-06.75:107.50", "river:Citarum", "river:", "adm4:32.73.01.1001", strings.Repeat("river:a", 20), "catchment:", "catchment:Cikapundung", "catchment:a--b"} {
 		if ValidSiteID(bad) {
 			t.Errorf("%q seharusnya tidak valid", bad)
 		}
