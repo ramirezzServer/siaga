@@ -2,9 +2,9 @@
 
 Dokumen ini adalah titik lanjut untuk sesi kerja berikutnya, termasuk chat baru dengan asisten AI. Perbarui setiap akhir sesi.
 
-## Status: Fase 1e-2b-3 ditulis asisten (2026-10-02), menunggu verifikasi WSL; berikutnya 1e-3c
+## Status: Fase 1e-2b-3 terverifikasi (2026-10-02, prune pertama 2026-10-20); berikutnya 1e-3c
 
-Fase 0 sampai 1e-3b-2b ter-commit dan terverifikasi, CI hijau (1e-3b-2b di `8848fc8..ee75b44`). Fase 1e dipecah: **1e-1** arsip Garage + replay, **1e-2a** OpenTelemetry + dashboard, **1e-2b** deploy (**1e-2b-1** image + CI + manifest, **1e-2b-2** Garage dan Collector di cluster, SOPS, default deny, **1e-2b-3** retensi dan backup arsip), **1e-3** backfill + kalibrasi. 1e-3 dipecah lagi: **1e-3a** pengisian ulang OpenAQ, replay prakiraan BMKG + OpenAQ, peta pemeriksaan titik sungai, **1e-3b** reanalisis GloFAS → ambang banjir → `hazard.flood.*` (**1e-3b-1** pemilihan sel dari reanalisis; **1e-3b-2a** alat ambang banjir dan ambang indeks hujan 7 sub-DAS; **1e-3b-2b** konektor hujan sub-DAS, ambang di geo-processor, `hazard.flood.*`, bagian ini), **1e-3c** arsip FIRMS SP → ambang titik api → `hazard.fire.*`, set berlabel T4, radius dirasakan, replay CAP.
+Fase 0 sampai 1e-3b-2b dan 1e-2b-3 ter-commit dan terverifikasi, CI hijau (1e-2b-3 di `2e9822c..16cd8dc`). Fase 1e dipecah: **1e-1** arsip Garage + replay, **1e-2a** OpenTelemetry + dashboard, **1e-2b** deploy (**1e-2b-1** image + CI + manifest, **1e-2b-2** Garage dan Collector di cluster, SOPS, default deny, **1e-2b-3** retensi dan backup arsip), **1e-3** backfill + kalibrasi. 1e-3 dipecah lagi: **1e-3a** pengisian ulang OpenAQ, replay prakiraan BMKG + OpenAQ, peta pemeriksaan titik sungai, **1e-3b** reanalisis GloFAS → ambang banjir → `hazard.flood.*` (**1e-3b-1** pemilihan sel dari reanalisis; **1e-3b-2a** alat ambang banjir dan ambang indeks hujan 7 sub-DAS; **1e-3b-2b** konektor hujan sub-DAS, ambang di geo-processor, `hazard.flood.*`, bagian ini), **1e-3c** arsip FIRMS SP → ambang titik api → `hazard.fire.*`, set berlabel T4, radius dirasakan, replay CAP.
 
 ### Fase 1e-2b-3: retensi arsip dan cadangan harian ke Backblaze B2
 
@@ -22,27 +22,41 @@ Keputusan lengkap di ADR 0022. Oracle Object Storage diganti Backblaze B2 karena
 
 Zstd dengan jendela 32 MiB dipilih setelah membandingkan: gzip -9 per tar ±9,8 MiB, zstd 2,4 MiB untuk hari yang sama (USGS 3,5 MiB → 32 KiB karena feed 2 harinya berulang). Proyeksi B2 bila 24 jam: ±2 GiB/tahun, jadi tidak ada lifecycle di B2 (ditinjau di 8 GB). Lifecycle Garage v2.3.0 sebenarnya ada (`Expiration` + `Prefix`), tetapi tidak bisa mensyaratkan objek sudah dicadangkan.
 
-### Verifikasi yang perlu dijalankan di WSL (1e-2b-3)
+### Verifikasi di WSL (1e-2b-3)
+
+Terverifikasi 2026-10-02: commit `2e9822c..16cd8dc` di-push (termasuk dua perbaikan prompt `b2-setup.sh`: `6b3d050` isian key terlihat + galat jelas, `16cd8dc` abaikan baris kosong dan tempelan liar), CI hijau (run #27 untuk `16cd8dc`; run `2e9822c` dan `6b3d050` dibatalkan karena tersusul commit berikutnya).
+
+- `make backup-setup` sukses: bucket `siaga-cadangan-ac1236`, application key `siaga-cadangan-laptop`.
+- `make archive-backup` pertama: 105 bagian (hari 24 Sep–1 Okt UTC); jalan ulang 0 bagian baru.
+- `make archive-backup-verify ARGS=-all`: 105 bagian, 57.836 objek utuh, 0 rusak.
+- `make archive-prune` (dry-run) saat itu 0 kedaluwarsa.
+
+Langkah yang dijalankan (untuk referensi):
 
 ```bash
 bash "/mnt/c/KULIAH/PROJECT CODE/siaga-titipan/terapkan-fase-1e-2b-3.sh"   # salin, cek hash, make check, commit
 git push
 make test-integration      # TestGarage kini juga menguji Delete ke Garage asli
 make k8s-check             # overlay prod kini berisi CronJob archive-maintenance
+make backup-setup          # sekali; docs/setup/backblaze-b2.md
+make archive-backup && make archive-backup-verify ARGS=-all && make archive-prune
 ```
 
-Lalu sekali, ikuti `docs/setup/backblaze-b2.md`: Caps & Alerts B2 ke $0, `pipx install b2`, buat master key, `make env`, `make backup-setup`. Setelah itu:
+Uji pulih (`archive-restore` ke `/tmp/pulih` lalu replay `-strict`) belum dilaporkan; jalankan sebagai uji pulih bulanan pertama (ADR 0022 butir 11).
 
-```bash
-make archive-backup          # hari 24 Sep–1 Okt (UTC) ke B2
-make archive-backup-verify ARGS=-all
-make archive-prune           # dry-run; 2 Okt belum ada yang kedaluwarsa (arsip mulai 24 Sep):
-                             # prakiraan mulai dipangkas 9 Okt, USGS dan Open-Meteo cuaca/udara 25 Okt
-make archive-restore FROM=2026-09-26 TO=2026-09-26 CONNECTORS=bmkg-prakiraan INTO=/tmp/pulih
-INGEST_ARCHIVE_URL=/tmp/pulih make replay FROM=2026-09-26 TO=2026-09-27 CONNECTORS=bmkg-prakiraan ARGS="-publish=false -strict"
-```
+### Sesi 20 Okt 2026: ingest mati 18 hari, Docker Desktop, prune pertama
 
-Yang dilaporkan: ringkasan `archive-backup` (jumlah bagian, ukuran total bundel), hasil verify, pemakaian bucket di web B2, hasil replay dari folder pulihan, dan CI. Prune pertama yang benar-benar menghapus terjadi ±9 Okt lewat `make archive-maintain`; periksa dulu keluarannya (kolom "belum dicadangkan" harus 0). Mulai sekarang `make archive-maintain` dijalankan setiap memulai sesi (catat juga di `MULAI-LAGI.md` titipan).
+- **Celah data**: ingest dan geo-processor mati sejak 2 Okt ±21.20 WIB sampai 20 Okt (±18 hari). Yang bisa diisi ulang: titik api lewat arsip FIRMS (1e-3c, sumber arsip menjangkau jauh ke belakang), gempa lewat katalog USGS/BMKG bila dibutuhkan kalibrasi. Yang hilang permanen: OpenAQ (pengisian ulang maks 7 hari), CAP BMKG, prakiraan BMKG/Open-Meteo vintage 3–19 Okt (prakiraan masa lalu tidak bisa diambil lagi).
+- **Docker Desktop v4.96.0**: `make up` gagal karena `docker-credential-desktop.exe` tidak ada di `PATH` WSL. Diperbaiki dengan membuang `credsStore` dari `~/.docker/config.json` (cadangan `config.json.bak`), lalu image `siaga-postgres` dibangun ulang. Volume data utuh. Dicatat di `docs/setup/windows-wsl2.md` bagian 6.
+- `make archive-backup`: 16 bagian baru untuk 2 Okt (177,2 MiB mentah → 3,2 MiB). `backup-verify -from 2026-10-02 -to 2026-10-02`: 16 bagian, 18.268 objek utuh, 0 rusak.
+- **Prune pertama** (`-apply`): `bmkg-prakiraan` 71.476 objek / 76,6 MiB dihapus (cutoff 6 Okt), 0 belum dicadangkan. Garage kini 4.628 objek / 29,6 MiB.
+- Status lain: CI `16cd8dc` hijau (dicek dari halaman Actions publik, 20 Okt). **Belum dicek** (perlu login, asisten tidak masuk ke akun): pemakaian bucket B2 di web B2 (perkiraan dari ukuran bundel ±25 MiB) dan status Grafana Cloud setelah trial habis ±9 Okt (seharusnya turun ke Free; dashboard kosong 3–19 Okt karena ingest mati).
+
+Perbaikan dari temuan sesi ini (patch `fix-arsip`, lihat Berikutnya):
+
+1. `archive backup-verify` tanpa `-from`/`-to`/`-all` kini memeriksa **dua hari terbaru yang ada di cadangan** (`-latest N`, use case `VerifyLatest`), bukan dua hari kalender terakhir. Sebelumnya, setelah ingest mati, `make archive-maintain` memverifikasi 0 bagian tanpa peringatan. Keluaran menyebut rentangnya: `(2 hari terbaru di cadangan: 2026-10-01 s.d. 2026-10-02)`.
+2. `archive prune` mencetak kemajuan ke stderr: jumlah objek kedaluwarsa di awal, setiap 5.000 objek, dan setiap konektor-hari selesai (misal `… bmkg-prakiraan 2026-09-24 selesai (1/12 hari): 8120/71476 objek, 8120 dihapus, 0 belum dicadangkan`).
+3. Masalah `credsStore` Docker Desktop, DNS WSL, dan "Catastrophic failure" dikumpulkan di `docs/setup/windows-wsl2.md` bagian 6.
 
 ### Temuan yang perlu ditindaklanjuti (1e-2b-3)
 
@@ -440,7 +454,7 @@ Target demo fase 1: dashboard Grafana berisi data live semua sumber.
 - [x] **1e-2a** OpenTelemetry di ingest dan geo-processor (trace lewat header `traceparent` NATS dan kolom outbox, metrik sumber/kuota/antrean/latensi/query, log OTLP), Grafana lokal `make obs-up` dan dashboard pipa data, panduan Grafana Cloud (ADR 0015). Terverifikasi di WSL; dashboard jalan di Grafana Cloud.
 - [x] **1e-2b-1** Image ingest dan geo-processor (satu Dockerfile, amd64 + arm64, distroless nonroot), job CI `images` (uji asap, Trivy, push GHCR + SBOM + cosign di `main`) dan `manifests`, manifest Kustomize ingest + geo-processor + Job migrasi dengan overlay local/prod, panel keterlambatan dashboard tanpa jeda ekspor (ADR 0016). Terverifikasi di WSL; CI hijau dan paket GHCR publik.
 - [x] **1e-2b-2** Garage satu node di cluster (ingest mengarsipkan langsung), OTel Collector `otelcol-k8s` (satu-satunya pemegang token Grafana Cloud, scrape metrik NATS dan Garage), secret produksi dalam satu `SopsSecret` terenkripsi age (`make secrets-prod`, sops-secrets-operator di fase 2), NetworkPolicy default deny namespace, baris dashboard platform (ADR 0017). Terverifikasi di WSL; CI hijau.
-- [ ] **1e-2b-3** Retensi arsip per konektor lewat `archive prune` yang hanya menghapus objek yang sudah dicadangkan, cadangan harian ke Backblaze B2 (bukan Oracle: pendaftaran gagal di verifikasi kartu) sebagai satu `tar.zst` + indeks per konektor per hari, `backup-verify`, `restore`, CronJob `archive-maintenance`, `make backup-setup` (ADR 0022). Kode ditulis asisten; menunggu verifikasi WSL dan pembuatan bucket/key B2.
+- [x] **1e-2b-3** Retensi arsip per konektor lewat `archive prune` yang hanya menghapus objek yang sudah dicadangkan, cadangan harian ke Backblaze B2 (bukan Oracle: pendaftaran gagal di verifikasi kartu) sebagai satu `tar.zst` + indeks per konektor per hari, `backup-verify`, `restore`, CronJob `archive-maintenance`, `make backup-setup` (ADR 0022). Terverifikasi di WSL; CI hijau; prune pertama 20 Okt.
 - [x] **1e-3a** Pengisian ulang jam OpenAQ (`backfill openaq`, nilai mentah, maks 7 hari), replay prakiraan BMKG dan OpenAQ dengan konteks dari isi payload (`MultiFeed`, `PartialFeed`), peta GeoJSON pemeriksaan titik sungai, panel "Target scrape" abu-abu saat kosong (ADR 0018). Terverifikasi di WSL.
 - [x] **1e-3b-1** river-snap memilih sel dari debit rata-rata reanalisis `consolidated_v4` 2020-07..2022-06 dengan cache, titik uji, dan batas kuota berbobot (ADR 0019); 14 titik ditetapkan dari penelusuran debit sel GloFAS. Terverifikasi di WSL.
 - [x] **1e-3b-2a** `make flood-threshold` (persentil debit harian reanalisis `consolidated_v4` 1997–2024 per titik, uji kejadian tercatat, rasio bias `seamless_v4`) dan `make rain-threshold` (7 sub-DAS Citarum Hulu dari HydroBASINS, puncak harian akumulasi hujan 3/6/24 jam arsip ECMWF IFS 2017–2024) (ADR 0020). Terverifikasi di WSL; ambang asli di `c0f4545`.

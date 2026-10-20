@@ -74,3 +74,32 @@ make up
 make seed
 make check
 ```
+
+## 6. Masalah yang pernah terjadi
+
+### `make up` gagal setelah Docker Desktop di-update: `docker-credential-desktop.exe` tidak ditemukan
+
+Terjadi 20 Okt 2026 setelah update ke Docker Desktop v4.96.0. `~/.docker/config.json` di WSL berisi `"credsStore": "desktop.exe"`, tetapi helper `docker-credential-desktop.exe` tidak ada di `PATH` WSL, jadi setiap `docker pull`/`docker build` (termasuk build image `siaga-postgres` di `make up`) gagal sebelum mulai:
+
+```text
+error getting credentials - err: exec: "docker-credential-desktop.exe": executable file not found in $PATH
+```
+
+Perbaikan: buang kunci `credsStore` (image SIAGA semuanya publik, tidak butuh login registry), lalu jalankan lagi.
+
+```bash
+cp ~/.docker/config.json ~/.docker/config.json.bak
+python3 -c 'import json,sys; c=json.load(open(sys.argv[1])); c.pop("credsStore",None); json.dump(c,open(sys.argv[2],"w"),indent=2)' \
+  ~/.docker/config.json.bak ~/.docker/config.json
+make up
+```
+
+Volume data tidak tersentuh. Bila kelak perlu `docker login` (misal GHCR privat), kredensial disimpan polos di `config.json`; pertimbangkan memulihkan `credsStore` setelah memastikan `docker-credential-desktop.exe` ada di `PATH` (Docker Desktop → Settings → Resources → WSL integration, matikan lalu nyalakan lagi untuk distro ini).
+
+### `go mod download`, `docker pull`, atau ingest timeout setelah WSL dijalankan ulang
+
+DNS tunneling WSL (resolver `10.255.255.254`) tidak jalan di laptop ini. `/etc/wsl.conf` harus berisi `[network] generateResolvConf = false` dan `/etc/resolv.conf` berisi `nameserver 1.1.1.1`, `nameserver 8.8.8.8`, `options use-vc`.
+
+### Integrasi WSL Docker "Catastrophic failure"
+
+Quit Docker Desktop dulu sebelum `wsl --shutdown`; kalau tidak, integrasi WSL gagal saat WSL hidup lagi. Quit Docker Desktop sepenuhnya lalu buka ulang.
