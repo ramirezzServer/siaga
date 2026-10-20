@@ -55,15 +55,15 @@ jobs:
           for m in $GO_MODULES; do (cd "$m" && go mod tidy -diff); done
       - uses: golangci/golangci-lint-action@v8
         with:
-          version: v2.13.2
+          version: v2.15.0
           working-directory: services/geo-processor
       - uses: golangci/golangci-lint-action@v8
         with:
-          version: v2.13.2
+          version: v2.15.0
           working-directory: services/ingest
       - uses: golangci/golangci-lint-action@v8
         with:
-          version: v2.13.2
+          version: v2.15.0
           working-directory: libs/go/platform
       - name: Unit test
         run: |

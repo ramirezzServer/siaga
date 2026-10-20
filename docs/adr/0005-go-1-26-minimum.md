@@ -10,7 +10,7 @@ goose v3.28.0, runner migrasi yang dipakai lewat `go tool goose`, mensyaratkan G
 
 - Versi minimum bahasa: `go 1.26.0` di `go.work` dan semua `go.mod`.
 - Toolchain pengembangan dan CI: `toolchain go1.27.1` di `go.work`, dibaca oleh `actions/setup-go`.
-- golangci-lint v2.13.2 di lokal dan CI. Versi 2.5.0 di-build dengan Go 1.25 dan tidak bisa menganalisis kode Go 1.26.
+- golangci-lint v2.13.2 di lokal dan CI. Versi 2.5.0 di-build dengan Go 1.25 dan tidak bisa menganalisis kode Go 1.26. Catatan 2026-10-21: naik ke v2.15.0 bersama toolchain go1.27.3, karena v2.13.2 tidak bisa membaca export data go1.27.3.
 - protoc-gen-go dijalankan dengan `GOWORK=off go -C libs/go/contracts tool protoc-gen-go`, karena flag `-modfile` tidak boleh dipakai dalam workspace mode.
 
 ## Konsekuensi

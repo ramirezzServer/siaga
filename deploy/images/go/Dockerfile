@@ -10,7 +10,7 @@
 #
 # Build berjalan di platform mesin build dan meng-cross-compile ke TARGETARCH,
 # jadi image arm64 (VM Oracle) dibangun tanpa emulasi QEMU.
-ARG GO_VERSION=1.27.1
+ARG GO_VERSION=1.27.3
 
 FROM --platform=$BUILDPLATFORM golang:${GO_VERSION} AS build
 ARG SERVICE

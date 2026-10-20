@@ -459,7 +459,7 @@ Kontrak `siaga.raw.v1`, stream `RAW`/`HAZARD`, layanan ingest dengan konektor BM
 - Repo kerja: `~/code/siaga` di WSL2 Ubuntu 24.04. Jangan bekerja di `/mnt/c/...` (lambat, file watcher Tilt tidak jalan).
 - GitHub: `github.com/ramirezzServer/siaga` (publik), login lewat `gh`.
 - `C:\KULIAH\PROJECT CODE\siaga` adalah clone kedua untuk dibuka dari Windows. Perbarui dengan `git -C "/mnt/c/KULIAH/PROJECT CODE/siaga" pull --ff-only`; jangan diedit bersamaan dengan repo WSL.
-- Versi alat: Go 1.27.1 (minimum bahasa 1.26, ADR 0005), Node 22, pnpm 10.28.0 lewat corepack, golangci-lint 2.13.2, gitleaks 8.30.1.
+- Versi alat: Go 1.27.3 (minimum bahasa 1.26, ADR 0005; `go.work` meminta toolchain ini, jadi Go lama di WSL mengunduhnya otomatis), Node 22, pnpm 10.28.0 lewat corepack, golangci-lint 2.15.0, gitleaks 8.30.1.
 - **DNS WSL**: DNS tunneling WSL (resolver `10.255.255.254`) tidak jalan di laptop ini. `/etc/wsl.conf` berisi `[network] generateResolvConf = false`, dan `/etc/resolv.conf` tetap berisi `nameserver 1.1.1.1`, `nameserver 8.8.8.8`, `options use-vc`. Bila `go mod download`, `docker pull`, atau ingest tiba-tiba timeout setelah WSL dijalankan ulang, cek dulu isi `/etc/resolv.conf`.
 - **Docker Desktop**: sebelum `wsl --shutdown`, Quit Docker Desktop dulu. Kalau tidak, integrasi WSL Docker gagal dengan "Catastrophic failure" saat WSL hidup lagi.
 - Cadangan arsip: akun Backblaze B2 (region US West); bucket dan key dibuat `make backup-setup` (docs/setup/backblaze-b2.md). Master key B2 tidak disimpan di repo atau `.env`.
@@ -470,7 +470,8 @@ Kontrak `siaga.raw.v1`, stream `RAW`/`HAZARD`, layanan ingest dengan konektor BM
 - Compose lite memakai `nats:2.11-alpine`, sedangkan test memakai server 2.15 dalam proses. Replay 1c dan 1d-1 sudah dijalankan dengan binary `nats-server` 2.11.9 tanpa masalah; naikkan image saat Renovate aktif.
 - `/status` geo-processor menampilkan ambang dengan durasi dalam nanodetik (JSON bawaan `time.Duration`). Kosmetik; rapikan saat dashboard Grafana dibuat.
 - Renovate sudah dikonfigurasi (`renovate.json`) tetapi GitHub App Renovate belum dipasang di repo.
-- Runner `ubuntu-latest` pindah ke Ubuntu 26 mulai 2026-10-19. Pantau run CI pertama setelah tanggal itu.
+- Runner `ubuntu-latest` pindah ke Ubuntu 26 mulai 2026-10-19; run pertama sesudahnya (`b034e0b`, 20 Okt) hijau di semua job kecuali `images`, yang merah karena CVE baru (lihat di bawah), jadi peralihan runner aman.
+- **Trivy `images` merah 20 Okt** oleh CVE HIGH baru di Go stdlib 1.27.1 (CVE-2026-78667 net/http Range, CVE-2026-78669 HTTP/2 SETTINGS, CVE-2026-97031 crypto/tls ECH; perbaikan di 1.27.2) dan `golang.org/x/net` v0.58.0 (CVE-2026-78669, perbaikan v0.60.0). Diperbaiki dengan toolchain 1.27.3 (rilis 19 Okt, juga perbaikan crypto/x509) dan `x/net` v0.60.0. golangci-lint 2.13.2 (dibangun dengan go1.27.0) tidak bisa membaca export data go1.27.3 (`export data version 5 is greater than maximum supported version 4`), jadi lokal dan CI naik ke 2.15.0 (0 temuan di 4 modul). Akan berulang setiap ada CVE Go baru selama Renovate belum aktif; pemeriksaan cepatnya: job `images` merah dengan tabel `gobinary`.
 - Profil full (`make k3d-up tilt`) belum pernah dicoba. Bila CloudNativePG menolak image, lihat ADR 0002.
 - `.trivyignore.yaml` mengecualikan CVE-2025-68121 untuk gosu sampai 2027-03-31; setelah itu CI merah dan harus ditinjau ulang.
 
