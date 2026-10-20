@@ -91,3 +91,65 @@ func TestConfidence(t *testing.T) {
 		}
 	}
 }
+
+func TestStandardProducts(t *testing.T) {
+	for _, s := range Satellites {
+		if !s.SP.Standard() || s.NRT.Standard() {
+			t.Fatalf("%s: SP/NRT tertukar", s.Name)
+		}
+		si, ok1 := s.SP.Instrument()
+		ni, ok2 := s.NRT.Instrument()
+		if !ok1 || !ok2 || si != ni {
+			t.Fatalf("%s: instrumen %s/%s", s.Name, si, ni)
+		}
+		if SatelliteOf(s.SP) != s.Name || SatelliteOf(s.NRT) != s.Name {
+			t.Fatalf("%s: SatelliteOf", s.Name)
+		}
+	}
+	if SatelliteOf("LANDSAT_NRT") != "" || Product("LANDSAT_NRT").Standard() {
+		t.Fatal("produk asing dikenali")
+	}
+}
+
+func TestSourceType(t *testing.T) {
+	want := map[string]SourceType{"": UnknownType, "0": VegetationFire, " 1 ": ActiveVolcano, "2": StaticSource, "3": Offshore}
+	for in, w := range want {
+		if got, ok := ParseSourceType(in); !ok || got != w {
+			t.Fatalf("%q → %v %v", in, got, ok)
+		}
+	}
+	if _, ok := ParseSourceType("4"); ok {
+		t.Fatal("type 4 diterima")
+	}
+	names := map[SourceType]string{UnknownType: "tidak diketahui", VegetationFire: "vegetasi", ActiveVolcano: "gunung api", StaticSource: "sumber tetap", Offshore: "lepas pantai"}
+	for typ, n := range names {
+		if typ.String() != n {
+			t.Fatalf("%d: %s", typ, typ.String())
+		}
+	}
+}
+
+func TestValidateArchive(t *testing.T) {
+	d := viirs()
+	d.Product, d.Version = VIIRSSNPPSP, "2"
+	// Arsip tidak dibatasi umur, tetapi tetap tidak boleh dari masa depan.
+	old := fetched.AddDate(-10, 0, 0)
+	if err := d.ValidateArchive(fetched); err != nil {
+		t.Fatal(err)
+	}
+	if err := d.Validate(old); err == nil {
+		t.Fatal("Validate menerima deteksi dari masa depan")
+	}
+	if err := d.ValidateArchive(old); !errors.Is(err, ErrInvalid) || !strings.Contains(err.Error(), "masa depan") {
+		t.Fatalf("masa depan: %v", err)
+	}
+	d.Lat = 30
+	if err := d.ValidateArchive(fetched); !errors.Is(err, ErrInvalid) {
+		t.Fatal("lokasi salah diterima")
+	}
+	m := modis()
+	m.Product = MODISSP
+	if err := m.ValidateArchive(fetched); err != nil {
+		t.Fatal(err)
+	}
+}

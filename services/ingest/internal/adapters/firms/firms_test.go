@@ -206,3 +206,43 @@ func TestParsersMatchConnectors(t *testing.T) {
 		}
 	}
 }
+
+func TestParseArchive(t *testing.T) {
+	now := time.Date(2026, 10, 20, 0, 0, 0, 0, time.UTC)
+	sp := "latitude,longitude,bright_ti4,scan,track,acq_date,acq_time,satellite,instrument,confidence,version,bright_ti5,frp,daynight,type\n" +
+		"-6.38510,108.37020,340.1,0.4,0.4,2019-08-07,1840,N,VIIRS,n,2,290.2,25.5,N,2\n" +
+		"-6.89200,108.40000,367,0.4,0.4,2019-08-07,540,N,VIIRS,h,2,295,80,D,0\n" +
+		"-6.89200,108.40000,367,0.4,0.4,2019-08-07,540,N,VIIRS,h,2,295,80,D,0\n" + // ganda
+		"-6.9,107.6,330,0.4,0.4,2019-08-07,540,N,VIIRS,n,2,290,3,D,7\n" + // type salah
+		"-6.9,107.6,330,0.4,0.4,2027-01-01,540,N,VIIRS,n,2,290,3,D,0\n" + // masa depan
+		"-6.9,107.6,330,0.4,0.4,2019-08-07,540,N,VIIRS,x,2,290,3,D,0\n" + // keyakinan
+		"\"rusak\n"
+	got, rej, err := ParseArchive(fire.VIIRSSNPPSP, []byte(sp), now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 2 || len(rej) != 5 {
+		t.Fatalf("%d diterima, %d ditolak: %v", len(got), len(rej), rej)
+	}
+	if got[0].Type != fire.StaticSource || got[0].Product != fire.VIIRSSNPPSP || got[0].Daytime || got[1].Confidence != fire.High {
+		t.Fatalf("%+v", got)
+	}
+	// Deteksi lama (tujuh tahun) diterima di arsip, tidak di polling.
+	if _, rej, _ := (&Parser{product: fire.VIIRSSNPP}).Parse([]byte(strings.Replace(sp, ",2\n", "\n", 1)), now); len(rej) == 0 {
+		t.Fatal("polling menerima deteksi tujuh tahun lalu")
+	}
+	nrt, err := os.ReadFile("testdata/jabar-MODIS_NRT-2026-09-24.csv")
+	if err != nil {
+		t.Fatal(err)
+	}
+	m, rej, err := ParseArchive(fire.MODISProduct, nrt, now)
+	if err != nil || len(m) == 0 || len(rej) != 0 || m[0].Type != fire.UnknownType || m[0].ConfidencePct == nil {
+		t.Fatalf("%d %v %v", len(m), rej, err)
+	}
+	if _, _, err := ParseArchive("LANDSAT_NRT", nrt, now); err == nil {
+		t.Fatal("produk asing diterima")
+	}
+	if _, _, err := ParseArchive(fire.MODISSP, []byte("Invalid MAP_KEY."), now); !errors.Is(err, ErrStructure) {
+		t.Fatal(err)
+	}
+}

@@ -1,6 +1,7 @@
-// Package fire berisi aturan murni untuk deteksi titik panas satelit near
-// real-time (NASA FIRMS): produk yang diterima, ID deteksi yang stabil,
-// pemetaan keyakinan, dan batas nilai fisis.
+// Package fire berisi aturan murni untuk deteksi titik panas satelit NASA
+// FIRMS: produk yang diterima (near real-time untuk polling, standard
+// processing untuk arsip kalibrasi), ID deteksi yang stabil, pemetaan
+// keyakinan, jenis sumber panas arsip, dan batas nilai fisis.
 package fire
 
 import (
@@ -38,15 +39,109 @@ const (
 // Products adalah semua produk yang diterima, dalam urutan polling.
 var Products = []Product{VIIRSSNPP, VIIRSNOAA20, VIIRSNOAA21, MODISProduct}
 
+// Produk standard processing (SP): diproses ulang beberapa bulan setelah
+// lintasan, dengan kolom type (jenis sumber panas). Hanya untuk arsip
+// kalibrasi, tidak pernah dipolling.
+const (
+	VIIRSSNPPSP   Product = "VIIRS_SNPP_SP"
+	VIIRSNOAA20SP Product = "VIIRS_NOAA20_SP"
+	VIIRSNOAA21SP Product = "VIIRS_NOAA21_SP"
+	MODISSP       Product = "MODIS_SP"
+)
+
 // Instrument mengembalikan instrumen produk; ok false bila produk tidak dikenal.
 func (p Product) Instrument() (Instrument, bool) {
 	switch p {
-	case VIIRSSNPP, VIIRSNOAA20, VIIRSNOAA21:
+	case VIIRSSNPP, VIIRSNOAA20, VIIRSNOAA21, VIIRSSNPPSP, VIIRSNOAA20SP, VIIRSNOAA21SP:
 		return VIIRS, true
-	case MODISProduct:
+	case MODISProduct, MODISSP:
 		return MODIS, true
 	}
 	return "", false
+}
+
+// Standard true untuk produk standard processing.
+func (p Product) Standard() bool {
+	switch p {
+	case VIIRSSNPPSP, VIIRSNOAA20SP, VIIRSNOAA21SP, MODISSP:
+		return true
+	case VIIRSSNPP, VIIRSNOAA20, VIIRSNOAA21, MODISProduct:
+	}
+	return false
+}
+
+// Satellite adalah satu wahana dengan pasangan produk SP dan NRT-nya. Arsip
+// kalibrasi memakai SP selama tersedia, lalu NRT untuk sisa hari terbaru.
+type Satellite struct {
+	// Name dipakai di laporan, misal "S-NPP".
+	Name string
+	SP   Product
+	NRT  Product
+}
+
+// Satellites adalah semua wahana yang diarsipkan, urutan tetap.
+var Satellites = []Satellite{
+	{Name: "S-NPP", SP: VIIRSSNPPSP, NRT: VIIRSSNPP},
+	{Name: "NOAA-20", SP: VIIRSNOAA20SP, NRT: VIIRSNOAA20},
+	{Name: "NOAA-21", SP: VIIRSNOAA21SP, NRT: VIIRSNOAA21},
+	{Name: "MODIS", SP: MODISSP, NRT: MODISProduct},
+}
+
+// SatelliteOf mengembalikan nama wahana produk p (SP atau NRT); kosong bila
+// tidak dikenal.
+func SatelliteOf(p Product) string {
+	for _, s := range Satellites {
+		if s.SP == p || s.NRT == p {
+			return s.Name
+		}
+	}
+	return ""
+}
+
+// SourceType adalah kolom type arsip SP: jenis sumber panas menurut FIRMS.
+// Produk NRT tidak membawanya (UnknownType).
+type SourceType int8
+
+// Nilai kolom type FIRMS.
+const (
+	UnknownType    SourceType = -1
+	VegetationFire SourceType = 0
+	ActiveVolcano  SourceType = 1
+	StaticSource   SourceType = 2
+	Offshore       SourceType = 3
+)
+
+// ParseSourceType membaca kolom type ("0".."3"); kosong berarti UnknownType.
+func ParseSourceType(s string) (SourceType, bool) {
+	switch strings.TrimSpace(s) {
+	case "":
+		return UnknownType, true
+	case "0":
+		return VegetationFire, true
+	case "1":
+		return ActiveVolcano, true
+	case "2":
+		return StaticSource, true
+	case "3":
+		return Offshore, true
+	}
+	return UnknownType, false
+}
+
+// String mengembalikan nama jenis.
+func (t SourceType) String() string {
+	switch t {
+	case VegetationFire:
+		return "vegetasi"
+	case ActiveVolcano:
+		return "gunung api"
+	case StaticSource:
+		return "sumber tetap"
+	case Offshore:
+		return "lepas pantai"
+	case UnknownType:
+	}
+	return "tidak diketahui"
 }
 
 // Confidence adalah kelas keyakinan deteksi.
@@ -132,6 +227,13 @@ type Detection struct {
 	Version       string
 }
 
+// Archived adalah deteksi dari arsip kalibrasi beserta jenis sumber panasnya
+// (UnknownType untuk NRT).
+type Archived struct {
+	Detection
+	Type SourceType
+}
+
 // ID membentuk ID deteksi yang stabil: produk, menit lintasan, dan pusat
 // piksel lima desimal (±1 m). Dua baris dengan ID sama adalah deteksi yang sama.
 func (d Detection) ID() string {
@@ -140,6 +242,36 @@ func (d Detection) ID() string {
 
 // Validate memeriksa semua invarian; fetchedAt adalah waktu respons diterima.
 func (d Detection) Validate(fetchedAt time.Time) error {
+	errs := d.check()
+	switch t := d.DetectedAt; {
+	case t.IsZero():
+	case t.After(fetchedAt.Add(MaxClockSkew)):
+		errs = append(errs, fmt.Errorf("waktu deteksi %s di masa depan", t.Format(time.RFC3339)))
+	case t.Before(fetchedAt.Add(-MaxAge)):
+		errs = append(errs, fmt.Errorf("waktu deteksi %s lebih tua dari %v", t.Format(time.RFC3339), MaxAge))
+	}
+	return d.wrap(errs)
+}
+
+// ValidateArchive memeriksa invarian deteksi arsip kalibrasi: sama dengan
+// Validate tanpa batas umur, tetapi tidak boleh lebih baru dari now.
+func (d Detection) ValidateArchive(now time.Time) error {
+	errs := d.check()
+	if t := d.DetectedAt; !t.IsZero() && t.After(now.Add(MaxClockSkew)) {
+		errs = append(errs, fmt.Errorf("waktu deteksi %s di masa depan", t.Format(time.RFC3339)))
+	}
+	return d.wrap(errs)
+}
+
+func (d Detection) wrap(errs []error) error {
+	if len(errs) == 0 {
+		return nil
+	}
+	return fmt.Errorf("%w: %s: %w", ErrInvalid, d.ID(), errors.Join(errs...))
+}
+
+// check memeriksa invarian yang tidak bergantung pada waktu ambil.
+func (d Detection) check() []error {
 	var errs []error
 	bad := func(format string, a ...any) { errs = append(errs, fmt.Errorf(format, a...)) }
 	inst, ok := d.Product.Instrument()
@@ -163,10 +295,6 @@ func (d Detection) Validate(fetchedAt time.Time) error {
 		bad("waktu deteksi kosong atau bukan UTC")
 	case t.Second() != 0 || t.Nanosecond() != 0:
 		bad("waktu deteksi %s bukan kelipatan menit", t.Format(time.RFC3339))
-	case t.After(fetchedAt.Add(MaxClockSkew)):
-		bad("waktu deteksi %s di masa depan", t.Format(time.RFC3339))
-	case t.Before(fetchedAt.Add(-MaxAge)):
-		bad("waktu deteksi %s lebih tua dari %v", t.Format(time.RFC3339), MaxAge)
 	}
 	if d.Confidence < Low || d.Confidence > High {
 		bad("kelas keyakinan %d tidak dikenal", d.Confidence)
@@ -193,10 +321,7 @@ func (d Detection) Validate(fetchedAt time.Time) error {
 	if !inRange(d.ScanKm, 0.1, 10) || !inRange(d.TrackKm, 0.1, 10) {
 		bad("ukuran piksel %v × %v km di luar 0,1..10", d.ScanKm, d.TrackKm)
 	}
-	if len(errs) == 0 {
-		return nil
-	}
-	return fmt.Errorf("%w: %s: %w", ErrInvalid, d.ID(), errors.Join(errs...))
+	return errs
 }
 
 func inRange(v, lo, hi float64) bool {

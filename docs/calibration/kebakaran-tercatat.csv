@@ -1,0 +1,14 @@
+# Kebakaran tercatat di berita untuk menguji aturan titik api (ADR 0023, make fire-threshold).
+# mulai/selesai: tanggal WIB inklusif dari berita (selesai = tanggal padam atau laporan terakhir yang ditemukan).
+# lintang/bujur: titik perkiraan dari nama lokasi (puncak gunung atau objek OSM), jadi radius_km sengaja longgar.
+# luas_ha kosong bila berita tidak menyebut luas. Dicek 2026-10-20.
+id,mulai,selesai,lintang,bujur,radius_km,luas_ha,sumber,catatan
+ciremai-2019-08,2019-08-07,2019-08-10,-6.892,108.400,7,308,https://kabar24.bisnis.com/read/20190808/79/1134397/gunung-ciremai-kebakaran-belum-semua-pendaki-turun,Blok Gua Walet dekat puncak; Argamukti Argapura Majalengka; asap terpantau 7 Agu 15.10 WIB
+ciremai-2019-09,2019-09-05,2019-09-07,-6.892,108.400,7,,https://news.republika.co.id/berita/pxd74h414/puncak-gunung-ciremai-kembali-terbakar,Puncak kembali terbakar; luas tidak disebut
+ciremai-2019-10,2019-10-21,2019-10-26,-6.880,108.385,7,190,https://news.republika.co.id/berita/q00l46382/kebakaran-di-gunung-ciremai-berhasil-dipadamkan,Bantaragung (Sindangwangi) dan Cikaracak (Argapura) Majalengka lalu merambat ke Kuningan; padam 26 Okt
+papandayan-2019-10,2019-10-06,2019-10-07,-7.315,107.730,4,1.5,https://news.republika.co.id/berita/pyzlsx430/hutan-gunung-papandayan-garut-terbakar,Blok Leter S dekat gerbang cagar alam; kecil (uji kepekaan)
+guntur-2019-10,2019-10-24,2019-10-26,-7.143,107.841,5,,https://news.republika.co.id/berita/pzxacn463/gunung-guntur-terbakar-pendakian-ditutup,Puncak Guntur mulai malam 24 Okt; luas belum diukur
+sarimukti-2023-08,2023-08-19,2023-08-31,-6.800,107.348,3,19.5,https://www.medcom.id/nasional/daerah/Obz0Ex7K-api-belum-padam-total-area-tpa-sarimukti-yang-terbakar-mencapai-19-5-hektare,TPA Sarimukti Bandung Barat (koordinat OSM); hari ke-7 pada 25 Agu; tanggal selesai perkiraan
+ciremai-2023-08,2023-08-25,2023-08-28,-6.860,108.425,7,125.5,https://www.detik.com/jabar/berita/d-6898508/bpbd-sebut-kebakaran-hutan-gunung-ciremai-mulai-terkendali,Blok Batu Kuda dan Karang Sanggar Pasawahan Kuningan (lereng utara); asap 25 Agu 10.30 WIB
+papandayan-2023-10,2023-10-22,2023-10-23,-7.315,107.730,5,,https://jabar.antaranews.com/berita/476268/bbksda-tutup-sebagian-kawasan-wisata-gunung-papandayan-dampak-kebakaran,Hutan konservasi Papandayan; luas tidak disebut
+guntur-2024-08,2024-08-19,2024-08-22,-7.143,107.841,5,,https://jabar.antaranews.com/berita/536951/kebakaran-hutan-di-gunung-guntur-sudah-padam,Diketahui malam 19 Agu; padam 22 Agu

@@ -118,6 +118,8 @@ jobs:
           fz ./internal/app/replay FuzzRunOrdered
           fz ./internal/domain/threshold FuzzDailyMaxSum
           fz ./internal/domain/threshold FuzzLevel
+          fz ./internal/domain/firecluster FuzzClusterLinked
+          fz ./internal/domain/firecluster FuzzEvaluateMonotone
           cd ../../libs/go/platform
           fz ./otelx FuzzValidTraceParent
 

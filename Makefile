@@ -111,7 +111,7 @@ grid-list: regions-fetch ## Bangun ulang simpul grid 0,25° Open-Meteo ingest (P
 	  -grid-out ../ingest/internal/adapters/sitelist/data/grid025_$(PROVINCE).txt
 
 ##@ Pipa data
-.PHONY: ingest ingest-record geo calibrate-dedup river-snap flood-threshold rain-threshold calibration-copy archive-ls archive-verify archive-upload archive-backup archive-backup-verify archive-restore archive-prune archive-maintain backup-setup replay backfill-openaq
+.PHONY: ingest ingest-record geo calibrate-dedup river-snap flood-threshold rain-threshold fire-threshold calibration-copy archive-ls archive-verify archive-upload archive-backup archive-backup-verify archive-restore archive-prune archive-maintain backup-setup replay backfill-openaq
 ingest: ## Jalankan ingest (butuh `make up`); arsip ke Garage, status di http://127.0.0.1:8081/status
 	cd services/ingest && INGEST_ARCHIVE_URL="$(INGEST_ARCHIVE_URL)" go run ./cmd/ingest
 
@@ -184,6 +184,11 @@ rain-threshold: ## Ambang indeks hujan 7 sub-DAS Citarum Hulu dari arsip ECMWF I
 	pnpm exec prettier --write --log-level warn docs/calibration/ambang-hujan-sub-das.md
 	@$(MAKE) --no-print-directory calibration-copy
 
+# Contoh: make fire-threshold ARGS=-plan (rencana saja), ARGS=-offline (cache saja), ARGS="-max-requests 500"
+fire-threshold: ## Bahan kalibrasi titik api dari arsip FIRMS 2012–kemarin (butuh FIRMS_MAP_KEY; jalan pertama ±2.900 request, 1–2 jam; ulang gratis dari .cache/fire-archive)
+	go run ./services/ingest/cmd/fire-threshold $(ARGS)
+	@for f in docs/calibration/titik-api.md docs/calibration/sumber-panas-tetap-32.geojson; do [ ! -f "$$f" ] || pnpm exec prettier --write --log-level warn "$$f"; done
+
 calibration-copy: ## Salin daftar sub-DAS dan ambang banjir dari docs/calibration ke data yang disematkan ingest dan geo-processor (diperiksa test)
 	cp docs/calibration/sub-das-citarum-hulu.csv services/ingest/internal/adapters/sitelist/data/catchments_32.csv
 	cp docs/calibration/ambang-banjir-32.csv docs/calibration/ambang-hujan-sub-das.csv services/geo-processor/internal/adapters/calibration/data/
@@ -226,7 +231,7 @@ test-integration: ## Test integrasi (butuh `make up migrate`; paket dijalankan b
 fuzz: ## Fuzzing singkat semua target fuzz (30 detik per target)
 	@cd services/geo-processor && for t in ./internal/domain/region:FuzzParseCode ./internal/domain/region:FuzzParseLatLngPath ./internal/adapters/cahyadsn:FuzzParseDump ./internal/domain/quake:FuzzClusteringOrderIndependent ./internal/domain/quake:FuzzClusteringInvariantsUnderCrowding ./internal/domain/quake:FuzzApplyOrderIndependent ./internal/domain/quake:FuzzLevelMonotone ./internal/domain/quake:FuzzRuleMatchSymmetric ./internal/app/quakes:FuzzServiceOrderIndependent ./internal/domain/weather:FuzzDeriveOrderIndependent ./internal/app/warnings:FuzzServiceOrderIndependent ./internal/domain/series:FuzzWeatherValidate ./internal/domain/flood:FuzzDayMaxSumMatchesCalibration ./internal/domain/flood:FuzzLevelMonotone; do \
 	  go test $${t%%:*} -run='^$$' -fuzz="^$${t##*:}\$$" -fuzztime=30s || exit 1; done
-	@cd services/ingest && for t in ./internal/domain/ratelimit:FuzzWindowBound ./internal/domain/ratelimit:FuzzPriorityHeadroom ./internal/domain/ratelimit:FuzzAvailable ./internal/domain/schedule:FuzzNextBounds ./internal/domain/forecast:FuzzOrder ./internal/domain/warning:FuzzParseReferences ./internal/adapters/bmkg:FuzzParse ./internal/adapters/bmkg:FuzzParseCAPDocuments ./internal/adapters/bmkg:FuzzParseForecastDocument ./internal/adapters/usgs:FuzzParse ./internal/adapters/openmeteo:FuzzParse ./internal/domain/airquality:FuzzClean ./internal/adapters/firms:FuzzParseFIRMS ./internal/adapters/openaq:FuzzParseOpenAQ ./internal/domain/archivekey:FuzzParse ./internal/domain/archivebundle:FuzzParse ./internal/domain/retention:FuzzExpiredMonotone ./internal/app/replay:FuzzRunOrdered ./internal/domain/threshold:FuzzDailyMaxSum ./internal/domain/threshold:FuzzLevel; do \
+	@cd services/ingest && for t in ./internal/domain/ratelimit:FuzzWindowBound ./internal/domain/ratelimit:FuzzPriorityHeadroom ./internal/domain/ratelimit:FuzzAvailable ./internal/domain/schedule:FuzzNextBounds ./internal/domain/forecast:FuzzOrder ./internal/domain/warning:FuzzParseReferences ./internal/adapters/bmkg:FuzzParse ./internal/adapters/bmkg:FuzzParseCAPDocuments ./internal/adapters/bmkg:FuzzParseForecastDocument ./internal/adapters/usgs:FuzzParse ./internal/adapters/openmeteo:FuzzParse ./internal/domain/airquality:FuzzClean ./internal/adapters/firms:FuzzParseFIRMS ./internal/adapters/openaq:FuzzParseOpenAQ ./internal/domain/archivekey:FuzzParse ./internal/domain/archivebundle:FuzzParse ./internal/domain/retention:FuzzExpiredMonotone ./internal/app/replay:FuzzRunOrdered ./internal/domain/threshold:FuzzDailyMaxSum ./internal/domain/threshold:FuzzLevel ./internal/domain/firecluster:FuzzClusterLinked ./internal/domain/firecluster:FuzzEvaluateMonotone; do \
 	  go test $${t%%:*} -run='^$$' -fuzz="^$${t##*:}\$$" -fuzztime=30s || exit 1; done
 	@cd libs/go/platform && for t in ./otelx:FuzzValidTraceParent; do \
 	  go test $${t%%:*} -run='^$$' -fuzz="^$${t##*:}\$$" -fuzztime=30s || exit 1; done

@@ -99,9 +99,10 @@ var (
 	modisColumns = []string{"latitude", "longitude", "brightness", "scan", "track", "acq_date", "acq_time", "satellite", "instrument", "confidence", "version", "bright_t31", "frp", "daynight"}
 )
 
-// Parse membaca CSV menjadi event raw.fire.firms. Baris yang rusak ditolak
-// sendiri-sendiri; header yang tidak dikenali menolak seluruh payload.
-func (p *Parser) Parse(body []byte, fetchedAt time.Time) ([]ports.Event, []ports.Rejection, error) {
+// rows membaca header CSV lalu memanggil row untuk setiap baris data. get
+// mengembalikan isi kolom bernama (kosong bila kolom tidak ada). Header yang
+// tidak memuat kolom wajib instrumen menolak seluruh payload.
+func (p *Parser) rows(body []byte, row func(line int, get func(string) string, err error)) error {
 	inst, _ := p.product.Instrument()
 	want := viirsColumns
 	if inst == fire.MODIS {
@@ -112,7 +113,7 @@ func (p *Parser) Parse(body []byte, fetchedAt time.Time) ([]ports.Event, []ports
 	r.ReuseRecord = true
 	header, err := r.Read()
 	if err != nil {
-		return nil, nil, fmt.Errorf("%w: %s", ErrStructure, snippet(body))
+		return fmt.Errorf("%w: %s", ErrStructure, snippet(body))
 	}
 	col := map[string]int{}
 	for i, h := range header {
@@ -120,28 +121,36 @@ func (p *Parser) Parse(body []byte, fetchedAt time.Time) ([]ports.Event, []ports
 	}
 	for _, name := range want {
 		if _, ok := col[name]; !ok {
-			return nil, nil, fmt.Errorf("%w: kolom %q tidak ada: %s", ErrStructure, name, snippet(body))
+			return fmt.Errorf("%w: kolom %q tidak ada: %s", ErrStructure, name, snippet(body))
 		}
 	}
-
-	var events []ports.Event
-	var rejected []ports.Rejection
-	seen := map[string]bool{}
 	for line := 2; ; line++ {
 		rec, err := r.Read()
 		if errors.Is(err, io.EOF) {
-			break
-		}
-		key := fmt.Sprintf("%s:baris-%d", p.product, line)
-		if err != nil {
-			rejected = append(rejected, ports.Rejection{Key: key, Reason: err})
-			continue
+			return nil
 		}
 		get := func(name string) string {
-			if i := col[name]; i < len(rec) {
+			if i, ok := col[name]; ok && i < len(rec) {
 				return strings.TrimSpace(rec[i])
 			}
 			return ""
+		}
+		row(line, get, err)
+	}
+}
+
+// Parse membaca CSV menjadi event raw.fire.firms. Baris yang rusak ditolak
+// sendiri-sendiri; header yang tidak dikenali menolak seluruh payload.
+func (p *Parser) Parse(body []byte, fetchedAt time.Time) ([]ports.Event, []ports.Rejection, error) {
+	inst, _ := p.product.Instrument()
+	var events []ports.Event
+	var rejected []ports.Rejection
+	seen := map[string]bool{}
+	err := p.rows(body, func(line int, get func(string) string, err error) {
+		key := fmt.Sprintf("%s:baris-%d", p.product, line)
+		if err != nil {
+			rejected = append(rejected, ports.Rejection{Key: key, Reason: err})
+			return
 		}
 		d, err := p.detection(inst, get)
 		if err == nil {
@@ -153,17 +162,65 @@ func (p *Parser) Parse(body []byte, fetchedAt time.Time) ([]ports.Event, []ports
 		}
 		if err != nil {
 			rejected = append(rejected, ports.Rejection{Key: key, Reason: err})
-			continue
+			return
 		}
 		seen[key] = true
 		ev, err := rawpb.NewFireEvent(d)
 		if err != nil {
 			rejected = append(rejected, ports.Rejection{Key: key, Reason: err})
-			continue
+			return
 		}
 		events = append(events, ev)
+	})
+	if err != nil {
+		return nil, nil, err
 	}
 	return events, rejected, nil
+}
+
+// ParseArchive membaca CSV arsip kalibrasi (produk SP atau NRT) tanpa batas
+// umur deteksi; now hanya menolak deteksi dari masa depan. Kolom type
+// (khusus SP) dibaca bila ada. Baris rusak dan ID ganda ditolak
+// sendiri-sendiri.
+func ParseArchive(product fire.Product, body []byte, now time.Time) ([]fire.Archived, []ports.Rejection, error) {
+	inst, ok := product.Instrument()
+	if !ok {
+		return nil, nil, fmt.Errorf("produk FIRMS %q tidak dikenal", product)
+	}
+	p := &Parser{product: product}
+	var out []fire.Archived
+	var rejected []ports.Rejection
+	seen := map[string]bool{}
+	err := p.rows(body, func(line int, get func(string) string, err error) {
+		key := fmt.Sprintf("%s:baris-%d", product, line)
+		var a fire.Archived
+		if err == nil {
+			a.Detection, err = p.detection(inst, get)
+		}
+		if err == nil {
+			key = a.ID()
+			err = a.ValidateArchive(now)
+		}
+		if err == nil {
+			var ok bool
+			if a.Type, ok = fire.ParseSourceType(get("type")); !ok {
+				err = fmt.Errorf("type %q bukan 0..3", get("type"))
+			}
+		}
+		if err == nil && seen[key] {
+			err = errors.New("deteksi ganda dalam satu payload")
+		}
+		if err != nil {
+			rejected = append(rejected, ports.Rejection{Key: key, Reason: err})
+			return
+		}
+		seen[key] = true
+		out = append(out, a)
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+	return out, rejected, nil
 }
 
 // detection membaca satu baris tanpa memvalidasi.
