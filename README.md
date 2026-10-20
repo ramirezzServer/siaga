@@ -30,6 +30,7 @@ make calibrate-dedup  # ukur ambang deduplikasi dengan katalog historis BMKG + U
 make river-snap       # pilih sel GloFAS untuk 38 titik pantau sungai dari reanalisis 2020–2022 (±4.300 panggilan sekali, lalu dari cache), peta cek .cache/titik-sungai.geojson
 make flood-threshold  # ambang banjir 38 titik dari reanalisis GloFAS 1997–2024 + uji banjir tercatat (±3.100 panggilan sekali, lalu dari cache)
 make rain-threshold   # ambang indeks hujan 7 sub-DAS Citarum Hulu dari arsip ECMWF IFS 2017–2024 (±1.000 panggilan sekali)
+make fire-threshold   # arsip FIRMS 2012–kemarin → sumber panas tetap, kejadian per varian aturan, uji kebakaran tercatat (±2.900 request sekali, ADR 0023)
                       # keduanya menyalin hasil ke geo-processor (make calibration-copy); ambang dimuat saat geo-processor start
 make archive-ls       # isi arsip payload mentah per konektor; archive-verify memeriksa integritasnya
 make archive-maintain # cadangkan arsip ke Backblaze B2, verifikasi, lalu pangkas Garage sesuai retensi (sekali: make backup-setup)
