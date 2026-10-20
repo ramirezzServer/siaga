@@ -88,8 +88,25 @@ func TestBackupPruneRestore(t *testing.T) {
 	}
 
 	out.Reset()
+	// Bawaan: dua hari terbaru yang ada di cadangan, bukan dua hari kalender
+	// terakhir (30 Sep tidak punya cadangan).
 	if err := run(t.Context(), []string{"backup-verify"}, env, &out, io.Discard); err != nil ||
+		!strings.Contains(out.String(), "4 bagian, 6 objek utuh, 0 bagian rusak (2 hari terbaru di cadangan: 2026-09-10 s.d. 2026-10-01)") {
+		t.Fatalf("%s %v", out.String(), err)
+	}
+	out.Reset()
+	if err := run(t.Context(), []string{"backup-verify", "-latest", "1"}, env, &out, io.Discard); err != nil ||
+		!strings.Contains(out.String(), "2 bagian, 3 objek utuh, 0 bagian rusak (1 hari terbaru di cadangan: 2026-10-01 s.d. 2026-10-01)") {
+		t.Fatalf("%s %v", out.String(), err)
+	}
+	out.Reset()
+	if err := run(t.Context(), []string{"backup-verify", "-from", "2026-09-30", "-to", "2026-10-01"}, env, &out, io.Discard); err != nil ||
 		!strings.Contains(out.String(), "2 bagian, 3 objek utuh, 0 bagian rusak (hari 2026-09-30 s.d. 2026-10-01)") {
+		t.Fatalf("%s %v", out.String(), err)
+	}
+	out.Reset()
+	if err := run(t.Context(), []string{"backup-verify", "-connectors", "tidak-ada"}, env, &out, io.Discard); err != nil ||
+		!strings.Contains(out.String(), "0 bagian, 0 objek utuh, 0 bagian rusak (2 hari terbaru di cadangan: cadangan kosong)") {
 		t.Fatalf("%s %v", out.String(), err)
 	}
 	out.Reset()
@@ -106,8 +123,17 @@ func TestBackupPruneRestore(t *testing.T) {
 		t.Fatal("prune tanpa -apply menghapus")
 	}
 	out.Reset()
-	if err := run(t.Context(), []string{"prune", "-apply"}, env, &out, io.Discard); err != nil || count(t, hot) != 4 {
+	var progress bytes.Buffer
+	if err := run(t.Context(), []string{"prune", "-apply"}, env, &out, &progress); err != nil || count(t, hot) != 4 {
 		t.Fatalf("%s %v %d", out.String(), err, count(t, hot))
+	}
+	for _, want := range []string{
+		"… 2 objek kedaluwarsa di 1 konektor-hari\n",
+		"… bmkg-prakiraan 2026-09-10 selesai (1/1 hari): 2/2 objek, 2 dihapus, 0 belum dicadangkan\n",
+	} {
+		if !strings.Contains(progress.String(), want) {
+			t.Errorf("progres tanpa %q:\n%s", want, progress.String())
+		}
 	}
 
 	into := t.TempDir()

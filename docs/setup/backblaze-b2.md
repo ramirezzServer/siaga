@@ -38,7 +38,7 @@ B2 dipilih karena bisa dibuat tanpa kartu kredit: 10 GB pertama gratis dan API k
 
    ```bash
    make archive-backup          # semua hari UTC yang sudah ditutup; ±1 menit untuk seminggu
-   make archive-backup-verify   # unduh bundel dua hari terakhir, periksa setiap payload
+   make archive-backup-verify   # unduh bundel dua hari terbaru di cadangan, periksa setiap payload
    make archive-prune           # HANYA menghitung: apa yang akan dihapus dari Garage
    ```
 

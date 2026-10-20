@@ -137,7 +137,7 @@ ARCHIVE_CMD = cd services/ingest && INGEST_ARCHIVE_URL="$(INGEST_ARCHIVE_URL)" g
 archive-backup: ## Kemas hari UTC yang sudah ditutup ke cadangan (satu tar.zst per konektor per hari)
 	@$(ARCHIVE_CMD) backup $(ARGS)
 
-archive-backup-verify: ## Unduh dan periksa bundel cadangan dua hari terakhir (ARGS=-all untuk semua)
+archive-backup-verify: ## Unduh dan periksa bundel cadangan dua hari terbaru yang ada di cadangan (ARGS=-all untuk semua)
 	@$(ARCHIVE_CMD) backup-verify $(ARGS)
 
 # Contoh: make archive-restore FROM=2026-09-26 TO=2026-09-27 CONNECTORS=bmkg-prakiraan INTO=/tmp/pulih
@@ -150,7 +150,7 @@ archive-prune: ## Hitung objek kedaluwarsa yang sudah dicadangkan (ARGS=-apply u
 backup-setup: ## Buat bucket + key Backblaze B2 untuk cadangan arsip dan isi ARCHIVE_BACKUP_* di .env (sekali)
 	@bash scripts/b2-setup.sh
 
-archive-maintain: ## Rawat arsip: backup, verifikasi dua hari terakhir, lalu prune -apply
+archive-maintain: ## Rawat arsip: backup, verifikasi dua hari terbaru di cadangan, lalu prune -apply
 	@$(ARCHIVE_CMD) backup
 	@$(ARCHIVE_CMD) backup-verify
 	@$(ARCHIVE_CMD) prune -apply

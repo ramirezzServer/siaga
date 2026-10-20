@@ -29,6 +29,25 @@ type Prune struct {
 	Apply bool
 	// MaxDelete membatasi penghapusan per jalan; nol = tanpa batas.
 	MaxDelete int
+	// Progress, bila diisi, dipanggil sebelum mulai, setiap ProgressEvery
+	// objek, dan setelah setiap konektor-hari selesai.
+	Progress func(PruneProgress)
+}
+
+// ProgressEvery adalah jarak laporan kemajuan Prune dalam objek.
+const ProgressEvery = 5000
+
+// PruneProgress adalah kemajuan Prune.Run.
+type PruneProgress struct {
+	Connector string
+	Day       string
+	// DayDone true saat konektor-hari selesai diperiksa.
+	DayDone bool
+	// Done adalah objek kedaluwarsa yang sudah diperiksa dari Total (seluruh
+	// jalan); Deleted dan NotBackedUp dihitung sejak awal jalan.
+	Done, Total          int
+	Deleted, NotBackedUp int
+	Days, TotalDays      int
 }
 
 // ConnectorPrune adalah hasil Prune satu konektor.
@@ -77,7 +96,18 @@ func (p Prune) Run(ctx context.Context, f Filter) (PruneReport, error) {
 	}
 	byConn := map[string]*ConnectorPrune{}
 	deleted := 0
-	for _, dk := range hot.sorted() {
+	order := hot.sorted()
+	prog := PruneProgress{TotalDays: len(order)}
+	for _, objs := range hot.days {
+		prog.Total += len(objs)
+	}
+	report := func() {
+		if p.Progress != nil {
+			p.Progress(prog)
+		}
+	}
+	report()
+	for _, dk := range order {
 		if err := ctx.Err(); err != nil {
 			return rep, err
 		}
@@ -89,6 +119,7 @@ func (p Prune) Run(ctx context.Context, f Filter) (PruneReport, error) {
 			byConn[dk.connector] = cp
 		}
 		cp.Days++
+		prog.Connector, prog.Day, prog.DayDone = dk.connector, dayString(dk.day), false
 		bd, err := scanBackup(ctx, p.Backup, archivebundle.DayPrefix(dk.connector, dk.day))
 		if err != nil {
 			return rep, err
@@ -102,8 +133,13 @@ func (p Prune) Run(ctx context.Context, f Filter) (PruneReport, error) {
 			return rep, err
 		}
 		for _, o := range hot.days[dk] {
+			prog.Done++
+			if prog.Done%ProgressEvery == 0 {
+				report()
+			}
 			if _, ok := covered[o.Key]; !ok {
 				cp.NotBackedUp++
+				prog.NotBackedUp++
 				rep.Samples = addSample(rep.Samples, fmt.Errorf("belum dicadangkan: %s", o.Key))
 				continue
 			}
@@ -117,9 +153,13 @@ func (p Prune) Run(ctx context.Context, f Filter) (PruneReport, error) {
 				}
 			}
 			deleted++
+			prog.Deleted++
 			cp.Deleted++
 			cp.Bytes += o.Size
 		}
+		prog.Days++
+		prog.DayDone = true
+		report()
 		if rep.Limited {
 			break
 		}

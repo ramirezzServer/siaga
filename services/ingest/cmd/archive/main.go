@@ -7,7 +7,7 @@
 // Cadangan dan retensi (ADR 0022):
 //
 //	archive backup        [-archive URL] [-backup URL] [-connectors] [-from] [-to]
-//	archive backup-verify [-backup URL] [-from] [-to] [-all]
+//	archive backup-verify [-backup URL] [-from] [-to] [-all] [-latest N]
 //	archive restore       -from HARI [-to HARI] [-into URL] [-backup URL] [-connectors]
 //	archive prune         [-archive URL] [-backup URL] [-retention] [-apply] [-max-delete N]
 //
@@ -46,7 +46,7 @@ const usage = `pemakaian: archive <ls|verify|cp|backup|backup-verify|restore|pru
   verify         periksa setiap objek: kunci baku, gzip utuh, SHA-256 cocok
   cp             salin objek yang belum ada dari -from ke -to (bawaan INGEST_ARCHIVE_URL)
   backup         kemas hari UTC yang sudah ditutup ke cadangan (satu tar.zst per konektor per hari)
-  backup-verify  unduh bundel cadangan dan periksa setiap payload (bawaan dua hari terakhir)
+  backup-verify  unduh bundel cadangan dan periksa setiap payload (bawaan dua hari terbaru di cadangan)
   restore        pulihkan payload dari cadangan ke arsip atau folder (-from wajib)
   prune          hapus objek kedaluwarsa yang sudah ada di cadangan (tanpa -apply hanya menghitung)`
 

@@ -4,6 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
+	"slices"
+	"time"
 
 	"github.com/ramirezzServer/siaga/services/ingest/internal/app/emit"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/domain/archivebundle"
@@ -13,6 +16,10 @@ import (
 
 // VerifyReport adalah hasil Verify.
 type VerifyReport struct {
+	// From dan To adalah hari UTC pertama dan terakhir yang diperiksa
+	// VerifyLatest (kosong untuk Verify atau bila cadangan kosong).
+	From    string   `json:"from,omitempty"`
+	To      string   `json:"to,omitempty"`
 	Parts   int      `json:"parts"`
 	Objects int      `json:"objects"`
 	Corrupt int      `json:"corrupt"`
@@ -24,11 +31,52 @@ type VerifyReport struct {
 // dan potongan di kunci arsip). Bagian rusak dihitung; galat baca
 // penyimpanan menghentikan verifikasi.
 func Verify(ctx context.Context, dst ports.ArchiveReader, f Filter) (VerifyReport, error) {
-	var rep VerifyReport
 	names, err := scanIndexes(ctx, dst, f)
 	if err != nil {
-		return rep, err
+		return VerifyReport{}, err
 	}
+	return verifyParts(ctx, dst, names, VerifyReport{})
+}
+
+// VerifyLatest seperti Verify, tetapi hanya untuk days hari UTC terbaru yang
+// ada di cadangan (setelah filter konektor dan rentang), bukan hari kalender
+// terakhir. Saat ingest mati beberapa hari, hari kalender terakhir tidak
+// punya cadangan dan Verify tidak memeriksa apa pun; VerifyLatest tetap
+// memeriksa cadangan yang terakhir ditulis.
+func VerifyLatest(ctx context.Context, dst ports.ArchiveReader, f Filter, days int) (VerifyReport, error) {
+	if days < 1 {
+		return VerifyReport{}, errors.New("archivebackup: jumlah hari VerifyLatest harus >= 1")
+	}
+	names, err := scanIndexes(ctx, dst, f)
+	if err != nil {
+		return VerifyReport{}, err
+	}
+	names, from, to := latestDays(names, days)
+	rep := VerifyReport{}
+	if len(names) > 0 {
+		rep.From, rep.To = dayString(from), dayString(to)
+	}
+	return verifyParts(ctx, dst, names, rep)
+}
+
+// latestDays memilih indeks dari days hari berbeda terbaru, urutan asli
+// dipertahankan.
+func latestDays(names []archivebundle.Name, days int) ([]archivebundle.Name, time.Time, time.Time) {
+	distinct := map[time.Time]bool{}
+	for _, n := range names {
+		distinct[n.Day] = true
+	}
+	all := slices.SortedFunc(maps.Keys(distinct), func(a, b time.Time) int { return b.Compare(a) })
+	if len(all) == 0 {
+		return nil, time.Time{}, time.Time{}
+	}
+	keep := all[:min(days, len(all))]
+	from, to := keep[len(keep)-1], keep[0]
+	out := slices.DeleteFunc(slices.Clone(names), func(n archivebundle.Name) bool { return n.Day.Before(from) })
+	return out, from, to
+}
+
+func verifyParts(ctx context.Context, dst ports.ArchiveReader, names []archivebundle.Name, rep VerifyReport) (VerifyReport, error) {
 	for _, n := range names {
 		rep.Parts++
 		ix, data, err := fetchPart(ctx, dst, n)

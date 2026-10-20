@@ -159,8 +159,9 @@ func runBackupCmd(ctx context.Context, cmd string, rest []string, env *envx.Read
 		}
 		return true, err
 	case "backup-verify":
-		days := addDayFlags(fs, "hari UTC pertama (bawaan: dua hari sebelum hari ini)")
+		days := addDayFlags(fs, "hari UTC pertama (bawaan: dua hari terbaru yang ada di cadangan)")
 		all := fs.Bool("all", false, "periksa semua hari di cadangan")
+		latest := fs.Int("latest", 2, "tanpa -from/-to/-all: jumlah hari terbaru di cadangan yang diperiksa")
 		if err := parse(fs, rest); err != nil {
 			return true, err
 		}
@@ -168,19 +169,22 @@ func runBackupCmd(ctx context.Context, cmd string, rest []string, env *envx.Read
 		if err != nil {
 			return true, err
 		}
-		if !*all && f.From.IsZero() && f.To.IsZero() {
-			today := retention.Day(now())
-			f.From, f.To = today.AddDate(0, 0, -2), today.AddDate(0, 0, -1)
-		}
 		dst, err := openBackup(ctx, *backupURL, be.creds, "")
 		if err != nil {
 			return true, err
 		}
-		rep, err := archivebackup.Verify(ctx, dst, f)
+		var rep archivebackup.VerifyReport
+		note := rangeNote(f)
+		if !*all && f.From.IsZero() && f.To.IsZero() {
+			rep, err = archivebackup.VerifyLatest(ctx, dst, f, *latest)
+			note = latestNote(rep, *latest)
+		} else {
+			rep, err = archivebackup.Verify(ctx, dst, f)
+		}
 		if *asJSON {
 			_ = printJSON(stdout, rep)
 		} else {
-			fmt.Fprintf(stdout, "%s: %d bagian, %d objek utuh, %d bagian rusak%s\n", dst.Location(), rep.Parts, rep.Objects, rep.Corrupt, rangeNote(f))
+			fmt.Fprintf(stdout, "%s: %d bagian, %d objek utuh, %d bagian rusak%s\n", dst.Location(), rep.Parts, rep.Objects, rep.Corrupt, note)
 			for _, s := range rep.Samples {
 				fmt.Fprintln(stdout, "  "+s)
 			}
@@ -256,6 +260,7 @@ func runBackupCmd(ctx context.Context, cmd string, rest []string, env *envx.Read
 		}
 		rep, err := archivebackup.Prune{
 			Src: src, Backup: dst, Policy: policy, Now: now, Apply: *apply, MaxDelete: *maxDelete,
+			Progress: pruneProgress(stderr, *apply),
 		}.Run(ctx, f)
 		if *asJSON {
 			_ = printJSON(stdout, rep)
@@ -265,6 +270,34 @@ func runBackupCmd(ctx context.Context, cmd string, rest []string, env *envx.Read
 		return true, err
 	default:
 		return false, nil
+	}
+}
+
+// latestNote menjelaskan rentang yang diperiksa VerifyLatest.
+func latestNote(rep archivebackup.VerifyReport, days int) string {
+	if rep.From == "" {
+		return fmt.Sprintf(" (%d hari terbaru di cadangan: cadangan kosong)", days)
+	}
+	return fmt.Sprintf(" (%d hari terbaru di cadangan: %s s.d. %s)", days, rep.From, rep.To)
+}
+
+// pruneProgress mencetak kemajuan prune ke w: baris awal, setiap
+// archivebackup.ProgressEvery objek, dan setiap konektor-hari selesai.
+func pruneProgress(w io.Writer, apply bool) func(archivebackup.PruneProgress) {
+	verb := "akan dihapus"
+	if apply {
+		verb = "dihapus"
+	}
+	return func(p archivebackup.PruneProgress) {
+		switch {
+		case p.Connector == "":
+			fmt.Fprintf(w, "… %d objek kedaluwarsa di %d konektor-hari\n", p.Total, p.TotalDays)
+		case p.DayDone:
+			fmt.Fprintf(w, "… %s %s selesai (%d/%d hari): %d/%d objek, %d %s, %d belum dicadangkan\n",
+				p.Connector, p.Day, p.Days, p.TotalDays, p.Done, p.Total, p.Deleted, verb, p.NotBackedUp)
+		default:
+			fmt.Fprintf(w, "… %s %s: %d/%d objek, %d %s\n", p.Connector, p.Day, p.Done, p.Total, p.Deleted, verb)
+		}
 	}
 }
 

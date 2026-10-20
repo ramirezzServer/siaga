@@ -419,6 +419,67 @@ func TestVerifyDetectsDamage(t *testing.T) {
 	})
 }
 
+func TestVerifyLatest(t *testing.T) {
+	src, dst := newMem(), newMem()
+	// Ingest mati 3–19 Okt: hari kalender terakhir tidak punya cadangan.
+	fillDay(t, src, "c", d1.AddDate(0, 0, -1), 1)
+	fillDay(t, src, "c", d1, 2)
+	fillDay(t, src, "d", d1.AddDate(0, 0, 1), 3)
+	runBackup(t, src, dst, d1.AddDate(0, 0, 18))
+	vr, err := VerifyLatest(t.Context(), dst, Filter{}, 2)
+	if err != nil || vr.Parts != 2 || vr.Objects != 5 || vr.From != "2026-10-01" || vr.To != "2026-10-02" {
+		t.Fatalf("%+v %v", vr, err)
+	}
+	// Filter konektor dipakai sebelum memilih hari terbaru.
+	vr, err = VerifyLatest(t.Context(), dst, Filter{Connectors: []string{"c"}}, 2)
+	if err != nil || vr.Parts != 2 || vr.Objects != 3 || vr.From != "2026-09-30" || vr.To != "2026-10-01" {
+		t.Fatalf("konektor %+v %v", vr, err)
+	}
+	vr, err = VerifyLatest(t.Context(), dst, Filter{}, 10)
+	if err != nil || vr.Parts != 3 || vr.From != "2026-09-30" {
+		t.Fatalf("lebih dari isi %+v %v", vr, err)
+	}
+	vr, err = VerifyLatest(t.Context(), newMem(), Filter{}, 2)
+	if err != nil || vr.Parts != 0 || vr.From != "" {
+		t.Fatalf("kosong %+v %v", vr, err)
+	}
+	if _, err := VerifyLatest(t.Context(), dst, Filter{}, 0); err == nil {
+		t.Fatal("hari 0 diterima")
+	}
+	dst.listErr = errors.New("daftar")
+	if _, err := VerifyLatest(t.Context(), dst, Filter{}, 2); err == nil {
+		t.Fatal("tanpa galat daftar")
+	}
+}
+
+func TestPruneProgress(t *testing.T) {
+	old := d1.AddDate(0, 0, -40)
+	src, dst := newMem(), newMem()
+	for i := range ProgressEvery + 1 {
+		put(t, src, "usgs-2.5-day", old.Add(time.Duration(i)*time.Second), fmt.Sprintf(`{"i":%d}`, i))
+	}
+	fillDay(t, src, "usgs-2.5-day", old.AddDate(0, 0, 1), 2)
+	runBackup(t, src, dst, d1)
+	var got []PruneProgress
+	rep, err := Prune{
+		Src: src, Backup: dst, Policy: retention.Default(), Now: clock(d1), Apply: true,
+		Progress: func(p PruneProgress) { got = append(got, p) },
+	}.Run(t.Context(), Filter{})
+	if err != nil || rep.Connectors[0].Deleted != ProgressEvery+3 {
+		t.Fatalf("%+v %v", rep, err)
+	}
+	total := ProgressEvery + 3
+	want := []PruneProgress{
+		{Total: total, TotalDays: 2},
+		{Connector: "usgs-2.5-day", Day: "2026-08-22", Done: ProgressEvery, Total: total, Deleted: ProgressEvery - 1, TotalDays: 2},
+		{Connector: "usgs-2.5-day", Day: "2026-08-22", DayDone: true, Done: ProgressEvery + 1, Total: total, Deleted: ProgressEvery + 1, Days: 1, TotalDays: 2},
+		{Connector: "usgs-2.5-day", Day: "2026-08-23", DayDone: true, Done: total, Total: total, Deleted: total, Days: 2, TotalDays: 2},
+	}
+	if !slices.Equal(got, want) {
+		t.Fatalf("\n%+v\ningin\n%+v", got, want)
+	}
+}
+
 func TestPrune(t *testing.T) {
 	old := d1.AddDate(0, 0, -20)
 	now := d1.Add(12 * time.Hour)
