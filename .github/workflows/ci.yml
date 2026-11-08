@@ -191,7 +191,9 @@ jobs:
           cp .env.example .env
           sed -i 's/=ganti-saya/=ci-password/' .env
           docker run -d --name pg --env-file .env -p 5432:5432 siaga-postgres:ci
-          for i in $(seq 60); do docker exec pg pg_isready -U postgres -d siaga && break; sleep 2; done
+          # Lewat TCP: server sementara initdb hanya mendengar socket Unix, jadi
+          # pg_isready lewat socket bisa lulus tepat sebelum server itu dimatikan.
+          for i in $(seq 60); do docker exec pg pg_isready -h 127.0.0.1 -U postgres -d siaga && break; sleep 2; done
           docker exec pg psql -U postgres -d siaga -tAc "select string_agg(extname, ',' order by extname) from pg_extension"
       - name: Migrasi naik, turun, naik
         working-directory: services/geo-processor
