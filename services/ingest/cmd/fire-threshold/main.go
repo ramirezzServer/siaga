@@ -205,7 +205,7 @@ func runWith(ctx context.Context, args []string, getenv func(string) string, std
 	if err := firethreshold.WriteReport(&rep, d.now(), bb.String(), cov, res); err != nil {
 		return err
 	}
-	if err := firethreshold.WriteStatic(&csvOut, res.Static); err != nil {
+	if err := firethreshold.WriteStatic(&csvOut, res); err != nil {
 		return err
 	}
 	if err := firethreshold.WriteGeoJSON(&geo, res.Static); err != nil {

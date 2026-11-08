@@ -195,10 +195,23 @@ func TestFindStatic(t *testing.T) {
 	var ps []Point
 	ps = append(ps, flare(-6.3851, 108.3702, fire.UnknownType)...) // kilang (NRT, tanpa type)
 	ps = append(ps, seasonal(-6.75, 108.45)...)                    // tebu musiman
-	// Kawah yang ditandai FIRMS walau hanya 4 hari.
+	// Kebakaran lereng gunung api: FIRMS memberi type 1, tetapi itu bukan
+	// sumber tetap (Ciremai 2019).
 	for i := range 4 {
-		p := pt(fmt.Sprintf("kawah-%d", i), -7.32+0.0005*float64(i), 107.73, t0.AddDate(0, 0, i), fire.Low)
+		p := pt(fmt.Sprintf("lereng-%d", i), -6.89+0.0005*float64(i), 108.40, t0.AddDate(0, 0, i), fire.Low)
 		p.Type = fire.ActiveVolcano
+		ps = append(ps, p)
+	}
+	// Anjungan lepas pantai: type 3, siang saja, 4 tahun.
+	for i := range 8 {
+		p := pt(fmt.Sprintf("anjungan-%d", i), -5.9+0.0005*float64(i%2), 107.5, time.Date(2013+i/2, time.Month(1+5*(i%2)), 9, 6, 0, 0, 0, time.UTC), fire.Nominal)
+		p.Type = fire.Offshore
+		ps = append(ps, p)
+	}
+	// Type 2 tetapi hanya satu tahun: bukan sumber tetap.
+	for i := range 5 {
+		p := pt(fmt.Sprintf("sekali-%d", i), -6.1, 106.9, t0.AddDate(0, 0, 3*i), fire.Nominal)
+		p.Type = fire.StaticSource
 		ps = append(ps, p)
 	}
 	// Satu deteksi lepas di sebelah kilang ikut sel tetangga sumbernya.
@@ -217,15 +230,17 @@ func TestFindStatic(t *testing.T) {
 		t.Fatalf("kilang %+v", k)
 	}
 	v := got[1]
-	if v.Reason != ReasonFIRMS || v.Typed[fire.ActiveVolcano] != 4 || v.RadiusKm != DefaultStaticRule.MinRadiusKm || v.ID() != "-7.31925,107.73000" {
-		t.Fatalf("kawah %+v", v)
+	if v.Reason != ReasonFIRMS || v.Typed[fire.Offshore] != 8 || v.Years != 4 || v.RadiusKm != DefaultStaticRule.MinRadiusKm {
+		t.Fatalf("anjungan %+v", v)
 	}
 	m := Mask(got)
 	if s, ok := m.Match(-6.3851, 108.3712); !ok || s.ID() != k.ID() {
 		t.Fatal("deteksi di kilang tidak tersaring")
 	}
-	if _, ok := m.Match(-6.75, 108.45); ok {
-		t.Fatal("kebakaran musiman tersaring")
+	for _, c := range [][2]float64{{-6.75, 108.45}, {-6.89, 108.40}, {-6.1, 106.9}} {
+		if s, ok := m.Match(c[0], c[1]); ok {
+			t.Fatalf("%v tersaring oleh %s", c, s.ID())
+		}
 	}
 	// Kilang yang juga ditandai FIRMS: keduanya.
 	both, _ := FindStatic(flare(-6.5, 107.0, fire.StaticSource), DefaultStaticRule)
@@ -312,7 +327,7 @@ func FuzzEvaluateMonotone(f *testing.F) {
 			p.Satellite = []string{"S-NPP", "NOAA-20", "MODIS"}[data[i+1]%3]
 			ps = append(ps, p)
 		}
-		for _, r := range []LevelRule{PRDRule, {Name: "lintasan", SiagaCount: 3, Unit: Overpasses, WaspadaMin: fire.Nominal, Window: 24 * time.Hour}} {
+		for _, r := range []LevelRule{PRDRule, SelectedRule, {Name: "lintasan", SiagaCount: 3, Unit: Overpasses, WaspadaMin: fire.Nominal, Window: 24 * time.Hour}} {
 			before, err := Evaluate(ps, r)
 			if err != nil {
 				t.Fatal(err)
@@ -351,5 +366,91 @@ func TestFindStaticNightShare(t *testing.T) {
 	r.MinNightShare = 1.5
 	if _, err := FindStatic(ps, r); !errors.Is(err, ErrRule) {
 		t.Fatal("bagian malam > 1 diterima")
+	}
+}
+
+func TestFindStaticSeason(t *testing.T) {
+	// Tanur bata musiman: 60% malam, 7 bulan berbeda, 5 tahun, tetapi 90%
+	// deteksi di Juli–Oktober.
+	var ps []Point
+	for y := range 5 {
+		for i := range 10 {
+			month := time.Month(7 + i%4)
+			if i == 9 {
+				month = time.Month(1 + y%3*2)
+			}
+			p := pt(fmt.Sprintf("bata-%d-%d", y, i), -6.73, 108.26, time.Date(2015+y, month, 1+2*i, 18, 0, 0, 0, time.UTC), fire.Nominal)
+			p.Daytime = i%5 >= 3
+			ps = append(ps, p)
+		}
+	}
+	SortPoints(ps)
+	if got, _ := FindStatic(ps, DefaultStaticRule); len(got) != 0 {
+		t.Fatalf("sumber musiman tersaring: %+v", got)
+	}
+	r := DefaultStaticRule
+	r.MaxSeasonShare = 0.95
+	if got, _ := FindStatic(ps, r); len(got) != 1 {
+		t.Fatal("tanpa syarat musim tidak tersaring")
+	}
+	// Hampir seluruhnya malam (suar kecil yang hanya terlihat di malam
+	// cerah kemarau) lolos tanpa syarat musim.
+	for i := range ps {
+		ps[i].Daytime = false
+	}
+	if got, _ := FindStatic(ps, DefaultStaticRule); len(got) != 1 {
+		t.Fatal("suar malam musiman tidak tersaring")
+	}
+	for _, bad := range []func(*StaticRule){
+		func(r *StaticRule) { r.MaxSeasonShare = 0 },
+		func(r *StaticRule) { r.NightOnlyShare = 1.2 },
+		func(r *StaticRule) { r.SeasonFrom, r.SeasonTo = time.October, time.July },
+		func(r *StaticRule) { r.SeasonTo = 13 },
+	} {
+		r := DefaultStaticRule
+		bad(&r)
+		if _, err := FindStatic(ps, r); !errors.Is(err, ErrRule) {
+			t.Fatalf("aturan %+v diterima", r)
+		}
+	}
+}
+
+func TestSelectedRule(t *testing.T) {
+	low := func(id, sat string, h time.Duration) Point {
+		p := pt(id, -6.9, 107.6, t0.Add(h), fire.Nominal)
+		p.Satellite = sat
+		return p
+	}
+	// Satu lintasan, dua piksel: Info. Lintasan kedua (wahana lain): Waspada.
+	one := []Point{low("a", "NOAA-20", 0), low("b", "NOAA-20", 0)}
+	if o, _ := Evaluate(one, SelectedRule); o.Level != Info || o.Peak != 2 {
+		t.Fatalf("%+v", o)
+	}
+	two := append(slices.Clone(one), low("c", "NOAA-21", 50*time.Minute))
+	if o, _ := Evaluate(two, SelectedRule); o.Level != Waspada || !o.ReachedAt.Equal(two[2].At) {
+		t.Fatalf("%+v", o)
+	}
+	// Lintasan kedua di luar jendela 24 jam: tetap Info.
+	late := append(slices.Clone(one), low("d", "NOAA-20", 25*time.Hour))
+	if o, _ := Evaluate(late, SelectedRule); o.Level != Info {
+		t.Fatalf("%+v", o)
+	}
+	// Piksel jenuh langsung Waspada; lima deteksi Siaga.
+	high := low("h", "NOAA-20", 0)
+	high.Confidence = fire.High
+	if o, _ := Evaluate([]Point{high}, SelectedRule); o.Level != Waspada {
+		t.Fatalf("%+v", o)
+	}
+	five := append(slices.Clone(two), low("e", "MODIS", 2*time.Hour), low("f", "MODIS", 2*time.Hour))
+	if o, _ := Evaluate(five, SelectedRule); o.Level != Siaga || o.Peak != 5 {
+		t.Fatalf("%+v", o)
+	}
+	r := SelectedRule
+	r.WaspadaPasses = -1
+	if _, err := Evaluate(five, r); !errors.Is(err, ErrRule) {
+		t.Fatal("lintasan negatif diterima")
+	}
+	if !slices.Equal(ExcludedSatellites, []string{"S-NPP"}) {
+		t.Fatal(ExcludedSatellites)
 	}
 }

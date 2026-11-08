@@ -16,14 +16,14 @@ func p(id, sat string, lat, lon float64, at time.Time, c fire.Confidence) firecl
 	return firecluster.Point{ID: id, Satellite: sat, Instrument: fire.VIIRS, Lat: lat, Lon: lon, At: at, Confidence: c, Type: fire.UnknownType, Daytime: true, FRPMW: 3}
 }
 
-// synthetic: kilang menyala tiap 20 hari 2016–2019 (malam, type 2 di SP),
+// synthetic: kilang menyala tiap 20 hari 2016–2019 (NOAA-20, malam, type 2 di SP),
 // kebakaran Ciremai Oktober 2019 (besar, tiga wahana, ada piksel jenuh),
 // satu deteksi rendah di Papandayan, dan kebakaran sawah kecil.
 func synthetic() []firecluster.Point {
 	var ps []firecluster.Point
 	for i := range 73 {
 		at := time.Date(2016, 1, 1, 18, 40, 0, 0, time.UTC).AddDate(0, 0, 20*i)
-		q := p(fmt.Sprintf("kilang-%d", i), "S-NPP", -6.3851+0.002*float64(i%3-1), 108.3702, at, fire.Nominal)
+		q := p(fmt.Sprintf("kilang-%d", i), "NOAA-20", -6.3851+0.002*float64(i%3-1), 108.3702, at, fire.Nominal)
 		q.Daytime, q.Type, q.FRPMW = false, fire.StaticSource, 25
 		ps = append(ps, q)
 	}
@@ -100,17 +100,21 @@ func TestAnalyze(t *testing.T) {
 	if res.Monthly[9] != 46 || res.Monthly[7] != 1 {
 		t.Fatalf("bulanan %v", res.Monthly)
 	}
-	// Inventaris: S-NPP 2016–2019 kilang + Ciremai; NOAA-20 dan MODIS 2019.
-	var snpp2019 InventoryRow
+	// Inventaris: NOAA-20 2016–2019 kilang + Ciremai; S-NPP dan MODIS 2019.
+	var snpp2019, noaa2019 InventoryRow
 	for _, r := range res.Inventory {
-		if r.Satellite == "S-NPP" && r.Year == 2019 {
+		switch {
+		case r.Satellite == "S-NPP" && r.Year == 2019:
 			snpp2019 = r
+		case r.Satellite == "NOAA-20" && r.Year == 2019:
+			noaa2019 = r
 		}
 	}
-	if res.Inventory[0].Satellite != "S-NPP" || snpp2019.Detections != 18+15 || snpp2019.ByConfidence[fire.High] != 1 || snpp2019.Typed[fire.StaticSource] != 18 {
+	if res.Inventory[0].Satellite != "S-NPP" || snpp2019.Detections != 15 || snpp2019.ByConfidence[fire.High] != 1 ||
+		noaa2019.Detections != 18+15+1 || noaa2019.Typed[fire.StaticSource] != 18 {
 		t.Fatalf("%+v", res.Inventory)
 	}
-	prd, noSNPP, noMask, nominal, passes := res.Variants[0], res.Variants[1], res.Variants[2], res.Variants[3], res.Variants[4]
+	prd, noSNPP, passes, selected, noMODIS, noMask := res.Variants[0], res.Variants[1], res.Variants[2], res.Variants[3], res.Variants[4], res.Variants[5]
 	// PRD: Ciremai Siaga, Papandayan Info, sawah Info.
 	if got := prd.Total(); got != [4]int{0, 2, 0, 1} || prd.Points != 47 {
 		t.Fatalf("PRD %v, %d deteksi", got, prd.Points)
@@ -118,12 +122,23 @@ func TestAnalyze(t *testing.T) {
 	if top := prd.Top(1)[0]; top.Level != firecluster.Siaga || top.Detections != 45 || top.Peak != 9 || len(top.Satellites) != 3 {
 		t.Fatalf("terbesar %+v", top)
 	}
-	if noSNPP.Points != 32 || noMask.Points != 120 || nominal.Total()[firecluster.Siaga] != 1 {
-		t.Fatalf("varian %d %d %v", noSNPP.Points, noMask.Points, nominal.Total())
+	if noSNPP.Points != 32 || noMask.Points != 32+73 || noMODIS.Points != 16 {
+		t.Fatalf("varian %d %d %d", noSNPP.Points, noMask.Points, noMODIS.Points)
+	}
+	// Terpilih: Ciremai tanpa S-NPP tetap 6 deteksi per hari → Siaga.
+	if got := selected.Total(); got != [4]int{0, 2, 0, 1} || !selected.Variant.Selected {
+		t.Fatalf("terpilih %v", got)
+	}
+	if v, ok := res.SelectedVariant(); !ok || v.Variant.Name != selected.Variant.Name {
+		t.Fatal("varian terpilih")
+	}
+	// Tanpa MODIS: Ciremai hanya NOAA-20, satu lintasan 3 piksel per hari → Info.
+	if got := noMODIS.Total(); got != [4]int{0, 2, 0, 0} {
+		t.Fatalf("tanpa MODIS %v", got)
 	}
 	// Tanpa saringan, kilang menjadi kejadian sendiri (setiap 20 hari: jeda >
 	// 24 jam, jadi 73 kejadian Info).
-	if got := noMask.Total(); got[firecluster.Info] != 2+73 {
+	if got := noMask.Total(); got[firecluster.Info] != 2+73 || got[firecluster.Siaga] != 1 {
 		t.Fatalf("tanpa saringan %v", got)
 	}
 	// Lintasan: Ciremai dilihat 2 wahana tanpa S-NPP per hari → < 3 lintasan.
@@ -146,7 +161,7 @@ func TestAnalyze(t *testing.T) {
 	if r := kilang.Results[0]; r.Found || r.Masked != 1 {
 		t.Fatalf("kilang PRD %+v", r)
 	}
-	if r := kilang.Results[2]; !r.Found || r.Masked != 0 {
+	if r := kilang.Results[5]; !r.Found || r.Masked != 0 {
 		t.Fatalf("kilang tanpa saringan %+v", r)
 	}
 
@@ -164,7 +179,9 @@ func TestAnalyze(t *testing.T) {
 		"| 2019 | 0 / 1 |",
 		"| [ciremai-2019-10](https://contoh.test/a) | 2019-10-21 s.d. 10-26 | 190 ha | Siaga, 45 deteksi, pertama 2019-10-21 12.30 |",
 		"| [kilang](https://contoh.test/d) | 2017-03-01 s.d. 03-31 | - | tidak terdeteksi (1 tersaring) |",
-		"## 25 kejadian terbesar (PRD)",
+		"| Terpilih: Waspada tinggi atau ≥ 2 lintasan, Siaga ≥ 5 deteksi, tanpa S-NPP * | S-NPP | ya | 2.0 km / 24 jam | high atau ≥ 2 lintasan | ≥ 5 deteksi | 32 | 3 | 2 | 0 | 1 |",
+		"## 25 kejadian terbesar (Terpilih: Waspada tinggi atau ≥ 2 lintasan, Siaga ≥ 5 deteksi, tanpa S-NPP)",
+		"≤ 80% deteksi di Jul–Okt",
 	} {
 		if !strings.Contains(rep.String(), want) {
 			t.Errorf("laporan tanpa %q", want)
@@ -175,11 +192,12 @@ func TestAnalyze(t *testing.T) {
 	}
 
 	var csvOut, geo bytes.Buffer
-	if err := WriteStatic(&csvOut, res.Static); err != nil {
+	if err := WriteStatic(&csvOut, res); err != nil {
 		t.Fatal(err)
 	}
 	lines := strings.Split(strings.TrimSpace(csvOut.String()), "\n")
-	if len(lines) != 2 || !strings.HasPrefix(lines[0], "id,lintang,bujur,radius_km,alasan") || !strings.HasPrefix(lines[1], "\"-6.38513,108.37020\",-6.38513,108.37020,") {
+	if len(lines) != 5 || lines[1] != "# Arsip FIRMS 2016-01-01..2019-12-11 (UTC)" || lines[2] != "# 1 sumber" ||
+		!strings.HasPrefix(lines[3], "id,lintang,bujur,radius_km,alasan") || !strings.HasPrefix(lines[4], "\"-6.38513,108.37020\",-6.38513,108.37020,") {
 		t.Fatalf("CSV\n%s", csvOut.String())
 	}
 	if err := WriteGeoJSON(&geo, res.Static); err != nil {

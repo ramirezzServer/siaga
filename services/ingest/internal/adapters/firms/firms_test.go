@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io/fs"
 	"os"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -18,8 +19,13 @@ const key = "KUNCIUJIKUNCIUJIKUNCIUJIKUNCIUJI"
 
 var fetched = time.Date(2026, 9, 24, 2, 0, 0, 0, time.UTC)
 
+// connector mengembalikan konektor produk p; produk yang tidak lagi
+// dipolling (S-NPP) dibuat langsung supaya parsernya tetap teruji.
 func connector(t *testing.T, p fire.Product) *Connector {
 	t.Helper()
+	if !slices.Contains(fire.PolledProducts, p) {
+		return &Connector{Parser: Parser{product: p}, base: DefaultBaseURL, key: key, box: area.JawaBarat}
+	}
 	cs, err := NewConnectors(DefaultBaseURL+"/", key, area.JawaBarat)
 	if err != nil {
 		t.Fatal(err)
@@ -196,13 +202,18 @@ func TestParsersMatchConnectors(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	parsers := NewParsers()
-	if len(parsers) != len(conns) {
+	// Parser mencakup semua produk yang diterima (replay arsip S-NPP lama);
+	// konektor hanya produk yang dipolling, dengan nama yang sama.
+	parsers := map[string]bool{}
+	for _, p := range NewParsers() {
+		parsers[p.Name()] = true
+	}
+	if len(parsers) != len(fire.Products) || len(conns) != len(fire.PolledProducts) || !parsers["firms-viirs-snpp-nrt"] {
 		t.Fatal(len(parsers), len(conns))
 	}
-	for i, p := range parsers {
-		if p.Name() != conns[i].Name() {
-			t.Fatalf("%s != %s", p.Name(), conns[i].Name())
+	for _, c := range conns {
+		if !parsers[c.Name()] || c.Name() == "firms-viirs-snpp-nrt" {
+			t.Fatalf("konektor %s", c.Name())
 		}
 	}
 }

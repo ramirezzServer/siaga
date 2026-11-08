@@ -1,0 +1,6214 @@
+{
+ "rule": "SIAGA",
+ "excluded": 631,
+ "masked": 310,
+ "events": [
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230818T0536:-6.58914:108.11834"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-18T05:36:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230818T0536:-6.75749:108.12277"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-18T05:36:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230818T0536:-6.87421:107.92741"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-18T05:36:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230818T0536:-6.98866:108.81070",
+    "VIIRS_NOAA21_NRT:20230818T0536:-6.98911:108.80748"
+   ],
+   "level": "Info",
+   "peak": 2,
+   "reached_at": "2023-08-18T05:36:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230818T0536:-7.05492:108.49257"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-18T05:36:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230818T0655:-6.04131:106.70101",
+    "VIIRS_NOAA20_NRT:20230818T0655:-6.04232:106.70100"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-08-18T06:55:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230818T0655:-6.65894:106.90583"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-18T06:55:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230818T0655:-6.83643:107.39728"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-18T06:55:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230818T0655:-6.91148:107.30976",
+    "VIIRS_NOAA20_NRT:20230819T0636:-6.89733:107.31385"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-08-19T06:36:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230818T1759:-6.51038:107.70609",
+    "VIIRS_NOAA20_NRT:20230818T1759:-6.51099:107.70519",
+    "VIIRS_NOAA21_NRT:20230818T1821:-6.51116:107.70623"
+   ],
+   "level": "Waspada",
+   "peak": 3,
+   "reached_at": "2023-08-18T18:21:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230818T1759:-6.77963:108.09377",
+    "VIIRS_NOAA21_NRT:20230818T1821:-6.77944:108.09417"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-08-18T18:21:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230818T1759:-6.81064:107.28102"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-18T17:59:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230818T1759:-6.82118:108.63892",
+    "VIIRS_NOAA20_NRT:20230818T1759:-6.82177:108.64263",
+    "VIIRS_NOAA21_NRT:20230818T1821:-6.81858:108.64205",
+    "VIIRS_NOAA21_NRT:20230818T1821:-6.82239:108.64148"
+   ],
+   "level": "Waspada",
+   "peak": 4,
+   "reached_at": "2023-08-18T18:21:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230818T1821:-6.09760:106.93136"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-18T18:21:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230818T1821:-7.26154:106.46494",
+    "VIIRS_NOAA21_NRT:20230818T1821:-7.26208:106.46853"
+   ],
+   "level": "Info",
+   "peak": 2,
+   "reached_at": "2023-08-18T18:21:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230818T1821:-7.43551:106.78003"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-18T18:21:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230819T0636:-6.55514:108.18825",
+    "VIIRS_NOAA21_NRT:20230819T0658:-6.54952:108.18888",
+    "VIIRS_NOAA20_NRT:20230820T0617:-6.56522:108.17576",
+    "VIIRS_NOAA21_NRT:20230820T0639:-6.56397:108.17764",
+    "VIIRS_NOAA21_NRT:20230820T0639:-6.56468:108.17338"
+   ],
+   "level": "Waspada",
+   "peak": 4,
+   "reached_at": "2023-08-19T06:58:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230819T0636:-6.59071:108.19753",
+    "VIIRS_NOAA20_NRT:20230819T0636:-6.59178:108.19870"
+   ],
+   "level": "Info",
+   "peak": 2,
+   "reached_at": "2023-08-19T06:36:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230819T0636:-6.59793:108.04980",
+    "VIIRS_NOAA20_NRT:20230820T0617:-6.60184:108.06805",
+    "VIIRS_NOAA20_NRT:20230820T0617:-6.60521:108.06937",
+    "VIIRS_NOAA20_NRT:20230820T0617:-6.61392:108.05653",
+    "VIIRS_NOAA21_NRT:20230820T0639:-6.60441:108.06758",
+    "VIIRS_NOAA21_NRT:20230820T0639:-6.61258:108.05530",
+    "VIIRS_NOAA21_NRT:20230820T0639:-6.61512:108.05647",
+    "VIIRS_NOAA21_NRT:20230821T0620:-6.60316:108.07491",
+    "VIIRS_NOAA21_NRT:20230821T0620:-6.61383:108.05079"
+   ],
+   "level": "Siaga",
+   "peak": 6,
+   "reached_at": "2023-08-20T06:39:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230819T0636:-6.62726:108.08387",
+    "VIIRS_NOAA21_NRT:20230819T0658:-6.62621:108.08478",
+    "VIIRS_NOAA20_NRT:20230820T0617:-6.62906:108.09066"
+   ],
+   "level": "Waspada",
+   "peak": 3,
+   "reached_at": "2023-08-19T06:58:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230819T0636:-6.84674:106.59960"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-19T06:36:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230819T0636:-6.91815:108.26896"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-19T06:36:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230819T0636:-6.94827:108.61871"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-19T06:36:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230819T0636:-6.96369:106.99544"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-19T06:36:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230819T0636:-7.29645:106.76186"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-19T06:36:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230819T0636:-7.39523:106.63832"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-19T06:36:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230819T0636:-7.46106:107.30215"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-19T06:36:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230819T0636:-7.47828:108.76222",
+    "VIIRS_NOAA20_NRT:20230819T0636:-7.47938:108.76230"
+   ],
+   "level": "Info",
+   "peak": 2,
+   "reached_at": "2023-08-19T06:36:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230819T0658:-6.39038:107.69683"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-19T06:58:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230819T1740:-6.34740:107.01853",
+    "VIIRS_NOAA20_NRT:20230819T1740:-6.34807:107.01717",
+    "VIIRS_NOAA21_NRT:20230819T1802:-6.34726:107.01640"
+   ],
+   "level": "Waspada",
+   "peak": 3,
+   "reached_at": "2023-08-19T18:02:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230819T1802:-6.48454:107.90653"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-19T18:02:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230819T1802:-7.14288:106.47137",
+    "MODIS_NRT:20230820T1514:-7.14290:106.47980",
+    "MODIS_NRT:20230820T1514:-7.14460:106.46850",
+    "VIIRS_NOAA20_NRT:20230820T1902:-7.14211:106.47102"
+   ],
+   "level": "Waspada",
+   "peak": 3,
+   "reached_at": "2023-08-20T15:14:00Z"
+  },
+  {
+   "members": [
+    "MODIS_NRT:20230820T0257:-6.22360:106.40920"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-20T02:57:00Z"
+  },
+  {
+   "members": [
+    "MODIS_NRT:20230820T0257:-7.16020:106.57810"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-20T02:57:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230820T0617:-6.03084:107.06275",
+    "VIIRS_NOAA20_NRT:20230820T0617:-6.04572:107.05424"
+   ],
+   "level": "Info",
+   "peak": 2,
+   "reached_at": "2023-08-20T06:17:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230820T0617:-6.38571:107.72582",
+    "VIIRS_NOAA21_NRT:20230820T0639:-6.38203:107.72671",
+    "VIIRS_NOAA21_NRT:20230820T0639:-6.38269:107.72272",
+    "MODIS_NRT:20230820T0653:-6.38740:107.72850",
+    "MODIS_NRT:20230820T0653:-6.38880:107.71850"
+   ],
+   "level": "Siaga",
+   "peak": 5,
+   "reached_at": "2023-08-20T06:53:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230820T0617:-6.41614:107.47881"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-20T06:17:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230820T0617:-6.63553:108.00319"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-20T06:17:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230820T0617:-6.80159:107.35075",
+    "VIIRS_NOAA20_NRT:20230820T0617:-6.80492:107.35122",
+    "VIIRS_NOAA21_NRT:20230820T0639:-6.80422:107.35056",
+    "MODIS_NRT:20230820T0653:-6.80200:107.34760",
+    "VIIRS_NOAA20_NRT:20230821T0558:-6.80289:107.35069",
+    "VIIRS_NOAA20_NRT:20230821T0558:-6.80343:107.34686",
+    "VIIRS_NOAA21_NRT:20230821T0620:-6.80089:107.34908",
+    "VIIRS_NOAA21_NRT:20230821T0620:-6.80420:107.34961",
+    "VIIRS_NOAA21_NRT:20230821T1724:-6.80427:107.34811",
+    "VIIRS_NOAA20_NRT:20230821T1843:-6.79909:107.34586",
+    "VIIRS_NOAA20_NRT:20230821T1843:-6.80408:107.34572",
+    "MODIS_NRT:20230822T0241:-6.79630:107.34530",
+    "MODIS_NRT:20230822T0241:-6.79780:107.35530",
+    "VIIRS_NOAA21_NRT:20230822T0602:-6.79930:107.34737",
+    "VIIRS_NOAA21_NRT:20230822T0602:-6.80313:107.34770",
+    "MODIS_NRT:20230822T0638:-6.79970:107.35120",
+    "MODIS_NRT:20230822T0638:-6.80110:107.34130",
+    "MODIS_NRT:20230822T1458:-6.79870:107.34550",
+    "VIIRS_NOAA20_NRT:20230822T1824:-6.79934:107.34663",
+    "VIIRS_NOAA20_NRT:20230822T1824:-6.79997:107.35080",
+    "VIIRS_NOAA20_NRT:20230822T1824:-6.80297:107.34624",
+    "VIIRS_NOAA20_NRT:20230822T1824:-6.80360:107.35038",
+    "VIIRS_NOAA21_NRT:20230822T1846:-6.79976:107.34797",
+    "VIIRS_NOAA20_NRT:20230823T1805:-6.79618:107.34569",
+    "VIIRS_NOAA20_NRT:20230823T1805:-6.79677:107.34932",
+    "VIIRS_NOAA20_NRT:20230823T1805:-6.80014:107.34869",
+    "VIIRS_NOAA20_NRT:20230823T1805:-6.80351:107.34808",
+    "VIIRS_NOAA21_NRT:20230823T1827:-6.79822:107.34593",
+    "VIIRS_NOAA21_NRT:20230823T1827:-6.80215:107.34559",
+    "VIIRS_NOAA20_NRT:20230824T0642:-6.80138:107.34947",
+    "VIIRS_NOAA21_NRT:20230824T1808:-6.79935:107.34771",
+    "VIIRS_NOAA21_NRT:20230824T1808:-6.80265:107.34718",
+    "VIIRS_NOAA20_NRT:20230825T0623:-6.80105:107.34899"
+   ],
+   "level": "Siaga",
+   "peak": 13,
+   "reached_at": "2023-08-21T05:58:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230820T0617:-6.81398:108.83604"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-20T06:17:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230820T0617:-6.86427:106.77252",
+    "VIIRS_NOAA21_NRT:20230820T0639:-6.86584:106.77402"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-08-20T06:39:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230820T0617:-6.88639:107.32848"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-20T06:17:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230820T0617:-6.90130:108.59901"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-20T06:17:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230820T0617:-6.93088:107.21320",
+    "VIIRS_NOAA20_NRT:20230820T0617:-6.93141:107.20968",
+    "VIIRS_NOAA20_NRT:20230821T0558:-6.92374:107.22710"
+   ],
+   "level": "Waspada",
+   "peak": 3,
+   "reached_at": "2023-08-21T05:58:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230820T0617:-6.98800:107.55454"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-20T06:17:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230820T0617:-7.00438:107.91972",
+    "VIIRS_NOAA21_NRT:20230820T0639:-7.00517:107.92209"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-08-20T06:39:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230820T0617:-7.01952:107.95381"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-20T06:17:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230820T0617:-7.03363:108.59854"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-20T06:17:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230820T0617:-7.03905:106.96394",
+    "VIIRS_NOAA21_NRT:20230820T0639:-7.03968:106.96311"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-08-20T06:39:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230820T0617:-7.11429:106.52675",
+    "VIIRS_NOAA21_NRT:20230820T0639:-7.11218:106.52560"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-08-20T06:39:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230820T0617:-7.12493:107.90681",
+    "VIIRS_NOAA20_NRT:20230821T0558:-7.11747:107.89055"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-08-21T05:58:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230820T0617:-7.17349:108.01367"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-20T06:17:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230820T0617:-7.41796:106.88188"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-20T06:17:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230820T0617:-7.55777:108.78904"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-20T06:17:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230820T0617:-7.58368:108.84019"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-20T06:17:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230820T0639:-6.60401:108.10543",
+    "MODIS_NRT:20230820T0653:-6.60840:108.10070"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-08-20T06:53:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230820T0639:-6.73076:108.06638",
+    "VIIRS_NOAA21_NRT:20230820T0639:-6.73271:108.06635"
+   ],
+   "level": "Info",
+   "peak": 2,
+   "reached_at": "2023-08-20T06:39:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230820T0639:-6.86390:107.16441",
+    "VIIRS_NOAA21_NRT:20230820T0639:-6.86797:107.16506"
+   ],
+   "level": "Info",
+   "peak": 2,
+   "reached_at": "2023-08-20T06:39:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230820T0639:-6.99880:108.30747"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-20T06:39:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230820T0639:-6.99910:107.88017",
+    "VIIRS_NOAA20_NRT:20230821T0558:-7.00149:107.87795"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-08-21T05:58:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230820T0639:-7.12851:106.89558"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-20T06:39:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230820T0639:-7.21431:106.71232"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-20T06:39:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230820T0639:-7.52321:107.67874"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-20T06:39:00Z"
+  },
+  {
+   "members": [
+    "MODIS_NRT:20230820T1514:-6.60420:108.17280",
+    "VIIRS_NOAA20_NRT:20230820T1721:-6.60685:108.16688",
+    "VIIRS_NOAA21_NRT:20230820T1743:-6.60770:108.16916",
+    "VIIRS_NOAA21_NRT:20230821T0620:-6.59574:108.18836",
+    "VIIRS_NOAA21_NRT:20230821T0620:-6.59631:108.18473"
+   ],
+   "level": "Siaga",
+   "peak": 5,
+   "reached_at": "2023-08-21T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230821T0558:-6.38566:107.45538",
+    "VIIRS_NOAA20_NRT:20230821T0558:-6.38974:107.45599",
+    "VIIRS_NOAA21_NRT:20230821T0620:-6.38670:107.45556"
+   ],
+   "level": "Waspada",
+   "peak": 3,
+   "reached_at": "2023-08-21T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230821T0558:-6.45177:107.74536"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-21T05:58:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230821T0558:-6.48761:107.49641",
+    "VIIRS_NOAA21_NRT:20230821T0620:-6.48581:107.49660"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-08-21T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230821T0558:-6.59441:107.85899"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-21T05:58:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230821T0558:-6.61635:107.84792"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-21T05:58:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230821T0558:-6.65993:108.07620",
+    "VIIRS_NOAA20_NRT:20230821T0558:-6.66065:108.07426"
+   ],
+   "level": "Info",
+   "peak": 2,
+   "reached_at": "2023-08-21T05:58:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230821T0558:-6.66580:108.03921"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-21T05:58:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230821T0558:-6.69186:108.16252"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-21T05:58:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230821T0558:-6.71046:108.08858",
+    "VIIRS_NOAA21_NRT:20230821T0620:-6.70242:108.07932",
+    "VIIRS_NOAA21_NRT:20230821T0620:-6.70650:108.08769",
+    "VIIRS_NOAA21_NRT:20230821T0620:-6.70986:108.08821",
+    "VIIRS_NOAA21_NRT:20230821T0620:-6.72220:108.09749"
+   ],
+   "level": "Siaga",
+   "peak": 5,
+   "reached_at": "2023-08-21T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230821T0558:-6.83537:108.11033",
+    "VIIRS_NOAA20_NRT:20230821T0558:-6.83927:108.11117",
+    "VIIRS_NOAA21_NRT:20230821T0620:-6.81606:108.12746",
+    "VIIRS_NOAA21_NRT:20230821T0620:-6.82335:108.12492",
+    "VIIRS_NOAA21_NRT:20230821T0620:-6.83571:108.11202",
+    "VIIRS_NOAA21_NRT:20230821T0620:-6.83627:108.10843"
+   ],
+   "level": "Siaga",
+   "peak": 6,
+   "reached_at": "2023-08-21T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230821T0558:-6.87982:108.24770",
+    "VIIRS_NOAA20_NRT:20230821T0558:-6.88368:108.24861",
+    "VIIRS_NOAA21_NRT:20230821T0620:-6.88071:108.24431"
+   ],
+   "level": "Waspada",
+   "peak": 3,
+   "reached_at": "2023-08-21T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230821T0558:-6.96442:107.52780"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-21T05:58:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230821T0558:-6.97711:108.65248"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-21T05:58:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230821T0558:-7.03152:108.61929"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-21T05:58:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230821T0558:-7.03544:107.93818"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-21T05:58:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230821T0558:-7.06015:106.63163"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-21T05:58:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230821T0558:-7.07581:107.82642"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-21T05:58:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230821T0558:-7.09759:108.86105"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-21T05:58:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230821T0558:-7.76144:108.46212"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-21T05:58:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230821T0620:-6.46833:107.58743"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-21T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230821T0620:-6.48205:107.36644"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-21T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230821T0620:-6.51181:106.97243"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-21T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230821T0620:-6.56607:107.83484"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-21T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230821T0620:-6.57552:107.81810"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-21T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230821T0620:-6.59696:107.92352"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-21T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230821T0620:-6.62613:108.17086"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-21T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230821T0620:-6.66710:107.46741"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-21T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230821T0620:-6.70763:107.49153"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-21T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230821T0620:-6.76876:108.13060",
+    "VIIRS_NOAA21_NRT:20230821T0620:-6.77213:108.13112"
+   ],
+   "level": "Info",
+   "peak": 2,
+   "reached_at": "2023-08-21T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230821T0620:-6.86368:107.95462"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-21T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230821T0620:-6.92415:108.71090"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-21T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230821T0620:-6.92515:107.24744"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-21T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230821T0620:-6.96763:106.65932"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-21T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230821T0620:-7.05702:106.78710"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-21T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230821T0620:-7.07140:107.16064"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-21T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230821T0620:-7.11443:106.58729"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-21T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230821T0620:-7.12003:107.85918"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-21T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230821T0620:-7.29087:106.43420"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-21T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230821T0620:-7.39359:106.74110"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-21T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230821T0620:-7.62058:107.76722"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-21T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230821T0621:-6.13242:106.87740"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-21T06:21:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230821T0621:-6.15114:107.06459"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-21T06:21:00Z"
+  },
+  {
+   "members": [
+    "MODIS_NRT:20230822T0241:-6.22560:107.10230"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-22T02:41:00Z"
+  },
+  {
+   "members": [
+    "MODIS_NRT:20230822T0241:-7.10470:106.53540"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-22T02:41:00Z"
+  },
+  {
+   "members": [
+    "MODIS_NRT:20230822T0241:-7.65280:108.88530"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-22T02:41:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230822T0539:-6.86825:107.16743"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-22T05:39:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230822T0539:-6.90431:108.59170"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-22T05:39:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230822T0539:-7.17850:106.59154",
+    "VIIRS_NOAA20_NRT:20230822T0539:-7.18305:106.58970",
+    "VIIRS_NOAA21_NRT:20230822T0601:-7.17797:106.58958",
+    "VIIRS_NOAA21_NRT:20230822T0601:-7.17980:106.58980"
+   ],
+   "level": "Waspada",
+   "peak": 4,
+   "reached_at": "2023-08-22T06:01:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230822T0601:-6.96587:107.61403",
+    "VIIRS_NOAA21_NRT:20230822T0601:-6.96897:107.61908",
+    "MODIS_NRT:20230822T0638:-6.97570:107.61190"
+   ],
+   "level": "Waspada",
+   "peak": 3,
+   "reached_at": "2023-08-22T06:38:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230822T0601:-6.99577:108.58008"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-22T06:01:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230822T0601:-7.20839:106.41029",
+    "VIIRS_NOAA20_NRT:20230822T1824:-7.20648:106.41296",
+    "VIIRS_NOAA20_NRT:20230823T1805:-7.19897:106.42899"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-08-22T18:24:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230822T0601:-7.26873:106.42590"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-22T06:01:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230822T0601:-7.34281:106.43304"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-22T06:01:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230822T0602:-6.66847:108.04178"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-22T06:02:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230822T0602:-6.78172:108.38759"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-22T06:02:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230822T0602:-6.93083:107.26720"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-22T06:02:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230822T0602:-7.05901:106.68957",
+    "MODIS_NRT:20230822T0638:-7.05810:106.67540",
+    "MODIS_NRT:20230822T0638:-7.06630:106.68820",
+    "VIIRS_NOAA21_NRT:20230823T0543:-7.05635:106.70045"
+   ],
+   "level": "Waspada",
+   "peak": 4,
+   "reached_at": "2023-08-22T06:38:00Z"
+  },
+  {
+   "members": [
+    "MODIS_NRT:20230822T0638:-6.67160:107.02210"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-22T06:38:00Z"
+  },
+  {
+   "members": [
+    "MODIS_NRT:20230822T0638:-6.92030:107.22070"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-22T06:38:00Z"
+  },
+  {
+   "members": [
+    "MODIS_NRT:20230822T0638:-7.02690:107.90290"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-22T06:38:00Z"
+  },
+  {
+   "members": [
+    "MODIS_NRT:20230822T0638:-7.21810:106.69330",
+    "MODIS_NRT:20230822T0638:-7.21860:106.69900",
+    "MODIS_NRT:20230822T0638:-7.22010:106.68770"
+   ],
+   "level": "Waspada",
+   "peak": 3,
+   "reached_at": "2023-08-22T06:38:00Z"
+  },
+  {
+   "members": [
+    "MODIS_NRT:20230822T1458:-6.57700:108.13450",
+    "MODIS_NRT:20230822T1458:-6.57830:108.12540"
+   ],
+   "level": "Info",
+   "peak": 2,
+   "reached_at": "2023-08-22T14:58:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230822T1824:-6.58132:108.08077"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-22T18:24:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230822T1824:-6.61160:108.05309",
+    "VIIRS_NOAA20_NRT:20230822T1824:-6.61304:108.05466"
+   ],
+   "level": "Info",
+   "peak": 2,
+   "reached_at": "2023-08-22T18:24:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230822T1824:-6.71660:108.08083",
+    "VIIRS_NOAA20_NRT:20230822T1824:-6.71757:108.08286"
+   ],
+   "level": "Info",
+   "peak": 2,
+   "reached_at": "2023-08-22T18:24:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230822T1824:-6.91696:108.74343"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-22T18:24:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230823T0543:-6.39052:107.23597",
+    "VIIRS_NOAA20_NRT:20230823T0701:-6.39117:107.23360"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-08-23T07:01:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230823T0543:-6.42837:107.50832"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-23T05:43:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230823T0543:-6.61120:108.00098"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-23T05:43:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230823T0543:-7.26949:106.45431"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-23T05:43:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230823T0543:-7.28962:106.42167"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-23T05:43:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230823T0543:-7.38597:106.71629"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-23T05:43:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230823T0701:-6.95858:106.40654"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-23T07:01:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230823T0701:-7.03692:106.76807"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-23T07:01:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230823T1805:-6.52112:107.83768"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-23T18:05:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230823T1805:-6.60450:108.14617",
+    "VIIRS_NOAA21_NRT:20230823T1827:-6.60713:108.14780"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-08-23T18:27:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230823T1805:-6.93802:108.77348"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-23T18:05:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230823T1805:-6.94549:108.08867"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-23T18:05:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230823T1827:-6.81768:108.07915",
+    "VIIRS_NOAA20_NRT:20230824T1746:-6.82325:108.09220",
+    "VIIRS_NOAA21_NRT:20230824T1808:-6.82097:108.09415"
+   ],
+   "level": "Waspada",
+   "peak": 3,
+   "reached_at": "2023-08-24T17:46:00Z"
+  },
+  {
+   "members": [
+    "MODIS_NRT:20230824T0624:-7.03350:108.61790"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-24T06:24:00Z"
+  },
+  {
+   "members": [
+    "MODIS_NRT:20230824T0624:-7.11590:106.49240",
+    "MODIS_NRT:20230824T0624:-7.11690:106.50980",
+    "MODIS_NRT:20230824T0624:-7.11970:106.48850",
+    "VIIRS_NOAA20_NRT:20230824T0642:-7.11317:106.50285",
+    "VIIRS_NOAA20_NRT:20230824T0642:-7.11373:106.50562",
+    "VIIRS_NOAA20_NRT:20230824T0642:-7.11453:106.50063",
+    "VIIRS_NOAA20_NRT:20230824T0642:-7.11716:106.50324"
+   ],
+   "level": "Siaga",
+   "peak": 7,
+   "reached_at": "2023-08-24T06:42:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230824T0642:-6.57970:108.16589"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-24T06:42:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230824T0642:-6.64021:107.99163",
+    "VIIRS_NOAA20_NRT:20230825T0623:-6.60818:107.98539",
+    "VIIRS_NOAA20_NRT:20230825T0623:-6.61495:107.98643",
+    "VIIRS_NOAA20_NRT:20230825T0623:-6.61552:107.98278",
+    "VIIRS_NOAA20_NRT:20230825T0623:-6.62851:107.98852",
+    "VIIRS_NOAA20_NRT:20230825T0623:-6.63190:107.98903",
+    "VIIRS_NOAA21_NRT:20230825T0645:-6.63288:107.98888",
+    "VIIRS_NOAA21_NRT:20230825T0646:-6.63370:107.98624"
+   ],
+   "level": "Siaga",
+   "peak": 7,
+   "reached_at": "2023-08-25T06:23:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230824T0642:-6.64817:108.29482"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-24T06:42:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230824T0642:-6.70506:108.31319",
+    "VIIRS_NOAA20_NRT:20230824T0642:-6.70704:108.31382"
+   ],
+   "level": "Info",
+   "peak": 2,
+   "reached_at": "2023-08-24T06:42:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230824T0642:-6.74019:108.50197"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-24T06:42:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230824T0642:-6.83198:108.29819"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-24T06:42:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230824T0642:-6.89378:108.62466"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-24T06:42:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230824T0642:-6.91442:107.91838"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-24T06:42:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230824T0642:-6.97250:107.89121",
+    "VIIRS_NOAA20_NRT:20230824T0642:-6.97321:107.88687"
+   ],
+   "level": "Info",
+   "peak": 2,
+   "reached_at": "2023-08-24T06:42:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230824T0642:-7.05476:106.74583"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-24T06:42:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230824T0642:-7.16625:106.55064",
+    "VIIRS_NOAA21_NRT:20230824T0704:-7.16224:106.55113",
+    "VIIRS_NOAA21_NRT:20230824T0704:-7.16584:106.55167"
+   ],
+   "level": "Waspada",
+   "peak": 3,
+   "reached_at": "2023-08-24T07:04:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230824T0642:-7.20972:106.67249",
+    "VIIRS_NOAA20_NRT:20230824T0642:-7.21029:106.66908",
+    "VIIRS_NOAA20_NRT:20230824T0642:-7.21367:106.67336"
+   ],
+   "level": "Info",
+   "peak": 3,
+   "reached_at": "2023-08-24T06:42:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230824T0642:-7.30416:106.44354"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-24T06:42:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230824T0642:-7.47859:107.68208"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-24T06:42:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230824T0642:-7.53815:107.66460"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-24T06:42:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230824T0704:-6.61075:108.09493",
+    "VIIRS_NOAA20_NRT:20230825T0623:-6.57991:108.07829",
+    "VIIRS_NOAA20_NRT:20230825T0623:-6.59633:108.08456",
+    "VIIRS_NOAA20_NRT:20230825T0623:-6.59973:108.08508",
+    "VIIRS_NOAA21_NRT:20230825T0646:-6.59737:108.08429",
+    "VIIRS_NOAA21_NRT:20230825T1749:-6.58733:108.06549"
+   ],
+   "level": "Siaga",
+   "peak": 5,
+   "reached_at": "2023-08-25T06:46:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230824T0704:-7.05644:106.64578",
+    "VIIRS_NOAA21_NRT:20230824T0704:-7.05863:106.64899"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-08-24T07:04:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230824T0704:-7.07517:107.82896"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-24T07:04:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230824T0704:-7.16884:106.51394"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-24T07:04:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230824T1746:-6.42006:106.91991",
+    "VIIRS_NOAA20_NRT:20230824T1746:-6.42029:106.91687",
+    "VIIRS_NOAA21_NRT:20230824T1808:-6.41943:106.92042"
+   ],
+   "level": "Waspada",
+   "peak": 3,
+   "reached_at": "2023-08-24T18:08:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230824T1746:-6.58726:108.10627",
+    "VIIRS_NOAA20_NRT:20230824T1746:-6.59144:108.10553",
+    "VIIRS_NOAA21_NRT:20230824T1808:-6.58157:108.11058",
+    "VIIRS_NOAA21_NRT:20230824T1808:-6.59095:108.10559"
+   ],
+   "level": "Waspada",
+   "peak": 4,
+   "reached_at": "2023-08-24T18:08:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230824T1746:-6.64522:108.17115",
+    "VIIRS_NOAA20_NRT:20230824T1746:-6.64675:108.17110",
+    "VIIRS_NOAA21_NRT:20230824T1808:-6.64569:108.17121",
+    "VIIRS_NOAA21_NRT:20230824T1808:-6.64900:108.17070"
+   ],
+   "level": "Waspada",
+   "peak": 4,
+   "reached_at": "2023-08-24T18:08:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230824T1808:-6.29093:106.73289"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-24T18:08:00Z"
+  },
+  {
+   "members": [
+    "MODIS_NRT:20230825T0305:-6.96910:107.61730"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-25T03:05:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230825T0623:-6.50274:107.87582"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-25T06:23:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230825T0623:-6.52614:108.10715",
+    "VIIRS_NOAA20_NRT:20230825T0623:-6.52658:108.10766",
+    "VIIRS_NOAA20_NRT:20230825T0623:-6.52671:108.10347",
+    "VIIRS_NOAA20_NRT:20230825T0623:-6.52716:108.10399",
+    "VIIRS_NOAA21_NRT:20230825T0646:-6.52577:108.10440"
+   ],
+   "level": "Siaga",
+   "peak": 5,
+   "reached_at": "2023-08-25T06:46:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230825T0623:-6.52982:107.90223"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-25T06:23:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230825T0623:-6.53970:108.06837"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-25T06:23:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230825T0623:-6.54639:108.13705"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-25T06:23:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230825T0623:-6.57206:107.88327"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-25T06:23:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230825T0623:-6.58161:107.79971"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-25T06:23:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230825T0623:-6.61272:108.02341",
+    "VIIRS_NOAA20_NRT:20230825T0623:-6.62968:108.02602",
+    "VIIRS_NOAA21_NRT:20230825T0646:-6.61302:108.02097"
+   ],
+   "level": "Waspada",
+   "peak": 3,
+   "reached_at": "2023-08-25T06:46:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230825T0623:-6.63481:108.06049",
+    "VIIRS_NOAA20_NRT:20230825T0623:-6.63708:108.06833",
+    "VIIRS_NOAA21_NRT:20230825T0646:-6.63482:108.06861"
+   ],
+   "level": "Waspada",
+   "peak": 3,
+   "reached_at": "2023-08-25T06:46:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230825T0623:-6.63759:108.22670",
+    "VIIRS_NOAA21_NRT:20230825T0645:-6.64110:108.22853"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-08-25T06:45:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230825T0623:-6.66121:108.03091",
+    "VIIRS_NOAA20_NRT:20230825T0623:-6.66969:108.04339"
+   ],
+   "level": "Info",
+   "peak": 2,
+   "reached_at": "2023-08-25T06:23:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230825T0623:-6.70472:108.08634"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-25T06:23:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230825T0623:-6.73076:108.09784"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-25T06:23:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230825T0623:-6.80819:108.41261",
+    "VIIRS_NOAA20_NRT:20230825T0623:-6.81164:108.41302",
+    "VIIRS_NOAA21_NRT:20230825T0645:-6.81026:108.41469",
+    "VIIRS_NOAA20_NRT:20230825T1727:-6.81738:108.41155",
+    "VIIRS_NOAA20_NRT:20230825T1727:-6.81867:108.41888",
+    "VIIRS_NOAA20_NRT:20230825T1727:-6.82072:108.41145",
+    "VIIRS_NOAA20_NRT:20230825T1727:-6.82140:108.41518",
+    "VIIRS_NOAA20_NRT:20230825T1727:-6.82206:108.41875",
+    "VIIRS_NOAA20_NRT:20230825T1727:-6.82322:108.41181",
+    "VIIRS_NOAA20_NRT:20230825T1727:-6.82388:108.41552",
+    "VIIRS_NOAA21_NRT:20230825T1750:-6.81877:108.41035",
+    "VIIRS_NOAA21_NRT:20230825T1750:-6.82026:108.41933",
+    "VIIRS_NOAA21_NRT:20230825T1750:-6.82333:108.41461",
+    "VIIRS_NOAA21_NRT:20230825T1750:-6.82406:108.41906"
+   ],
+   "level": "Siaga",
+   "peak": 14,
+   "reached_at": "2023-08-25T17:27:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230825T0623:-6.81791:108.12355"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-25T06:23:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230825T0623:-6.84113:108.06293"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-25T06:23:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230825T0623:-6.93991:106.59344"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-25T06:23:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230825T0623:-6.94698:108.62421",
+    "VIIRS_NOAA20_NRT:20230825T0623:-6.95959:108.63405"
+   ],
+   "level": "Info",
+   "peak": 2,
+   "reached_at": "2023-08-25T06:23:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230825T0623:-6.96793:108.71748"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-25T06:23:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230825T0623:-7.01312:108.78303"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-25T06:23:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230825T0623:-7.09090:106.71728",
+    "VIIRS_NOAA20_NRT:20230825T0623:-7.09368:106.72124",
+    "VIIRS_NOAA21_NRT:20230825T0645:-7.09270:106.72139",
+    "MODIS_NRT:20230825T0705:-7.09380:106.71500"
+   ],
+   "level": "Waspada",
+   "peak": 4,
+   "reached_at": "2023-08-25T06:45:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230825T0623:-7.09955:107.68226",
+    "VIIRS_NOAA21_NRT:20230825T0645:-7.09813:107.68378"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-08-25T06:45:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230825T0623:-7.11399:106.56498"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-25T06:23:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230825T0623:-7.17605:106.69125",
+    "VIIRS_NOAA21_NRT:20230825T0645:-7.17845:106.69168"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-08-25T06:45:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230825T0623:-7.21557:107.14592"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-25T06:23:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230825T0623:-7.21900:106.83331",
+    "VIIRS_NOAA21_NRT:20230825T0645:-7.21777:106.83630"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-08-25T06:45:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230825T0623:-7.23700:106.44624"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-25T06:23:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230825T0623:-7.26798:106.53245"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-25T06:23:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230825T0623:-7.30233:106.41714"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-25T06:23:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230825T0623:-7.36881:106.71826",
+    "VIIRS_NOAA21_NRT:20230825T0645:-7.36857:106.71883",
+    "VIIRS_NOAA20_NRT:20230826T0604:-7.38232:106.71575"
+   ],
+   "level": "Waspada",
+   "peak": 3,
+   "reached_at": "2023-08-25T06:45:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230825T0624:-6.13322:106.87817"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-25T06:24:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230825T0624:-6.40708:107.70226"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-25T06:24:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230825T0624:-6.43400:107.97670"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-25T06:24:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230825T0624:-6.44819:107.56944"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-25T06:24:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230825T0624:-6.48845:107.57558"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-25T06:24:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230825T0645:-6.64491:108.38317"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-25T06:45:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230825T0645:-6.78725:108.09483",
+    "VIIRS_NOAA20_NRT:20230826T0605:-6.79260:108.08992"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-08-26T06:05:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230825T0645:-6.91443:107.23732"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-25T06:45:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230825T0645:-6.91523:107.26005"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-25T06:45:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230825T0645:-7.11515:106.58967",
+    "MODIS_NRT:20230825T0705:-7.11420:106.58550"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-08-25T07:05:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230825T0645:-7.17724:106.73021",
+    "VIIRS_NOAA21_NRT:20230825T0645:-7.18456:106.73637",
+    "VIIRS_NOAA21_NRT:20230826T0627:-7.18821:106.72119"
+   ],
+   "level": "Waspada",
+   "peak": 3,
+   "reached_at": "2023-08-26T06:27:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230825T0645:-7.19136:106.53261"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-25T06:45:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230825T0646:-6.53141:107.49179"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-25T06:46:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230825T0646:-6.69082:107.19401"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-25T06:46:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230825T1727:-6.12361:106.93147",
+    "VIIRS_NOAA21_NRT:20230825T1749:-6.12443:106.93445"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-08-25T17:49:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230826T0604:-6.90791:107.55351"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-26T06:04:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230826T0604:-6.96695:107.61583",
+    "VIIRS_NOAA20_NRT:20230826T0604:-6.97694:107.59928",
+    "MODIS_NRT:20230827T0249:-6.97100:107.61320",
+    "VIIRS_NOAA21_NRT:20230827T0608:-6.96303:107.61526"
+   ],
+   "level": "Waspada",
+   "peak": 3,
+   "reached_at": "2023-08-27T02:49:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230826T0604:-6.98122:108.89327"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-26T06:04:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230826T0604:-7.06526:108.49422",
+    "VIIRS_NOAA21_NRT:20230826T0627:-7.03927:108.50143",
+    "VIIRS_NOAA21_NRT:20230826T0627:-7.05225:108.49030",
+    "VIIRS_NOAA21_NRT:20230826T0627:-7.06319:108.49179"
+   ],
+   "level": "Waspada",
+   "peak": 4,
+   "reached_at": "2023-08-26T06:27:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230826T0604:-7.10781:106.53836",
+    "VIIRS_NOAA21_NRT:20230826T0627:-7.10836:106.53553"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-08-26T06:27:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230826T0604:-7.36468:106.83984"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-26T06:04:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230826T0605:-6.26929:107.25813"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-26T06:05:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230826T0605:-6.60642:108.17203",
+    "VIIRS_NOAA21_NRT:20230826T0627:-6.60862:108.16277",
+    "VIIRS_NOAA21_NRT:20230827T0608:-6.59830:108.16502",
+    "VIIRS_NOAA21_NRT:20230827T0608:-6.60561:108.16239"
+   ],
+   "level": "Waspada",
+   "peak": 3,
+   "reached_at": "2023-08-26T06:27:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230826T0605:-6.62253:108.18694",
+    "VIIRS_NOAA20_NRT:20230826T0605:-6.62670:108.18336",
+    "VIIRS_NOAA21_NRT:20230826T0627:-6.62167:108.18465",
+    "VIIRS_NOAA21_NRT:20230826T0627:-6.62527:108.18523"
+   ],
+   "level": "Waspada",
+   "peak": 4,
+   "reached_at": "2023-08-26T06:27:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230826T0605:-6.86975:107.16938",
+    "VIIRS_NOAA21_NRT:20230826T0627:-6.86901:107.16596"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-08-26T06:27:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230826T0627:-6.32695:107.35116"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-26T06:27:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230826T0627:-6.54928:108.07289"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-26T06:27:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230826T0627:-6.57401:108.10213"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-26T06:27:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230826T0627:-6.59083:107.90412"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-26T06:27:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230826T0627:-6.62885:108.00997"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-26T06:27:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230826T0627:-6.80157:107.34925"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-26T06:27:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230826T0627:-6.83066:108.65711"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-26T06:27:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230826T0627:-6.93563:107.21097"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-26T06:27:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230826T0627:-7.01673:106.71358",
+    "VIIRS_NOAA21_NRT:20230826T0627:-7.01729:106.70997"
+   ],
+   "level": "Info",
+   "peak": 2,
+   "reached_at": "2023-08-26T06:27:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230826T0627:-7.05527:106.76395",
+    "VIIRS_NOAA21_NRT:20230827T0608:-7.04008:106.76451"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-08-27T06:08:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230826T0627:-7.08460:106.77581"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-26T06:27:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230826T0627:-7.14261:106.75912"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-26T06:27:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230826T0627:-7.15435:106.57187"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-26T06:27:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230826T0627:-7.16210:106.52185"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-26T06:27:00Z"
+  },
+  {
+   "members": [
+    "MODIS_NRT:20230826T1424:-6.93940:108.74020",
+    "MODIS_NRT:20230826T1425:-6.92970:108.73340",
+    "VIIRS_NOAA21_NRT:20230827T0608:-6.93367:108.73828"
+   ],
+   "level": "Waspada",
+   "peak": 3,
+   "reached_at": "2023-08-26T14:25:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230826T1731:-6.46983:106.95554"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-26T17:31:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230826T1731:-6.57599:108.08261"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-26T17:31:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230826T1731:-6.59881:108.12225",
+    "VIIRS_NOAA21_NRT:20230826T1731:-6.59914:108.12238",
+    "VIIRS_NOAA20_NRT:20230826T1849:-6.60338:108.12027"
+   ],
+   "level": "Waspada",
+   "peak": 3,
+   "reached_at": "2023-08-26T18:49:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230826T1731:-6.67791:108.07849"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-26T17:31:00Z"
+  },
+  {
+   "members": [
+    "MODIS_NRT:20230827T0248:-6.49660:107.90840"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-27T02:48:00Z"
+  },
+  {
+   "members": [
+    "MODIS_NRT:20230827T0249:-7.03630:107.93990"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-27T02:49:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230827T0546:-6.73349:108.11361",
+    "VIIRS_NOAA21_NRT:20230827T0608:-6.73516:108.11479",
+    "MODIS_NRT:20230827T0651:-6.73330:108.11430"
+   ],
+   "level": "Waspada",
+   "peak": 3,
+   "reached_at": "2023-08-27T06:08:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230827T0546:-6.90725:107.29082",
+    "VIIRS_NOAA21_NRT:20230827T0608:-6.90825:107.29523"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-08-27T06:08:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230827T0546:-7.00695:108.61348"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-27T05:46:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230827T0546:-7.00981:106.92782"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-27T05:46:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230827T0546:-7.04350:107.63214"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-27T05:46:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230827T0546:-7.16677:106.55028",
+    "VIIRS_NOAA21_NRT:20230827T0608:-7.16426:106.55473"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-08-27T06:08:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230827T0608:-6.51224:107.82438"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-27T06:08:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230827T0608:-6.54669:108.13077"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-27T06:08:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230827T0608:-6.65804:108.02064"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-27T06:08:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230827T0608:-6.69863:108.15044"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-27T06:08:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230827T0608:-6.98594:108.64081"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-27T06:08:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230827T0608:-7.00256:107.91899"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-27T06:08:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230827T0608:-7.07994:107.84685"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-27T06:08:00Z"
+  },
+  {
+   "members": [
+    "MODIS_NRT:20230827T0651:-6.82030:108.27330"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-27T06:51:00Z"
+  },
+  {
+   "members": [
+    "MODIS_NRT:20230827T0651:-7.37060:106.71900"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-27T06:51:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230827T1830:-6.57223:108.08517",
+    "VIIRS_NOAA21_NRT:20230827T1852:-6.57049:108.08572",
+    "VIIRS_NOAA21_NRT:20230827T1852:-6.57495:108.08463"
+   ],
+   "level": "Waspada",
+   "peak": 3,
+   "reached_at": "2023-08-27T18:52:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230827T1830:-6.62961:108.05804",
+    "VIIRS_NOAA21_NRT:20230827T1852:-6.62835:108.05640"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-08-27T18:52:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230827T1830:-6.76285:108.20154",
+    "VIIRS_NOAA20_NRT:20230827T1830:-6.76341:108.20538"
+   ],
+   "level": "Info",
+   "peak": 2,
+   "reached_at": "2023-08-27T18:30:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230827T1830:-6.81286:108.42619",
+    "VIIRS_NOAA21_NRT:20230827T1852:-6.81187:108.42801",
+    "VIIRS_NOAA21_NRT:20230827T1852:-6.81622:108.42597"
+   ],
+   "level": "Waspada",
+   "peak": 3,
+   "reached_at": "2023-08-27T18:52:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230827T1852:-6.98947:108.83738"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-27T18:52:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230828T0549:-6.58843:108.19436"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-28T05:49:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230828T0549:-6.60157:108.06767"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-28T05:49:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230828T0549:-6.77475:108.08608",
+    "VIIRS_NOAA21_NRT:20230828T0549:-6.77921:108.08665"
+   ],
+   "level": "Info",
+   "peak": 2,
+   "reached_at": "2023-08-28T05:49:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230828T0549:-6.85934:108.75748"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-28T05:49:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230828T0549:-6.99610:108.61685",
+    "VIIRS_NOAA21_NRT:20230828T0549:-7.00098:108.61340"
+   ],
+   "level": "Info",
+   "peak": 2,
+   "reached_at": "2023-08-28T05:49:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230828T0707:-7.23442:106.44118",
+    "MODIS_NRT:20230829T0636:-7.21790:106.43680",
+    "VIIRS_NOAA20_NRT:20230829T0648:-7.21806:106.43941",
+    "VIIRS_NOAA20_NRT:20230829T0648:-7.23114:106.44161",
+    "VIIRS_NOAA20_NRT:20230829T0648:-7.23135:106.44518"
+   ],
+   "level": "Siaga",
+   "peak": 5,
+   "reached_at": "2023-08-29T06:48:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230828T0707:-7.25438:106.46770",
+    "VIIRS_NOAA20_NRT:20230828T0707:-7.25649:106.46794"
+   ],
+   "level": "Info",
+   "peak": 2,
+   "reached_at": "2023-08-28T07:07:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230828T1811:-6.34335:107.32265"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-28T18:11:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230828T1811:-6.53270:108.12003",
+    "VIIRS_NOAA20_NRT:20230828T1811:-6.53324:108.12351"
+   ],
+   "level": "Info",
+   "peak": 2,
+   "reached_at": "2023-08-28T18:11:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230828T1811:-6.57901:108.17722"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-28T18:11:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230828T1811:-6.57943:108.22376",
+    "VIIRS_NOAA20_NRT:20230828T1811:-6.58493:108.23727",
+    "VIIRS_NOAA20_NRT:20230828T1811:-6.58941:108.22221",
+    "VIIRS_NOAA20_NRT:20230828T1811:-6.58995:108.22572",
+    "VIIRS_NOAA20_NRT:20230828T1811:-6.59274:108.22169",
+    "VIIRS_NOAA20_NRT:20230828T1811:-6.59328:108.22520"
+   ],
+   "level": "Siaga",
+   "peak": 6,
+   "reached_at": "2023-08-28T18:11:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230828T1811:-7.03502:108.00867"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-28T18:11:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230828T1811:-7.07664:108.76493"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-28T18:11:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230828T1812:-7.56705:107.91512"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-28T18:12:00Z"
+  },
+  {
+   "members": [
+    "MODIS_NRT:20230829T0232:-6.76090:108.25010"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-29T02:32:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230829T0530:-6.52284:108.04744"
+   ],
+   "level": "Waspada",
+   "peak": 1,
+   "reached_at": "2023-08-29T05:30:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230829T0530:-6.56639:108.13792",
+    "VIIRS_NOAA20_NRT:20230829T0649:-6.57097:108.14047"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-08-29T06:49:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230829T0530:-6.59705:108.14839"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-29T05:30:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230829T0530:-6.91648:108.85592",
+    "VIIRS_NOAA21_NRT:20230829T0530:-6.91704:108.85174"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-08-29T05:30:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230829T0530:-6.99207:108.81878"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-29T05:30:00Z"
+  },
+  {
+   "members": [
+    "MODIS_NRT:20230829T0636:-6.94980:108.84830",
+    "VIIRS_NOAA20_NRT:20230829T0648:-6.94627:108.84998"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-08-29T06:36:00Z"
+  },
+  {
+   "members": [
+    "MODIS_NRT:20230829T0637:-6.53970:108.17010"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-29T06:37:00Z"
+  },
+  {
+   "members": [
+    "MODIS_NRT:20230829T0637:-6.61400:107.98120"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-29T06:37:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230829T0648:-6.61377:108.13432",
+    "VIIRS_NOAA20_NRT:20230829T0649:-6.61346:108.13005",
+    "VIIRS_NOAA20_NRT:20230829T0649:-6.61841:108.13087",
+    "VIIRS_NOAA20_NRT:20230829T1752:-6.61426:108.11358",
+    "VIIRS_NOAA21_NRT:20230829T1815:-6.61488:108.11523",
+    "VIIRS_NOAA20_NRT:20230830T0630:-6.60794:108.14925"
+   ],
+   "level": "Siaga",
+   "peak": 6,
+   "reached_at": "2023-08-29T18:15:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230829T0648:-6.84712:107.40451"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-29T06:48:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230829T0648:-6.90970:107.30493"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-29T06:48:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230829T0648:-7.04769:106.65146",
+    "VIIRS_NOAA20_NRT:20230830T0630:-7.05556:106.64803"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-08-30T06:30:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230829T0648:-7.10501:106.52306",
+    "VIIRS_NOAA20_NRT:20230829T0648:-7.10578:106.51940",
+    "VIIRS_NOAA20_NRT:20230829T0648:-7.11007:106.51986",
+    "VIIRS_NOAA20_NRT:20230829T0648:-7.11015:106.52029",
+    "VIIRS_NOAA20_NRT:20230830T0630:-7.11635:106.53026",
+    "VIIRS_NOAA21_NRT:20230830T0652:-7.11432:106.53207"
+   ],
+   "level": "Siaga",
+   "peak": 5,
+   "reached_at": "2023-08-30T06:30:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230829T0648:-7.18120:106.73774",
+    "VIIRS_NOAA20_NRT:20230829T0648:-7.18243:106.73921",
+    "VIIRS_NOAA20_NRT:20230830T0630:-7.18366:106.72419"
+   ],
+   "level": "Waspada",
+   "peak": 3,
+   "reached_at": "2023-08-30T06:30:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230829T0648:-7.21891:106.67745",
+    "VIIRS_NOAA21_NRT:20230829T0710:-7.22183:106.68107",
+    "VIIRS_NOAA21_NRT:20230829T0710:-7.22336:106.68122"
+   ],
+   "level": "Waspada",
+   "peak": 3,
+   "reached_at": "2023-08-29T07:10:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230829T0711:-7.01036:106.63833"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-29T07:11:00Z"
+  },
+  {
+   "members": [
+    "MODIS_NRT:20230829T1449:-7.15810:106.47250",
+    "VIIRS_NOAA20_NRT:20230830T0630:-7.14227:106.47512",
+    "VIIRS_NOAA21_NRT:20230830T0652:-7.14323:106.47942",
+    "VIIRS_NOAA21_NRT:20230830T0652:-7.14405:106.47469"
+   ],
+   "level": "Waspada",
+   "peak": 4,
+   "reached_at": "2023-08-30T06:30:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230829T1752:-6.28138:106.97663",
+    "VIIRS_NOAA21_NRT:20230829T1815:-6.28179:106.97749"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-08-29T18:15:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230829T1752:-6.29139:106.73110",
+    "VIIRS_NOAA21_NRT:20230829T1815:-6.29177:106.73339"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-08-29T18:15:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230829T1752:-6.46955:106.95432",
+    "VIIRS_NOAA21_NRT:20230829T1815:-6.46876:106.95521"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-08-29T18:15:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230829T1752:-6.57941:108.09083",
+    "VIIRS_NOAA20_NRT:20230829T1752:-6.58018:108.09548",
+    "VIIRS_NOAA21_NRT:20230829T1815:-6.58021:108.09369",
+    "VIIRS_NOAA20_NRT:20230830T0630:-6.59187:108.08578",
+    "VIIRS_NOAA20_NRT:20230831T0611:-6.58923:108.09914",
+    "VIIRS_NOAA20_NRT:20230831T0611:-6.59261:108.09962",
+    "VIIRS_NOAA21_NRT:20230831T0633:-6.58867:108.09639"
+   ],
+   "level": "Waspada",
+   "peak": 4,
+   "reached_at": "2023-08-29T18:15:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230829T1752:-6.61733:108.03673"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-29T17:52:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230829T1815:-6.57458:108.19456"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-29T18:15:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230829T1815:-6.85905:108.68253"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-29T18:15:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230829T1815:-7.19609:107.99281"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-29T18:15:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230830T0629:-7.58555:107.84363"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-30T06:29:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230830T0630:-6.38383:107.52377"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-30T06:30:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230830T0630:-6.52246:108.09699"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-30T06:30:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230830T0630:-6.60811:108.05368"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-30T06:30:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230830T0630:-6.64364:108.53780"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-30T06:30:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230830T0630:-6.96616:107.06521"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-30T06:30:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230830T0630:-6.98393:106.61113",
+    "VIIRS_NOAA20_NRT:20230830T0630:-6.98465:106.61130"
+   ],
+   "level": "Info",
+   "peak": 2,
+   "reached_at": "2023-08-30T06:30:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230830T0630:-7.08092:106.52876",
+    "VIIRS_NOAA21_NRT:20230830T0652:-7.07998:106.52999",
+    "VIIRS_NOAA21_NRT:20230830T0652:-7.08113:106.52805",
+    "VIIRS_NOAA20_NRT:20230830T1734:-7.09348:106.52000"
+   ],
+   "level": "Waspada",
+   "peak": 4,
+   "reached_at": "2023-08-30T06:52:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230830T0630:-7.15746:106.78102",
+    "VIIRS_NOAA20_NRT:20230830T0630:-7.15804:106.77728"
+   ],
+   "level": "Info",
+   "peak": 2,
+   "reached_at": "2023-08-30T06:30:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230830T0630:-7.24051:106.40907",
+    "VIIRS_NOAA20_NRT:20230830T0630:-7.24387:106.40964",
+    "VIIRS_NOAA21_NRT:20230830T0652:-7.23931:106.40855",
+    "VIIRS_NOAA20_NRT:20230831T0611:-7.24553:106.42161"
+   ],
+   "level": "Waspada",
+   "peak": 4,
+   "reached_at": "2023-08-30T06:52:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230830T0630:-7.37782:106.69264"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-30T06:30:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230830T0652:-6.65300:107.46548"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-30T06:52:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230830T0652:-6.93535:108.73275",
+    "VIIRS_NOAA21_NRT:20230830T0652:-6.93709:108.73320"
+   ],
+   "level": "Info",
+   "peak": 2,
+   "reached_at": "2023-08-30T06:52:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230830T0652:-7.07115:107.07376"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-30T06:52:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230830T1734:-6.22241:106.96732"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-30T17:34:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230830T1734:-7.05930:108.53275"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-30T17:34:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230830T1756:-6.42685:107.53016"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-30T17:56:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230831T0610:-7.60868:108.39831"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-31T06:10:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230831T0611:-6.13387:106.88519",
+    "VIIRS_NOAA20_NRT:20230831T0611:-6.13439:106.88564"
+   ],
+   "level": "Info",
+   "peak": 2,
+   "reached_at": "2023-08-31T06:11:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230831T0611:-6.14796:107.06279"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-31T06:11:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230831T0611:-6.29275:107.26385",
+    "VIIRS_NOAA20_NRT:20230831T0611:-6.29414:107.26410",
+    "VIIRS_NOAA21_NRT:20230831T0633:-6.29103:107.26443",
+    "VIIRS_NOAA21_NRT:20230901T0614:-6.29427:107.26580"
+   ],
+   "level": "Waspada",
+   "peak": 3,
+   "reached_at": "2023-08-31T06:33:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230831T0611:-6.45571:107.61076",
+    "VIIRS_NOAA21_NRT:20230831T0633:-6.45713:107.61068"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-08-31T06:33:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230831T0611:-6.47763:107.50733",
+    "VIIRS_NOAA21_NRT:20230831T0633:-6.47737:107.50801",
+    "VIIRS_NOAA21_NRT:20230831T0633:-6.47812:107.50330"
+   ],
+   "level": "Waspada",
+   "peak": 3,
+   "reached_at": "2023-08-31T06:33:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230831T0611:-6.48170:107.85974"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-31T06:11:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230831T0611:-6.49062:106.64275"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-31T06:11:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230831T0611:-6.50670:107.87840"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-31T06:11:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230831T0611:-6.57160:107.82119"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-31T06:11:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230831T0611:-6.57499:107.98597"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-31T06:11:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230831T0611:-6.60698:107.86401"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-31T06:11:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230831T0611:-6.63246:108.00233",
+    "VIIRS_NOAA21_NRT:20230831T0633:-6.61953:108.00412",
+    "VIIRS_NOAA21_NRT:20230831T0633:-6.62422:107.99979",
+    "VIIRS_NOAA21_NRT:20230831T0633:-6.63224:108.00400",
+    "VIIRS_NOAA20_NRT:20230901T0552:-6.62963:107.99611",
+    "VIIRS_NOAA21_NRT:20230901T0614:-6.62925:107.99443",
+    "VIIRS_NOAA21_NRT:20230902T0555:-6.62498:108.01002",
+    "VIIRS_NOAA21_NRT:20230902T0555:-6.63048:108.00013",
+    "MODIS_NRT:20230903T0240:-6.62080:108.00610"
+   ],
+   "level": "Siaga",
+   "peak": 5,
+   "reached_at": "2023-09-01T05:52:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230831T0611:-6.65078:108.34339"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-31T06:11:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230831T0611:-6.68371:107.05569",
+    "VIIRS_NOAA21_NRT:20230831T0633:-6.68319:107.05704"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-08-31T06:33:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230831T0611:-6.69025:107.96282"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-31T06:11:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230831T0611:-6.71503:108.05196"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-31T06:11:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230831T0611:-6.73652:108.10306"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-31T06:11:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230831T0611:-6.74949:108.40944",
+    "VIIRS_NOAA21_NRT:20230831T0633:-6.75088:108.41168",
+    "VIIRS_NOAA21_NRT:20230831T0633:-6.75146:108.40813"
+   ],
+   "level": "Waspada",
+   "peak": 3,
+   "reached_at": "2023-08-31T06:33:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230831T0611:-6.75378:108.07976"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-31T06:11:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230831T0611:-6.76322:108.06266",
+    "VIIRS_NOAA21_NRT:20230831T0633:-6.76326:108.06272"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-08-31T06:33:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230831T0611:-6.78464:108.62516"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-31T06:11:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230831T0611:-6.78830:108.10330"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-31T06:11:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230831T0611:-6.85744:107.15424"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-31T06:11:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230831T0611:-6.86181:107.32032"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-31T06:11:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230831T0611:-6.86502:107.02190"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-31T06:11:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230831T0611:-6.89277:108.67405",
+    "VIIRS_NOAA21_NRT:20230831T0633:-6.89233:108.67282",
+    "VIIRS_NOAA20_NRT:20230901T0552:-6.89244:108.66096"
+   ],
+   "level": "Waspada",
+   "peak": 3,
+   "reached_at": "2023-08-31T06:33:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230831T0611:-6.91068:108.62268"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-31T06:11:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230831T0611:-6.92503:107.25271"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-31T06:11:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230831T0611:-6.93830:108.77564",
+    "VIIRS_NOAA20_NRT:20230831T0611:-6.93882:108.77213"
+   ],
+   "level": "Info",
+   "peak": 2,
+   "reached_at": "2023-08-31T06:11:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230831T0611:-6.94065:107.26719",
+    "VIIRS_NOAA20_NRT:20230831T0611:-6.94227:107.26720"
+   ],
+   "level": "Info",
+   "peak": 2,
+   "reached_at": "2023-08-31T06:11:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230831T0611:-6.94567:107.24350",
+    "VIIRS_NOAA20_NRT:20230831T0611:-6.94767:107.24402"
+   ],
+   "level": "Info",
+   "peak": 2,
+   "reached_at": "2023-08-31T06:11:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230831T0611:-6.96147:106.98178"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-31T06:11:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230831T0611:-6.96551:107.61572",
+    "MODIS_NRT:20230901T0256:-6.96770:107.61560"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-09-01T02:56:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230831T0611:-6.96912:107.90188",
+    "VIIRS_NOAA21_NRT:20230831T0633:-6.96965:107.90178",
+    "VIIRS_NOAA21_NRT:20230831T0633:-6.97102:107.90485"
+   ],
+   "level": "Waspada",
+   "peak": 3,
+   "reached_at": "2023-08-31T06:33:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230831T0611:-7.04707:108.77427",
+    "VIIRS_NOAA21_NRT:20230831T0633:-7.04718:108.77249",
+    "VIIRS_NOAA21_NRT:20230831T0633:-7.04737:108.77198"
+   ],
+   "level": "Waspada",
+   "peak": 3,
+   "reached_at": "2023-08-31T06:33:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230831T0611:-7.05665:108.57716",
+    "VIIRS_NOAA21_NRT:20230831T0633:-7.05400:108.57719"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-08-31T06:33:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230831T0611:-7.08862:107.58829"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-31T06:11:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230831T0611:-7.11722:106.50784",
+    "VIIRS_NOAA20_NRT:20230831T0611:-7.11784:106.50359"
+   ],
+   "level": "Info",
+   "peak": 2,
+   "reached_at": "2023-08-31T06:11:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230831T0611:-7.14199:107.00735"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-31T06:11:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230831T0611:-7.18985:106.44761",
+    "VIIRS_NOAA20_NRT:20230831T0611:-7.20556:106.44146",
+    "VIIRS_NOAA20_NRT:20230831T0611:-7.20859:106.44614",
+    "VIIRS_NOAA20_NRT:20230831T0611:-7.20919:106.44200",
+    "VIIRS_NOAA21_NRT:20230831T0633:-7.20619:106.44888",
+    "VIIRS_NOAA21_NRT:20230831T0633:-7.20684:106.44482",
+    "VIIRS_NOAA21_NRT:20230831T0633:-7.20729:106.44537",
+    "VIIRS_NOAA21_NRT:20230831T0633:-7.20793:106.44125",
+    "VIIRS_NOAA21_NRT:20230831T0633:-7.21039:106.44537",
+    "VIIRS_NOAA21_NRT:20230901T0614:-7.19208:106.43940"
+   ],
+   "level": "Siaga",
+   "peak": 9,
+   "reached_at": "2023-08-31T06:33:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230831T0611:-7.23259:107.74957"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-31T06:11:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230831T0611:-7.30966:106.44351"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-31T06:11:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230831T0611:-7.43957:107.12043"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-31T06:11:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230831T0633:-6.56003:106.89149"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-31T06:33:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230831T0633:-6.61933:108.13012",
+    "VIIRS_NOAA21_NRT:20230901T0614:-6.61920:108.12723",
+    "VIIRS_NOAA20_NRT:20230902T0533:-6.61033:108.12064",
+    "VIIRS_NOAA21_NRT:20230902T0555:-6.60977:108.11726"
+   ],
+   "level": "Waspada",
+   "peak": 3,
+   "reached_at": "2023-09-01T06:14:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230831T0633:-6.65358:107.85148",
+    "VIIRS_NOAA21_NRT:20230831T0633:-6.65543:107.85372"
+   ],
+   "level": "Info",
+   "peak": 2,
+   "reached_at": "2023-08-31T06:33:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230831T0633:-6.72095:106.51582"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-31T06:33:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230831T0633:-6.86052:108.66388",
+    "VIIRS_NOAA21_NRT:20230831T0633:-6.86112:108.66029",
+    "VIIRS_NOAA20_NRT:20230901T0552:-6.86022:108.67556",
+    "VIIRS_NOAA20_NRT:20230901T0552:-6.86078:108.67165",
+    "VIIRS_NOAA20_NRT:20230901T0552:-6.86190:108.66386",
+    "VIIRS_NOAA20_NRT:20230901T0552:-6.86443:108.67616",
+    "VIIRS_NOAA21_NRT:20230901T0614:-6.85569:108.67139",
+    "VIIRS_NOAA21_NRT:20230901T0614:-6.85953:108.66844",
+    "VIIRS_NOAA21_NRT:20230901T0614:-6.86178:108.67589",
+    "MODIS_NRT:20230901T0704:-6.86300:108.65900",
+    "VIIRS_NOAA21_NRT:20230901T1718:-6.87015:108.67772"
+   ],
+   "level": "Siaga",
+   "peak": 9,
+   "reached_at": "2023-09-01T05:52:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230831T0633:-6.95328:108.60448"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-31T06:33:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230831T0633:-6.99214:108.87947"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-31T06:33:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230831T0633:-7.04106:107.86299",
+    "VIIRS_NOAA21_NRT:20230901T0614:-7.03791:107.87472"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-09-01T06:14:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230831T0633:-7.06893:108.66818"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-31T06:33:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230831T0633:-7.09306:107.78400",
+    "VIIRS_NOAA21_NRT:20230831T0633:-7.09568:107.78633"
+   ],
+   "level": "Info",
+   "peak": 2,
+   "reached_at": "2023-08-31T06:33:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230831T0633:-7.10746:108.00177"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-31T06:33:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230831T0633:-7.14300:106.52888"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-31T06:33:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230831T0633:-7.16795:106.46381"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-31T06:33:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230831T0633:-7.19331:106.52843",
+    "VIIRS_NOAA21_NRT:20230831T0633:-7.19414:106.52909"
+   ],
+   "level": "Info",
+   "peak": 2,
+   "reached_at": "2023-08-31T06:33:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230831T0633:-7.22184:106.73923"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-31T06:33:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230831T0633:-7.24140:107.22585"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-31T06:33:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230831T0633:-7.27981:106.44374"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-31T06:33:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230831T1737:-6.88314:108.71420"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-31T17:37:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230831T1737:-7.03217:107.64114"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-31T17:37:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230831T1855:-6.14305:106.72412"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-31T18:55:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230831T1855:-6.20931:106.64610"
+   ],
+   "level": "Waspada",
+   "peak": 1,
+   "reached_at": "2023-08-31T18:55:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230831T1855:-6.27161:107.05576"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-31T18:55:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230831T1855:-6.29237:106.73139"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-31T18:55:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230831T1855:-6.29891:107.12228"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-08-31T18:55:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230831T1855:-7.21313:106.40498",
+    "VIIRS_NOAA21_NRT:20230901T0614:-7.21071:106.40807",
+    "VIIRS_NOAA21_NRT:20230901T0614:-7.21126:106.40433"
+   ],
+   "level": "Waspada",
+   "peak": 3,
+   "reached_at": "2023-09-01T06:14:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230901T0552:-6.44216:108.02257",
+    "VIIRS_NOAA20_NRT:20230901T0552:-6.44274:108.01832",
+    "VIIRS_NOAA21_NRT:20230901T0614:-6.44146:108.02139",
+    "VIIRS_NOAA21_NRT:20230901T0614:-6.44199:108.01794",
+    "VIIRS_NOAA21_NRT:20230901T0614:-6.44529:108.01845"
+   ],
+   "level": "Siaga",
+   "peak": 5,
+   "reached_at": "2023-09-01T06:14:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230901T0552:-6.49180:107.58206",
+    "VIIRS_NOAA20_NRT:20230901T0552:-6.49358:107.58121",
+    "VIIRS_NOAA21_NRT:20230901T0614:-6.49164:107.57905"
+   ],
+   "level": "Waspada",
+   "peak": 3,
+   "reached_at": "2023-09-01T06:14:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230901T0552:-6.53410:108.16784",
+    "VIIRS_NOAA20_NRT:20230901T0552:-6.53467:108.16366",
+    "VIIRS_NOAA21_NRT:20230901T0614:-6.52884:108.16226",
+    "VIIRS_NOAA21_NRT:20230901T0614:-6.53162:108.16621",
+    "VIIRS_NOAA21_NRT:20230901T0614:-6.53215:108.16276",
+    "VIIRS_NOAA21_NRT:20230901T0614:-6.53492:108.16672"
+   ],
+   "level": "Siaga",
+   "peak": 6,
+   "reached_at": "2023-09-01T06:14:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230901T0552:-6.54307:108.07057"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-01T05:52:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230901T0552:-6.58782:108.03803"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-01T05:52:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230901T0552:-6.63476:108.02299"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-01T05:52:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230901T0552:-6.69855:108.29935"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-01T05:52:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230901T0552:-6.70535:108.09613"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-01T05:52:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230901T0552:-6.71166:108.33054",
+    "VIIRS_NOAA21_NRT:20230901T0614:-6.71072:108.32944"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-09-01T06:14:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230901T0552:-6.73647:108.06607",
+    "VIIRS_NOAA20_NRT:20230901T0552:-6.73672:108.06497",
+    "VIIRS_NOAA21_NRT:20230901T0614:-6.73418:108.06435",
+    "VIIRS_NOAA21_NRT:20230902T0555:-6.72803:108.07517"
+   ],
+   "level": "Waspada",
+   "peak": 3,
+   "reached_at": "2023-09-01T06:14:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230901T0552:-6.86526:108.82670"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-01T05:52:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230901T0552:-6.95575:106.65171"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-01T05:52:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230901T0552:-6.98312:108.68996"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-01T05:52:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230901T0552:-7.01632:108.79296",
+    "VIIRS_NOAA21_NRT:20230901T0614:-7.01729:108.79307",
+    "VIIRS_NOAA21_NRT:20230901T0614:-7.01782:108.78960"
+   ],
+   "level": "Waspada",
+   "peak": 3,
+   "reached_at": "2023-09-01T06:14:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230901T0552:-7.14902:106.46076",
+    "VIIRS_NOAA21_NRT:20230901T0614:-7.14279:106.46224",
+    "VIIRS_NOAA21_NRT:20230901T0614:-7.14328:106.46275",
+    "VIIRS_NOAA21_NRT:20230901T0614:-7.14383:106.45896",
+    "VIIRS_NOAA21_NRT:20230901T0614:-7.14668:106.46333",
+    "VIIRS_NOAA21_NRT:20230901T0614:-7.14724:106.45952"
+   ],
+   "level": "Siaga",
+   "peak": 6,
+   "reached_at": "2023-09-01T06:14:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230901T0552:-7.47639:108.58598",
+    "VIIRS_NOAA21_NRT:20230901T0614:-7.47367:108.58447"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-09-01T06:14:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230901T0552:-7.64874:108.80300"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-01T05:52:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230901T0614:-6.44250:107.02575"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-01T06:14:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230901T0614:-6.48336:107.36373"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-01T06:14:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230901T0614:-6.54739:107.50210"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-01T06:14:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230901T0614:-6.56851:108.19370"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-01T06:14:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230901T0614:-6.56884:107.83241"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-01T06:14:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230901T0614:-6.70937:107.44218"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-01T06:14:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230901T0614:-6.73554:107.47127"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-01T06:14:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230901T0614:-6.80631:108.08254"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-01T06:14:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230901T0614:-6.86386:107.02319"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-01T06:14:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230901T0614:-6.88061:108.59712"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-01T06:14:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230901T0614:-6.90607:106.80897"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-01T06:14:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230901T0614:-6.93787:108.64563"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-01T06:14:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230901T0614:-6.93982:107.21900",
+    "MODIS_NRT:20230901T0704:-6.94550:107.23320"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-09-01T07:04:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230901T0614:-6.94026:107.57799"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-01T06:14:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230901T0614:-6.94789:108.20050"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-01T06:14:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230901T0614:-6.99014:108.63595"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-01T06:14:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230901T0614:-6.99402:108.83200"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-01T06:14:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230901T0614:-7.02498:106.87833"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-01T06:14:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230901T0614:-7.05833:106.72436"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-01T06:14:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230901T0614:-7.08112:106.77966"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-01T06:14:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230901T0614:-7.13608:106.95433"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-01T06:14:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230901T0614:-7.18336:106.54505"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-01T06:14:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230901T0614:-7.24212:106.43179"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-01T06:14:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230901T0614:-7.38735:107.60909"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-01T06:14:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230901T1718:-6.59064:108.13062",
+    "VIIRS_NOAA20_NRT:20230901T1836:-6.58798:108.12884"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-09-01T18:36:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230901T1718:-6.61042:108.16566"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-01T17:18:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230901T1718:-6.61535:108.19218",
+    "VIIRS_NOAA20_NRT:20230901T1836:-6.62004:108.18840"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-09-01T18:36:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230901T1836:-6.57832:107.92702"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-01T18:36:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230902T0533:-6.35172:107.19859",
+    "VIIRS_NOAA21_NRT:20230902T0555:-6.35067:107.19649"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-09-02T05:55:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230902T0533:-6.64331:107.08828",
+    "VIIRS_NOAA20_NRT:20230902T0533:-6.64455:107.08960"
+   ],
+   "level": "Info",
+   "peak": 2,
+   "reached_at": "2023-09-02T05:33:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230902T0555:-6.41844:107.44773"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-02T05:55:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230902T0555:-6.50998:107.41441"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-02T05:55:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230902T0555:-6.52998:107.54025"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-02T05:55:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230902T0555:-6.54822:108.13197"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-02T05:55:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230902T0555:-6.86363:107.85156"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-02T05:55:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230902T0555:-6.91509:106.84014"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-02T05:55:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230902T0555:-6.93451:106.85968"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-02T05:55:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230902T0555:-6.96810:107.61810",
+    "VIIRS_NOAA21_NRT:20230902T0555:-6.97333:107.61116"
+   ],
+   "level": "Info",
+   "peak": 2,
+   "reached_at": "2023-09-02T05:55:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230902T0555:-6.97346:107.69053"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-02T05:55:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230902T0555:-7.00292:107.92367"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-02T05:55:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230902T0555:-7.03366:107.93975",
+    "VIIRS_NOAA21_NRT:20230902T0555:-7.03419:107.93614"
+   ],
+   "level": "Info",
+   "peak": 2,
+   "reached_at": "2023-09-02T05:55:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230902T0555:-7.03578:107.83959"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-02T05:55:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230902T0555:-7.09593:106.73464"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-02T05:55:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230902T0555:-7.09979:108.67092"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-02T05:55:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230902T0555:-7.18122:106.73666"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-02T05:55:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230902T0555:-7.28424:106.95750",
+    "VIIRS_NOAA21_NRT:20230902T0555:-7.28597:106.95764"
+   ],
+   "level": "Info",
+   "peak": 2,
+   "reached_at": "2023-09-02T05:55:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230902T0555:-7.30065:106.39468"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-02T05:55:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230902T0555:-7.43666:107.49516"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-02T05:55:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230902T0555:-7.62351:108.87502"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-02T05:55:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230902T0555:-7.67359:108.15324"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-02T05:55:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230902T1818:-6.29450:106.39083"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-02T18:18:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230902T1818:-6.75275:108.07595",
+    "MODIS_NRT:20230903T0240:-6.75150:108.07710"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-09-03T02:40:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230902T1818:-6.79843:108.07288",
+    "VIIRS_NOAA20_NRT:20230902T1818:-6.80247:108.07611",
+    "VIIRS_NOAA21_NRT:20230902T1840:-6.80094:108.07619",
+    "VIIRS_NOAA21_NRT:20230902T1840:-6.80214:108.07550"
+   ],
+   "level": "Waspada",
+   "peak": 4,
+   "reached_at": "2023-09-02T18:40:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230902T1818:-7.15688:106.45633",
+    "VIIRS_NOAA21_NRT:20230902T1840:-7.15615:106.45824"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-09-02T18:40:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230902T1818:-7.17309:106.56103"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-02T18:18:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230902T1818:-7.26571:107.09660",
+    "VIIRS_NOAA21_NRT:20230902T1840:-7.26881:107.09412"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-09-02T18:40:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230902T1840:-7.03898:108.49658"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-02T18:40:00Z"
+  },
+  {
+   "members": [
+    "MODIS_NRT:20230903T0240:-6.45610:107.39710"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-03T02:40:00Z"
+  },
+  {
+   "members": [
+    "MODIS_NRT:20230903T0240:-6.51470:107.85170"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-03T02:40:00Z"
+  },
+  {
+   "members": [
+    "MODIS_NRT:20230903T0240:-6.58820:108.09400"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-03T02:40:00Z"
+  },
+  {
+   "members": [
+    "MODIS_NRT:20230903T0240:-6.81650:108.20490"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-03T02:40:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230903T0536:-6.90608:107.29492",
+    "VIIRS_NOAA21_NRT:20230903T0537:-6.90637:107.29448"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-09-03T05:37:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230903T0536:-6.92914:108.73059",
+    "VIIRS_NOAA21_NRT:20230903T0536:-6.92957:108.72731"
+   ],
+   "level": "Info",
+   "peak": 2,
+   "reached_at": "2023-09-03T05:36:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230903T0536:-6.96880:106.62666",
+    "VIIRS_NOAA21_NRT:20230903T0537:-6.96781:106.62710"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-09-03T05:37:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230903T0536:-7.03042:108.74081"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-03T05:36:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230903T0536:-7.03342:106.83723"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-03T05:36:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230903T0536:-7.03432:108.51815"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-03T05:36:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230903T0536:-7.37842:106.69359"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-03T05:36:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230903T0537:-6.62691:108.16647"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-03T05:37:00Z"
+  },
+  {
+   "members": [
+    "MODIS_NRT:20230903T0649:-6.26730:107.21110",
+    "VIIRS_NOAA20_NRT:20230903T0655:-6.26291:107.21075"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-09-03T06:55:00Z"
+  },
+  {
+   "members": [
+    "MODIS_NRT:20230903T0649:-6.46420:107.57210",
+    "VIIRS_NOAA20_NRT:20230903T0655:-6.45868:107.57162",
+    "VIIRS_NOAA20_NRT:20230903T0655:-6.45998:107.57279",
+    "VIIRS_NOAA20_NRT:20230903T0655:-6.46054:107.56947"
+   ],
+   "level": "Waspada",
+   "peak": 4,
+   "reached_at": "2023-09-03T06:55:00Z"
+  },
+  {
+   "members": [
+    "MODIS_NRT:20230903T0649:-6.46820:107.03380",
+    "VIIRS_NOAA20_NRT:20230903T0655:-6.47146:107.03725",
+    "VIIRS_NOAA20_NRT:20230903T0655:-6.47200:107.03417"
+   ],
+   "level": "Waspada",
+   "peak": 3,
+   "reached_at": "2023-09-03T06:49:00Z"
+  },
+  {
+   "members": [
+    "MODIS_NRT:20230903T0649:-6.62070:108.07690",
+    "VIIRS_NOAA20_NRT:20230903T0655:-6.61779:108.07896",
+    "VIIRS_NOAA20_NRT:20230903T0655:-6.61843:108.07537"
+   ],
+   "level": "Waspada",
+   "peak": 3,
+   "reached_at": "2023-09-03T06:49:00Z"
+  },
+  {
+   "members": [
+    "MODIS_NRT:20230903T0649:-6.76360:108.53220"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-03T06:49:00Z"
+  },
+  {
+   "members": [
+    "MODIS_NRT:20230903T0649:-6.77840:108.13180"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-03T06:49:00Z"
+  },
+  {
+   "members": [
+    "MODIS_NRT:20230903T0649:-7.02650:106.80650",
+    "VIIRS_NOAA20_NRT:20230903T0655:-7.02526:106.81120",
+    "VIIRS_NOAA20_NRT:20230903T0655:-7.02553:106.80997"
+   ],
+   "level": "Waspada",
+   "peak": 3,
+   "reached_at": "2023-09-03T06:55:00Z"
+  },
+  {
+   "members": [
+    "MODIS_NRT:20230903T0649:-7.10460:106.51680",
+    "VIIRS_NOAA20_NRT:20230903T0655:-7.10145:106.52184"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-09-03T06:55:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230903T0655:-6.54527:107.73764"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-03T06:55:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230903T0655:-6.59054:108.00449",
+    "VIIRS_NOAA20_NRT:20230903T0655:-6.59153:108.00503"
+   ],
+   "level": "Info",
+   "peak": 2,
+   "reached_at": "2023-09-03T06:55:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230903T0655:-6.82107:108.24400"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-03T06:55:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230903T0655:-6.90625:107.48283",
+    "VIIRS_NOAA20_NRT:20230903T0655:-6.90637:107.48177",
+    "VIIRS_NOAA20_NRT:20230903T0655:-6.90682:107.47962",
+    "VIIRS_NOAA20_NRT:20230903T0655:-6.90692:107.47855"
+   ],
+   "level": "Waspada",
+   "peak": 4,
+   "reached_at": "2023-09-03T06:55:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230903T0655:-6.90636:107.51358"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-03T06:55:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230903T0655:-6.92429:107.25160"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-03T06:55:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230903T0655:-6.93328:108.21791"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-03T06:55:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230903T0655:-7.02066:106.92579"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-03T06:55:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230903T0655:-7.05723:106.74648"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-03T06:55:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230903T0655:-7.17871:107.80028",
+    "VIIRS_NOAA20_NRT:20230903T0655:-7.18088:107.79935"
+   ],
+   "level": "Info",
+   "peak": 2,
+   "reached_at": "2023-09-03T06:55:00Z"
+  },
+  {
+   "members": [
+    "MODIS_NRT:20230903T1456:-7.06820:106.63290"
+   ],
+   "level": "Waspada",
+   "peak": 1,
+   "reached_at": "2023-09-03T14:56:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230903T1759:-6.33385:106.59872"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-03T17:59:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230903T1759:-6.43687:106.75555",
+    "VIIRS_NOAA20_NRT:20230903T1759:-6.43821:106.75709"
+   ],
+   "level": "Info",
+   "peak": 2,
+   "reached_at": "2023-09-03T17:59:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230903T1759:-6.53484:108.12923",
+    "VIIRS_NOAA21_NRT:20230903T1821:-6.53514:108.12811"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-09-03T18:21:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230903T1759:-6.54640:107.84151"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-03T17:59:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230903T1759:-6.82309:108.65881",
+    "VIIRS_NOAA20_NRT:20230903T1759:-6.82710:108.66196",
+    "VIIRS_NOAA21_NRT:20230903T1821:-6.82629:108.66041"
+   ],
+   "level": "Waspada",
+   "peak": 3,
+   "reached_at": "2023-09-03T18:21:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230903T1759:-6.87678:108.64368",
+    "VIIRS_NOAA20_NRT:20230904T1740:-6.87401:108.63779",
+    "VIIRS_NOAA21_NRT:20230904T1802:-6.87431:108.64185"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-09-04T17:40:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230903T1759:-6.90014:107.89939"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-03T17:59:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230903T1759:-6.91464:108.22952"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-03T17:59:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230903T1759:-6.92505:108.61726"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-03T17:59:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230903T1759:-6.97562:108.25529"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-03T17:59:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230903T1759:-7.19925:106.41165",
+    "VIIRS_NOAA21_NRT:20230903T1821:-7.20018:106.41247"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-09-03T18:21:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230903T1759:-7.42980:107.12630"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-03T17:59:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230903T1821:-6.29109:106.73277"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-03T18:21:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230903T1821:-6.45683:108.43627"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-03T18:21:00Z"
+  },
+  {
+   "members": [
+    "MODIS_NRT:20230904T0320:-6.56130:108.05210"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-04T03:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230904T0636:-6.31678:106.39074"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-04T06:36:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230904T0636:-6.32502:106.36194",
+    "VIIRS_NOAA21_NRT:20230904T0658:-6.32407:106.36292",
+    "VIIRS_NOAA21_NRT:20230904T0658:-6.32467:106.35950",
+    "VIIRS_NOAA21_NRT:20230904T0658:-6.32699:106.36253",
+    "VIIRS_NOAA21_NRT:20230904T0658:-6.32757:106.35909"
+   ],
+   "level": "Siaga",
+   "peak": 5,
+   "reached_at": "2023-09-04T06:58:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230904T0636:-6.60347:106.87727",
+    "VIIRS_NOAA20_NRT:20230904T0636:-6.60583:106.87685"
+   ],
+   "level": "Info",
+   "peak": 2,
+   "reached_at": "2023-09-04T06:36:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230904T0636:-6.86698:107.80788"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-04T06:36:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230904T0636:-7.03510:107.88726"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-04T06:36:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230904T0636:-7.29718:106.39130",
+    "VIIRS_NOAA21_NRT:20230904T0658:-7.29755:106.38953",
+    "VIIRS_NOAA20_NRT:20230905T0617:-7.29300:106.38973"
+   ],
+   "level": "Waspada",
+   "peak": 3,
+   "reached_at": "2023-09-04T06:58:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230904T0658:-6.55811:108.23186"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-04T06:58:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230904T1740:-6.09804:106.79870",
+    "VIIRS_NOAA20_NRT:20230904T1740:-6.09856:106.80177",
+    "VIIRS_NOAA20_NRT:20230904T1740:-6.09985:106.79784",
+    "VIIRS_NOAA20_NRT:20230904T1740:-6.10039:106.80091",
+    "VIIRS_NOAA21_NRT:20230904T1802:-6.09894:106.80099"
+   ],
+   "level": "Siaga",
+   "peak": 5,
+   "reached_at": "2023-09-04T18:02:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230904T1740:-6.34952:107.07520"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-04T17:40:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230904T1740:-6.42904:107.68647",
+    "VIIRS_NOAA21_NRT:20230904T1802:-6.42705:107.68928"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-09-04T18:02:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230904T1740:-6.59030:107.73882",
+    "VIIRS_NOAA20_NRT:20230904T1740:-6.59076:107.74164",
+    "VIIRS_NOAA21_NRT:20230904T1802:-6.59262:107.74125"
+   ],
+   "level": "Waspada",
+   "peak": 3,
+   "reached_at": "2023-09-04T18:02:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230904T1802:-6.44558:107.52237"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-04T18:02:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230904T1802:-6.48399:108.02540"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-04T18:02:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230904T1802:-6.62938:108.06076",
+    "VIIRS_NOAA21_NRT:20230905T0639:-6.63116:108.05460",
+    "VIIRS_NOAA20_NRT:20230906T0558:-6.62274:108.04570"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-09-05T06:39:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230904T1802:-6.78746:108.13669"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-04T18:02:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230904T1802:-6.90961:108.62925"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-04T18:02:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230904T1802:-6.93148:108.14308"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-04T18:02:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230905T0617:-6.09100:106.52379"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-05T06:17:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230905T0617:-6.21890:107.86830"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-05T06:17:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230905T0617:-6.28173:106.60769",
+    "VIIRS_NOAA21_NRT:20230905T0639:-6.28016:106.60518",
+    "VIIRS_NOAA21_NRT:20230905T0639:-6.28256:106.60734"
+   ],
+   "level": "Waspada",
+   "peak": 3,
+   "reached_at": "2023-09-05T06:39:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230905T0617:-6.30043:107.12385"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-05T06:17:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230905T0617:-6.36069:106.44674"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-05T06:17:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230905T0617:-6.42894:107.35119",
+    "VIIRS_NOAA20_NRT:20230905T0617:-6.43226:107.35168",
+    "VIIRS_NOAA20_NRT:20230905T0617:-6.43279:107.34821",
+    "MODIS_NRT:20230905T0635:-6.42890:107.34750",
+    "VIIRS_NOAA21_NRT:20230905T0639:-6.42683:107.35086",
+    "VIIRS_NOAA21_NRT:20230905T0639:-6.43099:107.35152",
+    "VIIRS_NOAA21_NRT:20230906T0621:-6.44845:107.35206"
+   ],
+   "level": "Siaga",
+   "peak": 6,
+   "reached_at": "2023-09-05T06:39:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230905T0617:-6.45952:107.44121"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-05T06:17:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230905T0617:-6.47016:107.52905",
+    "VIIRS_NOAA20_NRT:20230906T0558:-6.45279:107.52831"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-09-06T05:58:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230905T0617:-6.48050:107.36960"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-05T06:17:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230905T0617:-6.54736:108.13985",
+    "MODIS_NRT:20230905T0635:-6.55470:108.13240",
+    "VIIRS_NOAA21_NRT:20230905T0639:-6.54501:108.13663"
+   ],
+   "level": "Waspada",
+   "peak": 3,
+   "reached_at": "2023-09-05T06:35:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230905T0617:-6.55815:108.18045"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-05T06:17:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230905T0617:-6.56099:108.04990",
+    "VIIRS_NOAA20_NRT:20230906T0558:-6.56925:108.05341",
+    "VIIRS_NOAA20_NRT:20230906T0558:-6.57392:108.04893",
+    "VIIRS_NOAA21_NRT:20230906T0621:-6.57118:108.05059",
+    "VIIRS_NOAA21_NRT:20230907T0602:-6.57919:108.04133"
+   ],
+   "level": "Waspada",
+   "peak": 3,
+   "reached_at": "2023-09-06T05:58:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230905T0617:-6.56380:107.78493"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-05T06:17:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230905T0617:-6.56440:108.20619",
+    "VIIRS_NOAA21_NRT:20230905T0639:-6.56080:108.20519",
+    "VIIRS_NOAA21_NRT:20230905T0639:-6.56097:108.20432"
+   ],
+   "level": "Waspada",
+   "peak": 3,
+   "reached_at": "2023-09-05T06:39:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230905T0617:-6.60600:108.06779"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-05T06:17:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230905T0617:-6.61011:108.17461",
+    "VIIRS_NOAA21_NRT:20230905T0639:-6.61133:108.17311"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-09-05T06:39:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230905T0617:-6.61694:107.74693"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-05T06:17:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230905T0617:-6.62432:107.94671"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-05T06:17:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230905T0617:-6.64356:107.70503"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-05T06:17:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230905T0617:-6.65246:107.12572"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-05T06:17:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230905T0617:-6.67273:107.73819",
+    "VIIRS_NOAA21_NRT:20230905T0639:-6.67085:107.73808"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-09-05T06:39:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230905T0617:-6.67466:107.90477"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-05T06:17:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230905T0617:-6.68679:106.34902"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-05T06:17:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230905T0617:-6.69277:107.96413"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-05T06:17:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230905T0617:-6.70215:108.03633"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-05T06:17:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230905T0617:-6.73005:108.45609"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-05T06:17:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230905T0617:-6.76313:108.08171"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-05T06:17:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230905T0617:-6.77645:106.47527"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-05T06:17:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230905T0617:-6.78299:108.08472",
+    "MODIS_NRT:20230905T0635:-6.78480:108.08220",
+    "VIIRS_NOAA21_NRT:20230905T0639:-6.78341:108.08722",
+    "VIIRS_NOAA21_NRT:20230905T0639:-6.78412:108.08282"
+   ],
+   "level": "Waspada",
+   "peak": 4,
+   "reached_at": "2023-09-05T06:35:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230905T0617:-6.81116:106.31097"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-05T06:17:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230905T0617:-6.81258:107.79926"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-05T06:17:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230905T0617:-6.84366:108.13327",
+    "VIIRS_NOAA20_NRT:20230905T0617:-6.84418:108.12981",
+    "VIIRS_NOAA21_NRT:20230905T0639:-6.84385:108.13409"
+   ],
+   "level": "Waspada",
+   "peak": 3,
+   "reached_at": "2023-09-05T06:39:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230905T0617:-6.84511:107.40264"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-05T06:17:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230905T0617:-6.85729:108.73390"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-05T06:17:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230905T0617:-6.86439:107.02206"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-05T06:17:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230905T0617:-6.88215:107.33671",
+    "VIIRS_NOAA20_NRT:20230905T0617:-6.88755:107.32337"
+   ],
+   "level": "Info",
+   "peak": 2,
+   "reached_at": "2023-09-05T06:17:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230905T0617:-6.89090:107.25562"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-05T06:17:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230905T0617:-6.91328:108.65665"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-05T06:17:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230905T0617:-6.91658:107.28845"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-05T06:17:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230905T0617:-6.92258:106.33836",
+    "VIIRS_NOAA20_NRT:20230905T0617:-6.92599:106.33883",
+    "VIIRS_NOAA21_NRT:20230905T0639:-6.92240:106.33895"
+   ],
+   "level": "Waspada",
+   "peak": 3,
+   "reached_at": "2023-09-05T06:39:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230905T0617:-6.92901:107.25098",
+    "MODIS_NRT:20230905T0635:-6.93220:107.25240",
+    "MODIS_NRT:20230905T0635:-6.93240:107.24690",
+    "VIIRS_NOAA21_NRT:20230905T0639:-6.92815:107.25070"
+   ],
+   "level": "Waspada",
+   "peak": 4,
+   "reached_at": "2023-09-05T06:35:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230905T0617:-6.95411:107.24060"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-05T06:17:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230905T0617:-6.95834:108.22633"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-05T06:17:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230905T0617:-6.98381:107.08675",
+    "MODIS_NRT:20230905T0635:-6.98560:107.08470",
+    "VIIRS_NOAA21_NRT:20230905T0639:-6.98436:107.08570",
+    "VIIRS_NOAA21_NRT:20230905T0639:-6.99079:107.09702"
+   ],
+   "level": "Waspada",
+   "peak": 4,
+   "reached_at": "2023-09-05T06:35:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230905T0617:-6.98822:108.63276",
+    "VIIRS_NOAA20_NRT:20230905T0617:-6.99100:108.63675",
+    "VIIRS_NOAA20_NRT:20230905T0617:-6.99313:108.62280"
+   ],
+   "level": "Info",
+   "peak": 3,
+   "reached_at": "2023-09-05T06:17:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230905T0617:-7.04418:106.77184"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-05T06:17:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230905T0617:-7.05732:106.58945"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-05T06:17:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230905T0617:-7.10184:106.52211",
+    "MODIS_NRT:20230905T0635:-7.10610:106.52210",
+    "VIIRS_NOAA21_NRT:20230905T0639:-7.10160:106.52429",
+    "VIIRS_NOAA21_NRT:20230906T0620:-7.11683:106.51698"
+   ],
+   "level": "Waspada",
+   "peak": 3,
+   "reached_at": "2023-09-05T06:35:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230905T0617:-7.14635:108.06131"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-05T06:17:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230905T0617:-7.16825:106.75869"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-05T06:17:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230905T0617:-7.17070:107.94457"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-05T06:17:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230905T0617:-7.19565:106.50316",
+    "VIIRS_NOAA21_NRT:20230905T0639:-7.19396:106.50263",
+    "VIIRS_NOAA21_NRT:20230906T0620:-7.17615:106.50481"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-09-05T06:39:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230905T0617:-7.20494:106.72018"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-05T06:17:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230905T0617:-7.22525:106.44360"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-05T06:17:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230905T0617:-7.22793:106.42553"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-05T06:17:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230905T0617:-7.24138:107.11192"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-05T06:17:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230905T0617:-7.25271:106.39900",
+    "VIIRS_NOAA20_NRT:20230905T0617:-7.26019:106.41889",
+    "VIIRS_NOAA21_NRT:20230905T0639:-7.25941:106.41883",
+    "VIIRS_NOAA21_NRT:20230905T0639:-7.26019:106.41401",
+    "VIIRS_NOAA21_NRT:20230906T0620:-7.25464:106.41467",
+    "VIIRS_NOAA21_NRT:20230906T0620:-7.25915:106.42954",
+    "VIIRS_NOAA21_NRT:20230906T0620:-7.25968:106.42607",
+    "VIIRS_NOAA21_NRT:20230906T0620:-7.26509:106.41270"
+   ],
+   "level": "Siaga",
+   "peak": 6,
+   "reached_at": "2023-09-06T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230905T0617:-7.26154:106.45651",
+    "VIIRS_NOAA21_NRT:20230905T0639:-7.26084:106.45931",
+    "VIIRS_NOAA21_NRT:20230905T0639:-7.26163:106.45436"
+   ],
+   "level": "Waspada",
+   "peak": 3,
+   "reached_at": "2023-09-05T06:39:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230905T0617:-7.30476:107.09303"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-05T06:17:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230905T0617:-7.32736:106.43996"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-05T06:17:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230905T0617:-7.33343:107.26700"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-05T06:17:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230905T0617:-7.46108:107.32186"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-05T06:17:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230905T0617:-7.72055:108.00961"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-05T06:17:00Z"
+  },
+  {
+   "members": [
+    "MODIS_NRT:20230905T0634:-7.53240:107.55830",
+    "MODIS_NRT:20230905T0634:-7.53380:107.55230",
+    "VIIRS_NOAA21_NRT:20230905T0639:-7.52930:107.55930",
+    "VIIRS_NOAA21_NRT:20230905T0639:-7.53139:107.55979"
+   ],
+   "level": "Waspada",
+   "peak": 4,
+   "reached_at": "2023-09-05T06:39:00Z"
+  },
+  {
+   "members": [
+    "MODIS_NRT:20230905T0635:-6.87560:108.67430",
+    "VIIRS_NOAA21_NRT:20230905T0639:-6.87080:108.67605",
+    "VIIRS_NOAA21_NRT:20230905T0639:-6.87531:108.67681",
+    "VIIRS_NOAA21_NRT:20230906T0620:-6.89172:108.66908"
+   ],
+   "level": "Waspada",
+   "peak": 4,
+   "reached_at": "2023-09-05T06:35:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230905T0639:-6.48946:107.54987"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-05T06:39:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230905T0639:-6.49465:107.90460",
+    "VIIRS_NOAA21_NRT:20230905T0639:-6.49662:107.90540"
+   ],
+   "level": "Info",
+   "peak": 2,
+   "reached_at": "2023-09-05T06:39:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230905T0639:-6.58175:107.54449"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-05T06:39:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230905T0639:-6.59203:107.58645",
+    "VIIRS_NOAA21_NRT:20230906T0621:-6.59918:107.58793"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-09-06T06:21:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230905T0639:-6.71417:108.42530"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-05T06:39:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230905T0639:-6.71625:107.44059"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-05T06:39:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230905T0639:-6.80553:108.25538"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-05T06:39:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230905T0639:-6.84568:107.44419"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-05T06:39:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230905T0639:-6.91970:107.22517"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-05T06:39:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230905T0639:-7.01281:108.72433",
+    "VIIRS_NOAA21_NRT:20230905T0639:-7.01462:108.72341"
+   ],
+   "level": "Info",
+   "peak": 2,
+   "reached_at": "2023-09-05T06:39:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230905T0639:-7.02413:108.24605"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-05T06:39:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230905T0639:-7.04614:107.67516"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-05T06:39:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230905T0639:-7.08920:107.10928"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-05T06:39:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230905T0639:-7.15533:106.81005"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-05T06:39:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230905T0639:-7.18085:106.72896"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-05T06:39:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230905T0639:-7.21500:106.69321"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-05T06:39:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230905T0639:-7.44885:107.23230"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-05T06:39:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230905T0639:-7.74986:108.06612",
+    "VIIRS_NOAA21_NRT:20230906T0620:-7.75363:108.07762"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-09-06T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230905T1744:-7.10530:106.48769",
+    "VIIRS_NOAA20_NRT:20230905T1902:-7.10489:106.48577"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-09-05T19:02:00Z"
+  },
+  {
+   "members": [
+    "MODIS_NRT:20230906T0304:-6.61340:107.97330",
+    "MODIS_NRT:20230906T0304:-6.61460:107.96730",
+    "MODIS_NRT:20230906T0304:-6.61540:107.98750",
+    "MODIS_NRT:20230906T0304:-6.61640:107.98140"
+   ],
+   "level": "Waspada",
+   "peak": 4,
+   "reached_at": "2023-09-06T03:04:00Z"
+  },
+  {
+   "members": [
+    "MODIS_NRT:20230906T0304:-6.86180:106.98580"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-06T03:04:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230906T0558:-6.43508:107.41804"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-06T05:58:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230906T0558:-6.44532:106.91545",
+    "VIIRS_NOAA21_NRT:20230906T0621:-6.44445:106.91294"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-09-06T06:21:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230906T0558:-6.47613:107.00299"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-06T05:58:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230906T0558:-6.50089:107.56872",
+    "VIIRS_NOAA21_NRT:20230906T0621:-6.50028:107.56849"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-09-06T06:21:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230906T0558:-6.50685:107.84658",
+    "VIIRS_NOAA21_NRT:20230906T0621:-6.50458:107.84562",
+    "VIIRS_NOAA21_NRT:20230906T0621:-6.50794:107.84613"
+   ],
+   "level": "Waspada",
+   "peak": 3,
+   "reached_at": "2023-09-06T06:21:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230906T0558:-6.54760:108.23341"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-06T05:58:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230906T0558:-6.56243:106.91223"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-06T05:58:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230906T0558:-6.57722:107.94028",
+    "VIIRS_NOAA21_NRT:20230906T0621:-6.57457:107.94069"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-09-06T06:21:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230906T0558:-6.58655:107.98862",
+    "VIIRS_NOAA20_NRT:20230906T0558:-6.59124:107.98409"
+   ],
+   "level": "Info",
+   "peak": 2,
+   "reached_at": "2023-09-06T05:58:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230906T0558:-6.60074:107.86046",
+    "VIIRS_NOAA21_NRT:20230906T0621:-6.60083:107.86053"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-09-06T06:21:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230906T0558:-6.63820:107.47821"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-06T05:58:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230906T0558:-6.72537:108.10690",
+    "VIIRS_NOAA20_NRT:20230906T0558:-6.72622:108.10415",
+    "VIIRS_NOAA21_NRT:20230906T0620:-6.72334:108.10426",
+    "VIIRS_NOAA20_NRT:20230907T0539:-6.73193:108.10978",
+    "VIIRS_NOAA20_NRT:20230907T0539:-6.73616:108.10989"
+   ],
+   "level": "Siaga",
+   "peak": 5,
+   "reached_at": "2023-09-07T05:39:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230906T0558:-6.73255:108.39622",
+    "VIIRS_NOAA21_NRT:20230906T0620:-6.73109:108.39666"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-09-06T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230906T0558:-6.82718:107.42891",
+    "VIIRS_NOAA20_NRT:20230906T0558:-6.82855:107.42866",
+    "VIIRS_NOAA21_NRT:20230906T0620:-6.82412:107.42892",
+    "VIIRS_NOAA21_NRT:20230906T0620:-6.82744:107.42942"
+   ],
+   "level": "Waspada",
+   "peak": 4,
+   "reached_at": "2023-09-06T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230906T0558:-6.90183:108.61550",
+    "VIIRS_NOAA21_NRT:20230906T0620:-6.90002:108.61673",
+    "VIIRS_NOAA21_NRT:20230906T0620:-6.90061:108.61301"
+   ],
+   "level": "Waspada",
+   "peak": 3,
+   "reached_at": "2023-09-06T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230906T0558:-6.90577:107.87735",
+    "VIIRS_NOAA20_NRT:20230906T0558:-6.90969:107.87856"
+   ],
+   "level": "Info",
+   "peak": 2,
+   "reached_at": "2023-09-06T05:58:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230906T0558:-6.96707:107.61804"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-06T05:58:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230906T0558:-7.00686:107.86854",
+    "VIIRS_NOAA20_NRT:20230906T0558:-7.00736:107.86497"
+   ],
+   "level": "Info",
+   "peak": 2,
+   "reached_at": "2023-09-06T05:58:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230906T0558:-7.03375:107.93865"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-06T05:58:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230906T0558:-7.06972:106.82648"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-06T05:58:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230906T0558:-7.67044:108.66634"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-06T05:58:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230906T0620:-6.64758:108.34591"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-06T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230906T0620:-6.66325:108.06898"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-06T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230906T0620:-6.80763:108.10686"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-06T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230906T0620:-6.81438:108.17458"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-06T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230906T0620:-6.82753:108.47509"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-06T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230906T0620:-6.83065:107.40855",
+    "VIIRS_NOAA21_NRT:20230906T0620:-6.83505:107.40205"
+   ],
+   "level": "Info",
+   "peak": 2,
+   "reached_at": "2023-09-06T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230906T0620:-6.84903:108.36056"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-06T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230906T0620:-6.93038:107.11475"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-06T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230906T0620:-6.94023:107.20500"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-06T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230906T0620:-6.94068:107.53364",
+    "VIIRS_NOAA21_NRT:20230907T0602:-6.94367:107.51691"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-09-07T06:02:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230906T0620:-6.94500:108.64276"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-06T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230906T0620:-6.97966:106.96986"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-06T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230906T0620:-7.01230:106.91115"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-06T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230906T0620:-7.01453:106.58611"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-06T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230906T0620:-7.03398:106.61386"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-06T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230906T0620:-7.04134:107.87077"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-06T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230906T0620:-7.04384:106.77097",
+    "VIIRS_NOAA21_NRT:20230906T0620:-7.04714:106.77148"
+   ],
+   "level": "Info",
+   "peak": 2,
+   "reached_at": "2023-09-06T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230906T0620:-7.05441:106.79025"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-06T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230906T0620:-7.05819:107.14482"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-06T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230906T0620:-7.07900:106.85426"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-06T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230906T0620:-7.13890:106.52747"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-06T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230906T0620:-7.14305:108.02626"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-06T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230906T0620:-7.14581:106.72660"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-06T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230906T0620:-7.15494:106.95872"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-06T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230906T0620:-7.15609:106.54781"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-06T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230906T0620:-7.18135:106.69312"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-06T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230906T0620:-7.21096:106.61353"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-06T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230906T0620:-7.37034:107.03899"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-06T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230906T0620:-7.39015:106.61686"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-06T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230906T0620:-7.41200:107.00999"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-06T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230906T0620:-7.48088:107.66739"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-06T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230906T0620:-7.54463:108.80300"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-06T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230906T0620:-7.79178:108.36344"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-06T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230906T0621:-6.06398:106.33340"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-06T06:21:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230906T0621:-6.10808:106.42131"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-06T06:21:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230906T0621:-6.11385:106.38336"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-06T06:21:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230906T0621:-6.13042:106.87739"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-06T06:21:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230906T0621:-6.14510:106.75930"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-06T06:21:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230906T0621:-6.25221:107.21384"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-06T06:21:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230906T0621:-6.27248:107.06030"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-06T06:21:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230906T0621:-6.31033:107.12299"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-06T06:21:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230906T0621:-6.37298:106.64719",
+    "VIIRS_NOAA21_NRT:20230906T0621:-6.37351:106.64373"
+   ],
+   "level": "Info",
+   "peak": 2,
+   "reached_at": "2023-09-06T06:21:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230906T0621:-6.38770:107.69948"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-06T06:21:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230906T0621:-6.45371:107.42813"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-06T06:21:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230906T0621:-6.46403:106.87344"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-06T06:21:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230906T0621:-6.52650:107.92592"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-06T06:21:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230906T0621:-6.54298:108.06477"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-06T06:21:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230906T0621:-6.60479:107.92339"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-06T06:21:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230906T0621:-6.69614:107.22314"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-06T06:21:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230906T0621:-6.71873:107.09828",
+    "VIIRS_NOAA20_NRT:20230907T0539:-6.70872:107.10770"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-09-07T05:39:00Z"
+  },
+  {
+   "members": [
+    "MODIS_NRT:20230906T0716:-6.83220:108.34960",
+    "MODIS_NRT:20230906T0716:-6.83430:108.34480"
+   ],
+   "level": "Info",
+   "peak": 2,
+   "reached_at": "2023-09-06T07:16:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230906T1724:-6.47368:108.13419"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-06T17:24:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230906T1725:-6.82022:108.63417",
+    "VIIRS_NOAA21_NRT:20230906T1725:-6.82090:108.63797",
+    "VIIRS_NOAA20_NRT:20230906T1843:-6.82161:108.63377",
+    "VIIRS_NOAA20_NRT:20230906T1843:-6.82208:108.63715"
+   ],
+   "level": "Waspada",
+   "peak": 4,
+   "reached_at": "2023-09-06T18:43:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230906T1843:-6.57310:108.08795",
+    "VIIRS_NOAA20_NRT:20230906T1843:-6.57536:108.09007"
+   ],
+   "level": "Info",
+   "peak": 2,
+   "reached_at": "2023-09-06T18:43:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230907T0539:-6.62561:108.01485",
+    "VIIRS_NOAA20_NRT:20230907T0539:-6.62648:108.01621",
+    "VIIRS_NOAA21_NRT:20230907T0602:-6.62414:108.01324"
+   ],
+   "level": "Waspada",
+   "peak": 3,
+   "reached_at": "2023-09-07T06:02:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230907T0539:-6.90279:108.75851"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-07T05:39:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230907T0539:-6.92636:107.24928",
+    "VIIRS_NOAA21_NRT:20230907T0602:-6.92871:107.24584"
+   ],
+   "level": "Waspada",
+   "peak": 2,
+   "reached_at": "2023-09-07T06:02:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230907T0539:-7.16904:107.86492",
+    "VIIRS_NOAA20_NRT:20230907T0539:-7.17432:107.86776",
+    "VIIRS_NOAA20_NRT:20230907T0539:-7.17475:107.86461",
+    "VIIRS_NOAA20_NRT:20230907T0539:-7.17516:107.86160",
+    "VIIRS_NOAA20_NRT:20230907T0539:-7.17903:107.86613",
+    "VIIRS_NOAA20_NRT:20230907T0539:-7.18042:107.86457",
+    "VIIRS_NOAA21_NRT:20230907T0602:-7.16925:107.86179",
+    "VIIRS_NOAA21_NRT:20230907T0602:-7.17239:107.86614",
+    "VIIRS_NOAA21_NRT:20230907T0602:-7.17299:107.86201",
+    "VIIRS_NOAA21_NRT:20230907T0602:-7.17672:107.86231"
+   ],
+   "level": "Siaga",
+   "peak": 10,
+   "reached_at": "2023-09-07T05:39:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230907T0601:-7.46248:107.29794"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-07T06:01:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230907T0602:-6.43567:107.71497"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-07T06:02:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230907T0602:-6.44285:107.48016",
+    "VIIRS_NOAA21_NRT:20230907T0602:-6.44502:107.48158",
+    "MODIS_NRT:20230907T0620:-6.44600:107.47270"
+   ],
+   "level": "Waspada",
+   "peak": 3,
+   "reached_at": "2023-09-07T06:20:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230907T0602:-6.56244:107.92278"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-07T06:02:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230907T0602:-6.61358:108.11094"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-07T06:02:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230907T0602:-6.70672:108.34040"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-07T06:02:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230907T0602:-6.76544:108.06775"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-07T06:02:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230907T0602:-6.86629:108.63154"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-07T06:02:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230907T0602:-6.87384:108.55537"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-07T06:02:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230907T0602:-6.90767:107.55365",
+    "VIIRS_NOAA21_NRT:20230907T0602:-6.91208:107.54961"
+   ],
+   "level": "Info",
+   "peak": 2,
+   "reached_at": "2023-09-07T06:02:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230907T0602:-6.95902:108.66566"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-07T06:02:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230907T0602:-7.03478:108.76585"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-07T06:02:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230907T0602:-7.03744:108.64802"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-07T06:02:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230907T0602:-7.23214:106.41875"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-07T06:02:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA21_NRT:20230907T0602:-7.25046:106.47210"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-07T06:02:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230907T1824:-6.81695:108.09425"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-07T18:24:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230907T1824:-6.84398:108.60826",
+    "VIIRS_NOAA20_NRT:20230907T1824:-6.84486:108.60558",
+    "VIIRS_NOAA20_NRT:20230907T1824:-6.84557:108.61049",
+    "VIIRS_NOAA21_NRT:20230907T1846:-6.84439:108.60463",
+    "VIIRS_NOAA21_NRT:20230907T1846:-6.84497:108.60896"
+   ],
+   "level": "Siaga",
+   "peak": 5,
+   "reached_at": "2023-09-07T18:46:00Z"
+  },
+  {
+   "members": [
+    "VIIRS_NOAA20_NRT:20230907T1824:-6.85853:108.34893"
+   ],
+   "level": "Info",
+   "peak": 1,
+   "reached_at": "2023-09-07T18:24:00Z"
+  }
+ ]
+}

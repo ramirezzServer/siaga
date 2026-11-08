@@ -36,8 +36,14 @@ const (
 	MODISProduct Product = "MODIS_NRT"
 )
 
-// Products adalah semua produk yang diterima, dalam urutan polling.
+// Products adalah semua produk NRT yang diterima, termasuk yang tidak lagi
+// dipolling (payload lama di arsip tetap bisa di-replay).
 var Products = []Product{VIIRSSNPP, VIIRSNOAA20, VIIRSNOAA21, MODISProduct}
+
+// PolledProducts adalah produk yang dipolling ingest, dalam urutan polling.
+// S-NPP tidak lagi dipolling: pengiriman datanya berhenti 2 Nov 2026 dan
+// aturan hazard.fire.* dikalibrasi tanpa wahana itu (ADR 0023).
+var PolledProducts = []Product{VIIRSNOAA20, VIIRSNOAA21, MODISProduct}
 
 // Produk standard processing (SP): diproses ulang beberapa bulan setelah
 // lintasan, dengan kolom type (jenis sumber panas). Hanya untuk arsip

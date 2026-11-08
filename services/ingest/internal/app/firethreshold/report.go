@@ -77,8 +77,9 @@ func WriteReport(w io.Writer, generated time.Time, box string, cov []Coverage, r
 
 	r := res.StaticRule
 	p("\n## Sumber panas tetap\n\n")
-	p("Sel %.3f° dinilai bersama 8 tetangganya. Persisten: ≥ %d hari, ≥ %d tahun, ≥ %d bulan kalender berbeda, dan ≥ %.0f%% deteksi malam. Type FIRMS: ≥ %d deteksi SP dan ≥ %.0f%% di antaranya type 1/2. Sel kandidat yang bersebelahan digabung; jari-jari = anggota terjauh + %.2f km (minimal %.2f km).\n\n",
-		r.CellDeg, r.MinDays, r.MinYears, r.MinMonths, 100*r.MinNightShare, r.MinTyped, 100*r.TypedShare, r.MarginKm, r.MinRadiusKm)
+	season := months[r.SeasonFrom-1] + "–" + months[r.SeasonTo-1]
+	p("Sel %.3f° dinilai bersama 8 tetangganya. Tidak musiman: ≤ %.0f%% deteksi di %s, atau ≥ %.0f%% deteksi malam. Persisten: ≥ %d hari, ≥ %d tahun, ≥ %d bulan kalender berbeda, ≥ %.0f%% deteksi malam, dan tidak musiman. Type FIRMS: ≥ %d deteksi SP, ≥ %.0f%% di antaranya type 2/3 (sumber tetap darat, lepas pantai), ≥ %d tahun, dan tidak musiman; type 1 (gunung api) tidak dihitung karena di Jawa Barat dipakai FIRMS untuk kebakaran lereng gunung api. Sel kandidat yang bersebelahan digabung; jari-jari = anggota terjauh + %.2f km (minimal %.2f km).\n\n",
+		r.CellDeg, 100*r.MaxSeasonShare, season, 100*r.NightOnlyShare, r.MinDays, r.MinYears, r.MinMonths, 100*r.MinNightShare, r.MinTyped, 100*r.TypedShare, r.MinYears, r.MarginKm, r.MinRadiusKm)
 	all := 0
 	for _, row := range res.Inventory {
 		all += row.Detections
@@ -86,17 +87,17 @@ func WriteReport(w io.Writer, generated time.Time, box string, cov []Coverage, r
 	p("**%d sumber**, menyaring %d dari %d deteksi (%s). Daftar lengkap di `sumber-panas-tetap-32.csv`, peta di `sumber-panas-tetap-32.geojson` (bisa dibuka di GitHub atau geojson.io).\n\n",
 		len(res.Static), res.Masked, all, pct(res.Masked, all))
 	if len(res.Static) > 0 {
-		p("| Pusat | Jari-jari | Alasan | Deteksi | Hari | Tahun | Bulan | type 1/2 | Malam | FRP rata | Pertama | Terakhir |\n")
-		p("| --- | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- |\n")
+		p("| Pusat | Jari-jari | Alasan | Deteksi | Hari | Tahun | Bulan | type 2/3 | Malam | %s | FRP rata | Pertama | Terakhir |\n", season)
+		p("| --- | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- |\n")
 		for _, s := range res.Static[:min(TopStatic, len(res.Static))] {
-			p("| %s | %.2f km | %s | %d | %d | %d | %d | %d | %s | %.1f MW | %s | %s |\n", s.ID(), s.RadiusKm, s.Reason, s.Detections, s.Days, s.Years, s.Months,
-				s.Typed[fire.ActiveVolcano]+s.Typed[fire.StaticSource], pct(s.Night, s.Detections), s.MeanFRPMW,
+			p("| %s | %.2f km | %s | %d | %d | %d | %d | %d | %s | %s | %.1f MW | %s | %s |\n", s.ID(), s.RadiusKm, s.Reason, s.Detections, s.Days, s.Years, s.Months,
+				s.Typed[fire.StaticSource]+s.Typed[fire.Offshore], pct(s.Night, s.Detections), pct(s.Season, s.Detections), s.MeanFRPMW,
 				s.First.In(WIB).Format(time.DateOnly), s.Last.In(WIB).Format(time.DateOnly))
 		}
 	}
 
 	p("\n## Kejadian per varian aturan\n\n")
-	p("Deteksi dikelompokkan menjadi kejadian bila berjarak ≤ jarak sambung dan berselang ≤ jeda dari anggota lain (berantai). Tingkat dinilai di setiap deteksi atas jendela 24 jam: Info bila ada deteksi, Waspada bila ada deteksi dengan keyakinan minimal aturan, Siaga bila hitungan ≥ ambang. Tahun menurut awal kejadian (WIB).\n\n")
+	p("Deteksi dikelompokkan menjadi kejadian bila berjarak ≤ jarak sambung dan berselang ≤ jeda dari anggota lain (berantai). Tingkat dinilai di setiap deteksi atas jendela 24 jam: Info bila ada deteksi, Waspada bila ada deteksi dengan keyakinan minimal aturan (atau terlihat di cukup banyak lintasan), Siaga bila hitungan ≥ ambang. Lintasan = wahana + waktu lintas berbeda. Tahun menurut awal kejadian (WIB). Varian bertanda * dipakai `hazard.fire.*`.\n\n")
 	p("| Varian | Wahana dibuang | Saringan | Sambung | Waspada mulai | Siaga | Deteksi dinilai | Kejadian | Info | Waspada | Siaga |\n")
 	p("| --- | --- | --- | --- | --- | --- | ---: | ---: | ---: | ---: | ---: |\n")
 	for _, vr := range res.Variants {
@@ -106,8 +107,15 @@ func WriteReport(w io.Writer, generated time.Time, box string, cov []Coverage, r
 		if v.NoMask {
 			mask = "tidak"
 		}
-		p("| %s | %s | %s | %.1f km / %.0f jam | %s | ≥ %d %s | %d | %d | %d | %d | %d |\n", v.Name, orDash(strings.Join(v.Exclude, ", ")), mask,
-			v.Cluster.LinkKm, v.Cluster.Gap.Hours(), v.Level.WaspadaMin, v.Level.SiagaCount, v.Level.Unit, vr.Points, len(vr.Events),
+		name, waspada := v.Name, v.Level.WaspadaMin.String()
+		if v.Selected {
+			name += " *"
+		}
+		if v.Level.WaspadaPasses > 0 {
+			waspada += fmt.Sprintf(" atau ≥ %d lintasan", v.Level.WaspadaPasses)
+		}
+		p("| %s | %s | %s | %.1f km / %.0f jam | %s | ≥ %d %s | %d | %d | %d | %d | %d |\n", name, orDash(strings.Join(v.Exclude, ", ")), mask,
+			v.Cluster.LinkKm, v.Cluster.Gap.Hours(), waspada, v.Level.SiagaCount, v.Level.Unit, vr.Points, len(vr.Events),
 			t[firecluster.Info], t[firecluster.Waspada], t[firecluster.Siaga])
 	}
 	years := map[int]bool{}
@@ -140,7 +148,7 @@ func WriteReport(w io.Writer, generated time.Time, box string, cov []Coverage, r
 		}
 		p("\n")
 
-		def := res.Variants[0]
+		def, _ := res.SelectedVariant()
 		p("\n## %d kejadian terbesar (%s)\n\n", TopEvents, def.Variant.Name)
 		p("| Mulai (WIB) | Selesai | Pusat | Deteksi | Puncak 24 jam | Tingkat | Wahana |\n| --- | --- | --- | ---: | ---: | --- | --- |\n")
 		for _, ev := range def.Top(TopEvents) {
@@ -185,6 +193,8 @@ func WriteReport(w io.Writer, generated time.Time, box string, cov []Coverage, r
 	return b.Flush()
 }
 
+var months = [...]string{"Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"}
+
 func orDash(s string) string {
 	if s == "" {
 		return "-"
@@ -195,13 +205,20 @@ func orDash(s string) string {
 // staticColumns adalah header sumber-panas-tetap-32.csv.
 var staticColumns = []string{
 	"id", "lintang", "bujur", "radius_km", "alasan", "sel", "deteksi", "hari", "tahun", "bulan",
-	"type_vegetasi", "type_gunung_api", "type_sumber_tetap", "type_lepas_pantai", "malam", "frp_rata_mw", "pertama", "terakhir",
+	"type_vegetasi", "type_gunung_api", "type_sumber_tetap", "type_lepas_pantai", "malam", "musim_kebakaran", "frp_rata_mw", "pertama", "terakhir",
 }
 
 func ff(v float64, prec int) string { return strconv.FormatFloat(v, 'f', prec, 64) }
 
-// WriteStatic menulis daftar sumber panas tetap sebagai CSV (urut deteksi).
-func WriteStatic(w io.Writer, static []firecluster.Source) error {
+// WriteStatic menulis daftar sumber panas tetap sebagai CSV (urut deteksi)
+// dengan komentar periode arsip dan jumlah sumber; dibaca geo-processor
+// (saringan hazard.fire.*, make calibration-copy).
+func WriteStatic(w io.Writer, res Result) error {
+	static := res.Static
+	if _, err := fmt.Fprintf(w, "# Sumber panas tetap untuk menyaring titik api (make fire-threshold, ADR 0023). Jangan diedit manual.\n# Arsip FIRMS %s..%s (UTC)\n# %d sumber\n",
+		res.From.UTC().Format(time.DateOnly), res.To.UTC().Format(time.DateOnly), len(static)); err != nil {
+		return err
+	}
 	cw := csv.NewWriter(w)
 	if err := cw.Write(staticColumns); err != nil {
 		return err
@@ -211,7 +228,7 @@ func WriteStatic(w io.Writer, static []firecluster.Source) error {
 			s.ID(), ff(s.Lat, 5), ff(s.Lon, 5), ff(s.RadiusKm, 2), string(s.Reason), strconv.Itoa(s.Cells),
 			strconv.Itoa(s.Detections), strconv.Itoa(s.Days), strconv.Itoa(s.Years), strconv.Itoa(s.Months),
 			strconv.Itoa(s.Typed[0]), strconv.Itoa(s.Typed[1]), strconv.Itoa(s.Typed[2]), strconv.Itoa(s.Typed[3]),
-			strconv.Itoa(s.Night), ff(s.MeanFRPMW, 1), s.First.UTC().Format(time.DateOnly), s.Last.UTC().Format(time.DateOnly),
+			strconv.Itoa(s.Night), strconv.Itoa(s.Season), ff(s.MeanFRPMW, 1), s.First.UTC().Format(time.DateOnly), s.Last.UTC().Format(time.DateOnly),
 		}
 		if err := cw.Write(rec); err != nil {
 			return err
@@ -245,6 +262,7 @@ func WriteGeoJSON(w io.Writer, static []firecluster.Source) error {
 				"id": s.ID(), "radius_km": s.RadiusKm, "alasan": string(s.Reason), "deteksi": s.Detections, "hari": s.Days,
 				"tahun": s.Years, "bulan": s.Months, "malam": s.Night, "frp_rata_mw": s.MeanFRPMW,
 				"type_gunung_api": s.Typed[fire.ActiveVolcano], "type_sumber_tetap": s.Typed[fire.StaticSource],
+				"type_lepas_pantai": s.Typed[fire.Offshore], "musim_kebakaran": s.Season,
 				"pertama": s.First.UTC().Format(time.DateOnly), "terakhir": s.Last.UTC().Format(time.DateOnly),
 				"marker-color": color[s.Reason], "marker-size": markerSize(s.Detections),
 			},
@@ -263,4 +281,39 @@ func markerSize(n int) string {
 		return "medium"
 	}
 	return "small"
+}
+
+// ReadStatic membaca sumber-panas-tetap-32.csv (keluaran WriteStatic):
+// pusat, jari-jari, dan alasan setiap sumber, cukup untuk menyaring deteksi
+// dengan firecluster.Mask.
+func ReadStatic(r io.Reader) ([]firecluster.Source, error) {
+	cr := csv.NewReader(r)
+	cr.Comment = '#'
+	cr.FieldsPerRecord = len(staticColumns)
+	recs, err := cr.ReadAll()
+	if err != nil {
+		return nil, fmt.Errorf("sumber panas tetap: %w", err)
+	}
+	if len(recs) == 0 || !slices.Equal(recs[0], staticColumns) {
+		return nil, fmt.Errorf("sumber panas tetap: header harus %v", staticColumns)
+	}
+	out := make([]firecluster.Source, 0, len(recs)-1)
+	for i, rec := range recs[1:] {
+		lat, err1 := strconv.ParseFloat(rec[1], 64)
+		lon, err2 := strconv.ParseFloat(rec[2], 64)
+		radius, err3 := strconv.ParseFloat(rec[3], 64)
+		s := firecluster.Source{Lat: lat, Lon: lon, RadiusKm: radius, Reason: firecluster.Reason(rec[4])}
+		switch {
+		case err1 != nil || err2 != nil || err3 != nil:
+			return nil, fmt.Errorf("sumber panas tetap baris %d: angka tidak sah", i+2)
+		case s.ID() != rec[0]:
+			return nil, fmt.Errorf("sumber panas tetap baris %d: ID %s tidak cocok dengan pusat %s", i+2, rec[0], s.ID())
+		case !(radius > 0 && radius <= 20):
+			return nil, fmt.Errorf("sumber panas tetap baris %d: jari-jari %v km", i+2, radius)
+		case s.Reason != firecluster.ReasonPersistent && s.Reason != firecluster.ReasonFIRMS && s.Reason != firecluster.ReasonBoth:
+			return nil, fmt.Errorf("sumber panas tetap baris %d: alasan %q", i+2, rec[4])
+		}
+		out = append(out, s)
+	}
+	return out, nil
 }

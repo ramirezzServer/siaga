@@ -204,15 +204,31 @@ type LevelRule struct {
 	// WaspadaMin adalah keyakinan terendah yang menaikkan ke Waspada (PRD:
 	// fire.High).
 	WaspadaMin fire.Confidence
-	Window     time.Duration
+	// WaspadaPasses > 0: kejadian yang terlihat di paling sedikit sebanyak
+	// ini lintasan berbeda dalam Window juga Waspada (api yang bertahan),
+	// walau tidak ada deteksi berkeyakinan WaspadaMin.
+	WaspadaPasses int
+	Window        time.Duration
 }
 
 // PRDRule adalah aturan PRD apa adanya.
 var PRDRule = LevelRule{Name: "PRD", SiagaCount: 5, Unit: Detections, WaspadaMin: fire.High, Window: 24 * time.Hour}
 
+// SelectedRule adalah aturan yang dipakai hazard.fire.* (kalibrasi
+// 1e-3c-1b, ADR 0023): Waspada bila ada deteksi keyakinan tinggi (piksel
+// jenuh) atau api terlihat di ≥ 2 lintasan dalam 24 jam, Siaga bila ≥ 5
+// deteksi dalam 24 jam, dinilai tanpa S-NPP (ExcludedSatellites).
+// geo-processor menyalin aturan ini; test di kedua layanan mencocokkan
+// hasilnya dengan berkas acuan yang sama.
+var SelectedRule = LevelRule{Name: "SIAGA", SiagaCount: 5, Unit: Detections, WaspadaMin: fire.High, WaspadaPasses: 2, Window: 24 * time.Hour}
+
+// ExcludedSatellites adalah wahana yang tidak dinilai: pengiriman data
+// S-NPP berhenti 2 Nov 2026, jadi aturan dikalibrasi tanpa wahana itu.
+var ExcludedSatellites = []string{"S-NPP"}
+
 // Validate memeriksa batas parameter.
 func (r LevelRule) Validate() error {
-	if r.SiagaCount < 1 || r.SiagaCount > 1000 || (r.Unit != Detections && r.Unit != Overpasses) ||
+	if r.SiagaCount < 1 || r.SiagaCount > 1000 || (r.Unit != Detections && r.Unit != Overpasses) || r.WaspadaPasses < 0 || r.WaspadaPasses > 100 ||
 		r.WaspadaMin < fire.Low || r.WaspadaMin > fire.High || r.Window <= 0 || r.Window > 7*24*time.Hour {
 		return fmt.Errorf("%w: %+v", ErrRule, r)
 	}
@@ -254,7 +270,8 @@ func Evaluate(ps []Point, r LevelRule) (Outcome, error) {
 		switch {
 		case n >= r.SiagaCount:
 			lvl = Siaga
-		case slices.ContainsFunc(win, func(q Point) bool { return q.Confidence >= r.WaspadaMin }):
+		case slices.ContainsFunc(win, func(q Point) bool { return q.Confidence >= r.WaspadaMin }),
+			r.WaspadaPasses > 0 && count(win, Overpasses) >= r.WaspadaPasses:
 			lvl = Waspada
 		}
 		o.Peak = max(o.Peak, n)

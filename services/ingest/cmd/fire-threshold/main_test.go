@@ -21,7 +21,7 @@ const key = "KUNCIUJIKUNCIUJIKUNCIUJIKUNCIUJI"
 var now = time.Date(2026, 10, 20, 12, 0, 0, 0, time.UTC)
 
 // firmsFake menjawab ketersediaan, status, dan Area API dengan deteksi
-// sintetis: kilang tiap 10 hari (SP type 2) dan kebakaran Ciremai 21–25
+// sintetis: kilang tiap 10 hari 2018–Jan 2020 (SP type 2, lalu NRT) dan kebakaran Ciremai 21–25
 // Okt 2019.
 type firmsFake struct {
 	mu   sync.Mutex
@@ -58,7 +58,7 @@ func (f *firmsFake) Fetch(_ context.Context, r ports.Request) (ports.Response, e
 	for d := range n {
 		day := start.AddDate(0, 0, d)
 		ds := day.Format(time.DateOnly)
-		if !modis && day.Sub(time.Date(2018, 1, 1, 0, 0, 0, 0, time.UTC)).Hours()/24 >= 0 && int(day.Sub(time.Date(2018, 1, 1, 0, 0, 0, 0, time.UTC)).Hours()/24)%10 == 0 && day.Year() <= 2019 {
+		if !modis && day.Sub(time.Date(2018, 1, 1, 0, 0, 0, 0, time.UTC)).Hours()/24 >= 0 && int(day.Sub(time.Date(2018, 1, 1, 0, 0, 0, 0, time.UTC)).Hours()/24)%10 == 0 && day.Year() <= 2020 {
 			fmt.Fprintf(&b, "-6.38510,108.37020,340,0.4,0.4,%s,1840,N,VIIRS,n,2,290,25,N,2\n", ds)
 		}
 		if day.After(time.Date(2019, 10, 20, 0, 0, 0, 0, time.UTC)) && day.Before(time.Date(2019, 10, 26, 0, 0, 0, 0, time.UTC)) {

@@ -249,8 +249,8 @@ func TestPlanKeyedSources(t *testing.T) {
 	for _, j := range jobs {
 		byName[j.Poller.Name()] = j.Interval
 	}
-	if len(jobs) != 14 || byName["openaq-stasiun"] != 15*time.Minute || byName["firms-viirs-snpp-nrt"] != 30*time.Minute ||
-		byName["firms-modis-nrt"] != 30*time.Minute {
+	if len(jobs) != 13 || byName["openaq-stasiun"] != 15*time.Minute || byName["firms-viirs-noaa20-nrt"] != 30*time.Minute ||
+		byName["firms-modis-nrt"] != 30*time.Minute || byName["firms-viirs-snpp-nrt"] != 0 {
 		t.Fatalf("%d job: %v", len(jobs), byName)
 	}
 	if s.firmsBox.String() != "106.3,-7.9,108.9,-5.7" || s.openAQBox != s.firmsBox {

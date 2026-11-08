@@ -1,0 +1,3619 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [108.09425, -6.54807],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "keduanya",
+        "bulan": 12,
+        "deteksi": 4251,
+        "frp_rata_mw": 2.3,
+        "hari": 1396,
+        "id": "-6.54807,108.09425",
+        "malam": 3464,
+        "marker-color": "#111111",
+        "marker-size": "large",
+        "musim_kebakaran": 2435,
+        "pertama": "2012-08-13",
+        "radius_km": 2.14,
+        "tahun": 14,
+        "terakhir": "2026-10-10",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 3105
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [108.39848, -6.37815],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "keduanya",
+        "bulan": 12,
+        "deteksi": 2572,
+        "frp_rata_mw": 3.4,
+        "hari": 1387,
+        "id": "-6.37815,108.39848",
+        "malam": 1922,
+        "marker-color": "#111111",
+        "marker-size": "large",
+        "musim_kebakaran": 1195,
+        "pertama": "2012-01-21",
+        "radius_km": 2.43,
+        "tahun": 15,
+        "terakhir": "2026-10-02",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 17,
+        "type_sumber_tetap": 2369
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [106.67117, -6.09473],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "keduanya",
+        "bulan": 12,
+        "deteksi": 1778,
+        "frp_rata_mw": 1.9,
+        "hari": 823,
+        "id": "-6.09473,106.67117",
+        "malam": 1564,
+        "marker-color": "#111111",
+        "marker-size": "large",
+        "musim_kebakaran": 1027,
+        "pertama": "2012-03-02",
+        "radius_km": 6.63,
+        "tahun": 15,
+        "terakhir": "2026-10-10",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 1148
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [107.74665, -7.04984],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "type-firms",
+        "bulan": 12,
+        "deteksi": 1438,
+        "frp_rata_mw": 7.7,
+        "hari": 856,
+        "id": "-7.04984,107.74665",
+        "malam": 1,
+        "marker-color": "#9467bd",
+        "marker-size": "large",
+        "musim_kebakaran": 592,
+        "pertama": "2012-01-17",
+        "radius_km": 2.91,
+        "tahun": 15,
+        "terakhir": "2026-10-09",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 925
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [106.55256, -6.1956],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "keduanya",
+        "bulan": 12,
+        "deteksi": 1146,
+        "frp_rata_mw": 1.4,
+        "hari": 725,
+        "id": "-6.19560,106.55256",
+        "malam": 1079,
+        "marker-color": "#111111",
+        "marker-size": "large",
+        "musim_kebakaran": 636,
+        "pertama": "2012-02-13",
+        "radius_km": 4.26,
+        "tahun": 15,
+        "terakhir": "2026-10-05",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 358
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [106.8982, -6.47934],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "keduanya",
+        "bulan": 12,
+        "deteksi": 1117,
+        "frp_rata_mw": 1.3,
+        "hari": 823,
+        "id": "-6.47934,106.89820",
+        "malam": 1115,
+        "marker-color": "#111111",
+        "marker-size": "large",
+        "musim_kebakaran": 679,
+        "pertama": "2012-03-12",
+        "radius_km": 1.98,
+        "tahun": 15,
+        "terakhir": "2026-10-10",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 849
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [107.87892, -6.28496],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 12,
+        "deteksi": 975,
+        "frp_rata_mw": 1,
+        "hari": 555,
+        "id": "-6.28496,107.87892",
+        "malam": 931,
+        "marker-color": "#d62728",
+        "marker-size": "large",
+        "musim_kebakaran": 677,
+        "pertama": "2014-07-27",
+        "radius_km": 2.69,
+        "tahun": 10,
+        "terakhir": "2026-08-28",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 145
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [106.52391, -6.15034],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "keduanya",
+        "bulan": 12,
+        "deteksi": 889,
+        "frp_rata_mw": 1.4,
+        "hari": 496,
+        "id": "-6.15034,106.52391",
+        "malam": 864,
+        "marker-color": "#111111",
+        "marker-size": "large",
+        "musim_kebakaran": 487,
+        "pertama": "2012-05-12",
+        "radius_km": 5.89,
+        "tahun": 15,
+        "terakhir": "2026-10-10",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 131
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [107.03124, -6.09939],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "keduanya",
+        "bulan": 12,
+        "deteksi": 724,
+        "frp_rata_mw": 1,
+        "hari": 471,
+        "id": "-6.09939,107.03124",
+        "malam": 685,
+        "marker-color": "#111111",
+        "marker-size": "large",
+        "musim_kebakaran": 412,
+        "pertama": "2012-02-06",
+        "radius_km": 2.6,
+        "tahun": 9,
+        "terakhir": "2023-12-17",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 479
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [106.35335, -6.18231],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "keduanya",
+        "bulan": 12,
+        "deteksi": 637,
+        "frp_rata_mw": 1.1,
+        "hari": 371,
+        "id": "-6.18231,106.35335",
+        "malam": 621,
+        "marker-color": "#111111",
+        "marker-size": "large",
+        "musim_kebakaran": 375,
+        "pertama": "2012-07-26",
+        "radius_km": 4.11,
+        "tahun": 12,
+        "terakhir": "2026-10-09",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 277
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [107.80038, -6.96087],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "type-firms",
+        "bulan": 12,
+        "deteksi": 607,
+        "frp_rata_mw": 9.8,
+        "hari": 467,
+        "id": "-6.96087,107.80038",
+        "malam": 8,
+        "marker-color": "#9467bd",
+        "marker-size": "large",
+        "musim_kebakaran": 259,
+        "pertama": "2012-01-19",
+        "radius_km": 3.67,
+        "tahun": 15,
+        "terakhir": "2026-10-10",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 494
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [108.40021, -6.70573],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "keduanya",
+        "bulan": 12,
+        "deteksi": 518,
+        "frp_rata_mw": 1.2,
+        "hari": 411,
+        "id": "-6.70573,108.40021",
+        "malam": 483,
+        "marker-color": "#111111",
+        "marker-size": "large",
+        "musim_kebakaran": 303,
+        "pertama": "2012-02-14",
+        "radius_km": 1.86,
+        "tahun": 15,
+        "terakhir": "2026-10-04",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 260
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [107.4947, -5.89447],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "keduanya",
+        "bulan": 12,
+        "deteksi": 507,
+        "frp_rata_mw": 2.7,
+        "hari": 373,
+        "id": "-5.89447,107.49470",
+        "malam": 429,
+        "marker-color": "#111111",
+        "marker-size": "large",
+        "musim_kebakaran": 283,
+        "pertama": "2012-03-06",
+        "radius_km": 1.08,
+        "tahun": 15,
+        "terakhir": "2026-10-10",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 457,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [106.54828, -6.09903],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "keduanya",
+        "bulan": 12,
+        "deteksi": 496,
+        "frp_rata_mw": 2.5,
+        "hari": 333,
+        "id": "-6.09903,106.54828",
+        "malam": 397,
+        "marker-color": "#111111",
+        "marker-size": "large",
+        "musim_kebakaran": 307,
+        "pertama": "2012-06-22",
+        "radius_km": 1.79,
+        "tahun": 13,
+        "terakhir": "2026-10-05",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 175
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [107.02846, -6.13484],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 12,
+        "deteksi": 455,
+        "frp_rata_mw": 1.6,
+        "hari": 299,
+        "id": "-6.13484,107.02846",
+        "malam": 375,
+        "marker-color": "#d62728",
+        "marker-size": "large",
+        "musim_kebakaran": 158,
+        "pertama": "2012-02-21",
+        "radius_km": 1.61,
+        "tahun": 15,
+        "terakhir": "2026-01-11",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 185
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [107.2117, -6.46069],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 12,
+        "deteksi": 454,
+        "frp_rata_mw": 1,
+        "hari": 376,
+        "id": "-6.46069,107.21170",
+        "malam": 450,
+        "marker-color": "#d62728",
+        "marker-size": "large",
+        "musim_kebakaran": 276,
+        "pertama": "2014-05-05",
+        "radius_km": 1.73,
+        "tahun": 13,
+        "terakhir": "2026-10-09",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 171
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [106.31385, -6.1859],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "keduanya",
+        "bulan": 12,
+        "deteksi": 440,
+        "frp_rata_mw": 1.3,
+        "hari": 341,
+        "id": "-6.18590,106.31385",
+        "malam": 410,
+        "marker-color": "#111111",
+        "marker-size": "large",
+        "musim_kebakaran": 217,
+        "pertama": "2014-04-08",
+        "radius_km": 2.81,
+        "tahun": 13,
+        "terakhir": "2026-09-28",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 206
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [106.99945, -6.08713],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "type-firms",
+        "bulan": 12,
+        "deteksi": 412,
+        "frp_rata_mw": 3.2,
+        "hari": 372,
+        "id": "-6.08713,106.99945",
+        "malam": 77,
+        "marker-color": "#9467bd",
+        "marker-size": "large",
+        "musim_kebakaran": 228,
+        "pertama": "2012-02-22",
+        "radius_km": 1.74,
+        "tahun": 15,
+        "terakhir": "2026-06-18",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 162,
+        "type_sumber_tetap": 185
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [107.09756, -6.07541],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "keduanya",
+        "bulan": 12,
+        "deteksi": 361,
+        "frp_rata_mw": 1,
+        "hari": 247,
+        "id": "-6.07541,107.09756",
+        "malam": 346,
+        "marker-color": "#111111",
+        "marker-size": "large",
+        "musim_kebakaran": 193,
+        "pertama": "2012-02-05",
+        "radius_km": 1.45,
+        "tahun": 9,
+        "terakhir": "2026-05-29",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 194
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [107.7309, -5.91531],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "keduanya",
+        "bulan": 12,
+        "deteksi": 352,
+        "frp_rata_mw": 2.6,
+        "hari": 289,
+        "id": "-5.91531,107.73090",
+        "malam": 330,
+        "marker-color": "#111111",
+        "marker-size": "large",
+        "musim_kebakaran": 183,
+        "pertama": "2012-11-27",
+        "radius_km": 1.38,
+        "tahun": 15,
+        "terakhir": "2026-10-04",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 347,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [107.92763, -5.91027],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "keduanya",
+        "bulan": 12,
+        "deteksi": 338,
+        "frp_rata_mw": 2.4,
+        "hari": 302,
+        "id": "-5.91027,107.92763",
+        "malam": 328,
+        "marker-color": "#111111",
+        "marker-size": "large",
+        "musim_kebakaran": 166,
+        "pertama": "2012-02-05",
+        "radius_km": 1.02,
+        "tahun": 14,
+        "terakhir": "2026-10-10",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 326,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [107.74454, -7.0078],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "type-firms",
+        "bulan": 12,
+        "deteksi": 334,
+        "frp_rata_mw": 6.3,
+        "hari": 299,
+        "id": "-7.00780,107.74454",
+        "malam": 0,
+        "marker-color": "#9467bd",
+        "marker-size": "large",
+        "musim_kebakaran": 134,
+        "pertama": "2012-01-17",
+        "radius_km": 2.1,
+        "tahun": 15,
+        "terakhir": "2026-09-02",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 201
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [108.14059, -6.09537],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "keduanya",
+        "bulan": 12,
+        "deteksi": 324,
+        "frp_rata_mw": 2.5,
+        "hari": 269,
+        "id": "-6.09537,108.14059",
+        "malam": 290,
+        "marker-color": "#111111",
+        "marker-size": "large",
+        "musim_kebakaran": 134,
+        "pertama": "2012-05-12",
+        "radius_km": 1.47,
+        "tahun": 15,
+        "terakhir": "2026-09-25",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 322,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [107.83319, -6.10156],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "keduanya",
+        "bulan": 12,
+        "deteksi": 301,
+        "frp_rata_mw": 2.4,
+        "hari": 236,
+        "id": "-6.10156,107.83319",
+        "malam": 291,
+        "marker-color": "#111111",
+        "marker-size": "large",
+        "musim_kebakaran": 193,
+        "pertama": "2015-08-03",
+        "radius_km": 0.99,
+        "tahun": 5,
+        "terakhir": "2019-11-07",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 301,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [106.44107, -6.42054],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "keduanya",
+        "bulan": 12,
+        "deteksi": 289,
+        "frp_rata_mw": 0.7,
+        "hari": 195,
+        "id": "-6.42054,106.44107",
+        "malam": 286,
+        "marker-color": "#111111",
+        "marker-size": "large",
+        "musim_kebakaran": 172,
+        "pertama": "2012-04-11",
+        "radius_km": 1.55,
+        "tahun": 7,
+        "terakhir": "2026-09-16",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 126
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [106.74319, -6.15993],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "keduanya",
+        "bulan": 12,
+        "deteksi": 276,
+        "frp_rata_mw": 1.4,
+        "hari": 176,
+        "id": "-6.15993,106.74319",
+        "malam": 272,
+        "marker-color": "#111111",
+        "marker-size": "large",
+        "musim_kebakaran": 184,
+        "pertama": "2012-07-16",
+        "radius_km": 1.94,
+        "tahun": 10,
+        "terakhir": "2024-08-09",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 99
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [107.52452, -6.04698],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "keduanya",
+        "bulan": 12,
+        "deteksi": 266,
+        "frp_rata_mw": 2.7,
+        "hari": 225,
+        "id": "-6.04698,107.52452",
+        "malam": 245,
+        "marker-color": "#111111",
+        "marker-size": "large",
+        "musim_kebakaran": 104,
+        "pertama": "2012-04-15",
+        "radius_km": 1.37,
+        "tahun": 12,
+        "terakhir": "2026-07-15",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 264,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [106.50014, -6.21196],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "keduanya",
+        "bulan": 12,
+        "deteksi": 264,
+        "frp_rata_mw": 1.5,
+        "hari": 196,
+        "id": "-6.21196,106.50014",
+        "malam": 234,
+        "marker-color": "#111111",
+        "marker-size": "large",
+        "musim_kebakaran": 131,
+        "pertama": "2012-03-23",
+        "radius_km": 3.14,
+        "tahun": 15,
+        "terakhir": "2026-10-04",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 72
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [108.63311, -6.30151],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "keduanya",
+        "bulan": 12,
+        "deteksi": 260,
+        "frp_rata_mw": 2.7,
+        "hari": 228,
+        "id": "-6.30151,108.63311",
+        "malam": 233,
+        "marker-color": "#111111",
+        "marker-size": "large",
+        "musim_kebakaran": 107,
+        "pertama": "2012-02-27",
+        "radius_km": 1.02,
+        "tahun": 15,
+        "terakhir": "2026-07-11",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 258,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [107.45422, -6.4496],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "type-firms",
+        "bulan": 12,
+        "deteksi": 242,
+        "frp_rata_mw": 8.1,
+        "hari": 207,
+        "id": "-6.44960,107.45422",
+        "malam": 0,
+        "marker-color": "#9467bd",
+        "marker-size": "large",
+        "musim_kebakaran": 77,
+        "pertama": "2012-02-08",
+        "radius_km": 1.8,
+        "tahun": 15,
+        "terakhir": "2026-09-16",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 167
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [107.49789, -6.86677],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "type-firms",
+        "bulan": 12,
+        "deteksi": 239,
+        "frp_rata_mw": 6.2,
+        "hari": 200,
+        "id": "-6.86677,107.49789",
+        "malam": 1,
+        "marker-color": "#9467bd",
+        "marker-size": "large",
+        "musim_kebakaran": 110,
+        "pertama": "2012-01-19",
+        "radius_km": 1.47,
+        "tahun": 15,
+        "terakhir": "2026-09-21",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 137
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [107.04388, -6.08195],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 11,
+        "deteksi": 233,
+        "frp_rata_mw": 1.2,
+        "hari": 167,
+        "id": "-6.08195,107.04388",
+        "malam": 217,
+        "marker-color": "#d62728",
+        "marker-size": "large",
+        "musim_kebakaran": 109,
+        "pertama": "2012-06-02",
+        "radius_km": 1.43,
+        "tahun": 14,
+        "terakhir": "2026-09-27",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [106.46516, -6.19628],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 12,
+        "deteksi": 208,
+        "frp_rata_mw": 1.8,
+        "hari": 152,
+        "id": "-6.19628,106.46516",
+        "malam": 177,
+        "marker-color": "#d62728",
+        "marker-size": "large",
+        "musim_kebakaran": 118,
+        "pertama": "2012-03-15",
+        "radius_km": 4.59,
+        "tahun": 14,
+        "terakhir": "2026-09-11",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 7
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [108.35733, -6.37233],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 6,
+        "deteksi": 200,
+        "frp_rata_mw": 1.2,
+        "hari": 99,
+        "id": "-6.37233,108.35733",
+        "malam": 199,
+        "marker-color": "#d62728",
+        "marker-size": "large",
+        "musim_kebakaran": 173,
+        "pertama": "2020-07-16",
+        "radius_km": 1.46,
+        "tahun": 3,
+        "terakhir": "2026-10-10",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [107.95901, -6.29575],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "keduanya",
+        "bulan": 12,
+        "deteksi": 196,
+        "frp_rata_mw": 0.8,
+        "hari": 167,
+        "id": "-6.29575,107.95901",
+        "malam": 192,
+        "marker-color": "#111111",
+        "marker-size": "medium",
+        "musim_kebakaran": 129,
+        "pertama": "2012-06-14",
+        "radius_km": 0.93,
+        "tahun": 6,
+        "terakhir": "2026-08-12",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 167
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [108.43284, -6.50088],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 12,
+        "deteksi": 179,
+        "frp_rata_mw": 0.8,
+        "hari": 156,
+        "id": "-6.50088,108.43284",
+        "malam": 177,
+        "marker-color": "#d62728",
+        "marker-size": "medium",
+        "musim_kebakaran": 131,
+        "pertama": "2012-04-19",
+        "radius_km": 1.72,
+        "tahun": 14,
+        "terakhir": "2026-07-30",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 81
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [107.40369, -6.41348],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "keduanya",
+        "bulan": 12,
+        "deteksi": 149,
+        "frp_rata_mw": 4.1,
+        "hari": 120,
+        "id": "-6.41348,107.40369",
+        "malam": 73,
+        "marker-color": "#111111",
+        "marker-size": "medium",
+        "musim_kebakaran": 67,
+        "pertama": "2012-01-19",
+        "radius_km": 2.35,
+        "tahun": 15,
+        "terakhir": "2026-09-14",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 41
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [107.69662, -6.93182],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "type-firms",
+        "bulan": 11,
+        "deteksi": 145,
+        "frp_rata_mw": 5,
+        "hari": 119,
+        "id": "-6.93182,107.69662",
+        "malam": 0,
+        "marker-color": "#9467bd",
+        "marker-size": "medium",
+        "musim_kebakaran": 78,
+        "pertama": "2012-04-23",
+        "radius_km": 1.73,
+        "tahun": 15,
+        "terakhir": "2026-09-29",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 69
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [106.54324, -6.23678],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 12,
+        "deteksi": 144,
+        "frp_rata_mw": 1.2,
+        "hari": 106,
+        "id": "-6.23678,106.54324",
+        "malam": 137,
+        "marker-color": "#d62728",
+        "marker-size": "medium",
+        "musim_kebakaran": 67,
+        "pertama": "2012-06-13",
+        "radius_km": 2.3,
+        "tahun": 13,
+        "terakhir": "2026-06-06",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 2
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [106.52304, -6.28753],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "keduanya",
+        "bulan": 12,
+        "deteksi": 135,
+        "frp_rata_mw": 0.8,
+        "hari": 104,
+        "id": "-6.28753,106.52304",
+        "malam": 134,
+        "marker-color": "#111111",
+        "marker-size": "medium",
+        "musim_kebakaran": 78,
+        "pertama": "2018-03-30",
+        "radius_km": 1.54,
+        "tahun": 5,
+        "terakhir": "2023-09-29",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 92
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [107.92765, -6.30727],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "keduanya",
+        "bulan": 12,
+        "deteksi": 135,
+        "frp_rata_mw": 1,
+        "hari": 125,
+        "id": "-6.30727,107.92765",
+        "malam": 129,
+        "marker-color": "#111111",
+        "marker-size": "medium",
+        "musim_kebakaran": 70,
+        "pertama": "2012-04-06",
+        "radius_km": 1.4,
+        "tahun": 4,
+        "terakhir": "2019-08-04",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 95
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [108.15392, -6.38125],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 12,
+        "deteksi": 130,
+        "frp_rata_mw": 0.9,
+        "hari": 120,
+        "id": "-6.38125,108.15392",
+        "malam": 125,
+        "marker-color": "#d62728",
+        "marker-size": "medium",
+        "musim_kebakaran": 71,
+        "pertama": "2014-10-04",
+        "radius_km": 1.54,
+        "tahun": 5,
+        "terakhir": "2025-10-06",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [106.92035, -6.18075],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 12,
+        "deteksi": 120,
+        "frp_rata_mw": 1.6,
+        "hari": 95,
+        "id": "-6.18075,106.92035",
+        "malam": 112,
+        "marker-color": "#d62728",
+        "marker-size": "medium",
+        "musim_kebakaran": 60,
+        "pertama": "2012-02-05",
+        "radius_km": 2.31,
+        "tahun": 13,
+        "terakhir": "2026-04-22",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 9
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [107.0284, -6.12253],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "keduanya",
+        "bulan": 11,
+        "deteksi": 116,
+        "frp_rata_mw": 1,
+        "hari": 109,
+        "id": "-6.12253,107.02840",
+        "malam": 115,
+        "marker-color": "#111111",
+        "marker-size": "medium",
+        "musim_kebakaran": 65,
+        "pertama": "2012-01-27",
+        "radius_km": 0.92,
+        "tahun": 3,
+        "terakhir": "2014-11-04",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 70
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [107.49998, -6.89439],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "type-firms",
+        "bulan": 12,
+        "deteksi": 113,
+        "frp_rata_mw": 6.2,
+        "hari": 106,
+        "id": "-6.89439,107.49998",
+        "malam": 3,
+        "marker-color": "#9467bd",
+        "marker-size": "medium",
+        "musim_kebakaran": 42,
+        "pertama": "2012-08-08",
+        "radius_km": 1.64,
+        "tahun": 15,
+        "terakhir": "2026-09-07",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 72
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [106.46547, -6.0567],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "keduanya",
+        "bulan": 10,
+        "deteksi": 111,
+        "frp_rata_mw": 4.9,
+        "hari": 73,
+        "id": "-6.05670,106.46547",
+        "malam": 67,
+        "marker-color": "#111111",
+        "marker-size": "medium",
+        "musim_kebakaran": 44,
+        "pertama": "2013-10-08",
+        "radius_km": 1.63,
+        "tahun": 8,
+        "terakhir": "2024-10-20",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 103,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [106.34218, -6.37404],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 10,
+        "deteksi": 106,
+        "frp_rata_mw": 0.6,
+        "hari": 89,
+        "id": "-6.37404,106.34218",
+        "malam": 106,
+        "marker-color": "#d62728",
+        "marker-size": "medium",
+        "musim_kebakaran": 54,
+        "pertama": "2020-08-25",
+        "radius_km": 0.83,
+        "tahun": 6,
+        "terakhir": "2026-07-26",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [108.11032, -6.37892],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 12,
+        "deteksi": 106,
+        "frp_rata_mw": 0.9,
+        "hari": 77,
+        "id": "-6.37892,108.11032",
+        "malam": 104,
+        "marker-color": "#d62728",
+        "marker-size": "medium",
+        "musim_kebakaran": 28,
+        "pertama": "2012-03-12",
+        "radius_km": 1.06,
+        "tahun": 13,
+        "terakhir": "2026-04-14",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [106.48033, -6.13821],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 12,
+        "deteksi": 96,
+        "frp_rata_mw": 0.8,
+        "hari": 83,
+        "id": "-6.13821,106.48033",
+        "malam": 93,
+        "marker-color": "#d62728",
+        "marker-size": "medium",
+        "musim_kebakaran": 59,
+        "pertama": "2018-07-01",
+        "radius_km": 2.28,
+        "tahun": 9,
+        "terakhir": "2026-09-14",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [108.52092, -7.32943],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 11,
+        "deteksi": 95,
+        "frp_rata_mw": 1,
+        "hari": 77,
+        "id": "-7.32943,108.52092",
+        "malam": 90,
+        "marker-color": "#d62728",
+        "marker-size": "medium",
+        "musim_kebakaran": 52,
+        "pertama": "2012-10-26",
+        "radius_km": 1.96,
+        "tahun": 11,
+        "terakhir": "2026-08-13",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [106.34897, -6.24193],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 12,
+        "deteksi": 92,
+        "frp_rata_mw": 5,
+        "hari": 66,
+        "id": "-6.24193,106.34897",
+        "malam": 73,
+        "marker-color": "#d62728",
+        "marker-size": "medium",
+        "musim_kebakaran": 59,
+        "pertama": "2012-04-09",
+        "radius_km": 1.77,
+        "tahun": 13,
+        "terakhir": "2026-08-08",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 5
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [108.45946, -6.63006],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 9,
+        "deteksi": 89,
+        "frp_rata_mw": 1.5,
+        "hari": 54,
+        "id": "-6.63006,108.45946",
+        "malam": 88,
+        "marker-color": "#d62728",
+        "marker-size": "medium",
+        "musim_kebakaran": 58,
+        "pertama": "2016-04-03",
+        "radius_km": 1.58,
+        "tahun": 7,
+        "terakhir": "2025-08-01",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 3
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [107.053, -5.78709],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "type-firms",
+        "bulan": 11,
+        "deteksi": 84,
+        "frp_rata_mw": 6.5,
+        "hari": 43,
+        "id": "-5.78709,107.05300",
+        "malam": 32,
+        "marker-color": "#9467bd",
+        "marker-size": "medium",
+        "musim_kebakaran": 30,
+        "pertama": "2018-01-24",
+        "radius_km": 1.51,
+        "tahun": 9,
+        "terakhir": "2026-09-25",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 83,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [107.35443, -6.28036],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 10,
+        "deteksi": 83,
+        "frp_rata_mw": 0.7,
+        "hari": 71,
+        "id": "-6.28036,107.35443",
+        "malam": 80,
+        "marker-color": "#d62728",
+        "marker-size": "medium",
+        "musim_kebakaran": 59,
+        "pertama": "2014-09-26",
+        "radius_km": 0.94,
+        "tahun": 8,
+        "terakhir": "2022-09-12",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [107.54777, -6.50166],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 6,
+        "deteksi": 80,
+        "frp_rata_mw": 1,
+        "hari": 51,
+        "id": "-6.50166,107.54777",
+        "malam": 80,
+        "marker-color": "#d62728",
+        "marker-size": "medium",
+        "musim_kebakaran": 64,
+        "pertama": "2019-08-19",
+        "radius_km": 0.99,
+        "tahun": 5,
+        "terakhir": "2025-09-02",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [106.34349, -6.08229],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 12,
+        "deteksi": 74,
+        "frp_rata_mw": 0.8,
+        "hari": 62,
+        "id": "-6.08229,106.34349",
+        "malam": 73,
+        "marker-color": "#d62728",
+        "marker-size": "medium",
+        "musim_kebakaran": 39,
+        "pertama": "2023-09-27",
+        "radius_km": 1.41,
+        "tahun": 4,
+        "terakhir": "2026-09-30",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [108.28372, -6.44286],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 10,
+        "deteksi": 74,
+        "frp_rata_mw": 0.6,
+        "hari": 68,
+        "id": "-6.44286,108.28372",
+        "malam": 72,
+        "marker-color": "#d62728",
+        "marker-size": "medium",
+        "musim_kebakaran": 56,
+        "pertama": "2012-04-24",
+        "radius_km": 1.22,
+        "tahun": 6,
+        "terakhir": "2023-08-20",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [107.14767, -6.30821],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 11,
+        "deteksi": 65,
+        "frp_rata_mw": 1.6,
+        "hari": 55,
+        "id": "-6.30821,107.14767",
+        "malam": 52,
+        "marker-color": "#d62728",
+        "marker-size": "medium",
+        "musim_kebakaran": 38,
+        "pertama": "2012-03-24",
+        "radius_km": 1.47,
+        "tahun": 13,
+        "terakhir": "2026-05-11",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [108.4232, -7.35185],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 12,
+        "deteksi": 54,
+        "frp_rata_mw": 2.3,
+        "hari": 42,
+        "id": "-7.35185,108.42320",
+        "malam": 51,
+        "marker-color": "#d62728",
+        "marker-size": "medium",
+        "musim_kebakaran": 21,
+        "pertama": "2023-08-15",
+        "radius_km": 1.34,
+        "tahun": 4,
+        "terakhir": "2026-08-19",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [107.10178, -6.20223],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 11,
+        "deteksi": 51,
+        "frp_rata_mw": 1,
+        "hari": 39,
+        "id": "-6.20223,107.10178",
+        "malam": 51,
+        "marker-color": "#d62728",
+        "marker-size": "medium",
+        "musim_kebakaran": 28,
+        "pertama": "2017-12-30",
+        "radius_km": 0.82,
+        "tahun": 7,
+        "terakhir": "2023-10-01",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [107.48073, -6.50142],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 9,
+        "deteksi": 51,
+        "frp_rata_mw": 1,
+        "hari": 35,
+        "id": "-6.50142,107.48073",
+        "malam": 47,
+        "marker-color": "#d62728",
+        "marker-size": "medium",
+        "musim_kebakaran": 32,
+        "pertama": "2023-10-20",
+        "radius_km": 1.68,
+        "tahun": 4,
+        "terakhir": "2026-09-22",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [107.62266, -6.97876],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "type-firms",
+        "bulan": 12,
+        "deteksi": 44,
+        "frp_rata_mw": 3.6,
+        "hari": 42,
+        "id": "-6.97876,107.62266",
+        "malam": 0,
+        "marker-color": "#9467bd",
+        "marker-size": "small",
+        "musim_kebakaran": 12,
+        "pertama": "2012-03-23",
+        "radius_km": 0.93,
+        "tahun": 13,
+        "terakhir": "2026-04-24",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 2
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [106.74418, -6.21138],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 8,
+        "deteksi": 43,
+        "frp_rata_mw": 5.1,
+        "hari": 25,
+        "id": "-6.21138,106.74418",
+        "malam": 42,
+        "marker-color": "#d62728",
+        "marker-size": "small",
+        "musim_kebakaran": 32,
+        "pertama": "2014-10-02",
+        "radius_km": 1.74,
+        "tahun": 9,
+        "terakhir": "2026-09-04",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [106.31452, -6.38588],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 8,
+        "deteksi": 43,
+        "frp_rata_mw": 0.8,
+        "hari": 32,
+        "id": "-6.38588,106.31452",
+        "malam": 41,
+        "marker-color": "#d62728",
+        "marker-size": "small",
+        "musim_kebakaran": 32,
+        "pertama": "2023-09-11",
+        "radius_km": 1.18,
+        "tahun": 4,
+        "terakhir": "2026-10-09",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [107.40771, -6.38519],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 10,
+        "deteksi": 41,
+        "frp_rata_mw": 1.1,
+        "hari": 34,
+        "id": "-6.38519,107.40771",
+        "malam": 37,
+        "marker-color": "#d62728",
+        "marker-size": "small",
+        "musim_kebakaran": 24,
+        "pertama": "2012-08-02",
+        "radius_km": 1.44,
+        "tahun": 9,
+        "terakhir": "2026-08-05",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [108.12722, -6.4091],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 8,
+        "deteksi": 41,
+        "frp_rata_mw": 3.7,
+        "hari": 32,
+        "id": "-6.40910,108.12722",
+        "malam": 29,
+        "marker-color": "#d62728",
+        "marker-size": "small",
+        "musim_kebakaran": 29,
+        "pertama": "2014-08-25",
+        "radius_km": 1.48,
+        "tahun": 6,
+        "terakhir": "2023-10-07",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [107.74592, -6.5348],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 10,
+        "deteksi": 39,
+        "frp_rata_mw": 0.7,
+        "hari": 38,
+        "id": "-6.53480,107.74592",
+        "malam": 39,
+        "marker-color": "#d62728",
+        "marker-size": "small",
+        "musim_kebakaran": 20,
+        "pertama": "2014-01-27",
+        "radius_km": 0.81,
+        "tahun": 6,
+        "terakhir": "2025-07-26",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [107.28835, -5.91579],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "type-firms",
+        "bulan": 10,
+        "deteksi": 37,
+        "frp_rata_mw": 4.8,
+        "hari": 25,
+        "id": "-5.91579,107.28835",
+        "malam": 14,
+        "marker-color": "#9467bd",
+        "marker-size": "small",
+        "musim_kebakaran": 12,
+        "pertama": "2012-12-09",
+        "radius_km": 1.01,
+        "tahun": 9,
+        "terakhir": "2025-02-14",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 37,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [106.57206, -6.32997],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 10,
+        "deteksi": 36,
+        "frp_rata_mw": 1.8,
+        "hari": 34,
+        "id": "-6.32997,106.57206",
+        "malam": 21,
+        "marker-color": "#d62728",
+        "marker-size": "small",
+        "musim_kebakaran": 21,
+        "pertama": "2013-02-10",
+        "radius_km": 1.06,
+        "tahun": 9,
+        "terakhir": "2026-09-02",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [107.24707, -6.34625],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 10,
+        "deteksi": 36,
+        "frp_rata_mw": 1.4,
+        "hari": 32,
+        "id": "-6.34625,107.24707",
+        "malam": 35,
+        "marker-color": "#d62728",
+        "marker-size": "small",
+        "musim_kebakaran": 22,
+        "pertama": "2012-08-18",
+        "radius_km": 1.36,
+        "tahun": 3,
+        "terakhir": "2019-02-23",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [106.42636, -6.08839],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 6,
+        "deteksi": 34,
+        "frp_rata_mw": 1.4,
+        "hari": 17,
+        "id": "-6.08839,106.42636",
+        "malam": 34,
+        "marker-color": "#d62728",
+        "marker-size": "small",
+        "musim_kebakaran": 25,
+        "pertama": "2021-08-07",
+        "radius_km": 1.01,
+        "tahun": 3,
+        "terakhir": "2023-09-07",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [108.76606, -7.29955],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "type-firms",
+        "bulan": 11,
+        "deteksi": 33,
+        "frp_rata_mw": 7,
+        "hari": 29,
+        "id": "-7.29955,108.76606",
+        "malam": 1,
+        "marker-color": "#9467bd",
+        "marker-size": "small",
+        "musim_kebakaran": 7,
+        "pertama": "2013-03-26",
+        "radius_km": 1.72,
+        "tahun": 11,
+        "terakhir": "2026-08-06",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 28
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [106.80756, -6.30862],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 9,
+        "deteksi": 32,
+        "frp_rata_mw": 1.3,
+        "hari": 26,
+        "id": "-6.30862,106.80756",
+        "malam": 32,
+        "marker-color": "#d62728",
+        "marker-size": "small",
+        "musim_kebakaran": 13,
+        "pertama": "2016-07-31",
+        "radius_km": 1.43,
+        "tahun": 8,
+        "terakhir": "2026-04-24",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [106.31569, -6.34685],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 8,
+        "deteksi": 32,
+        "frp_rata_mw": 0.9,
+        "hari": 26,
+        "id": "-6.34685,106.31569",
+        "malam": 32,
+        "marker-color": "#d62728",
+        "marker-size": "small",
+        "musim_kebakaran": 24,
+        "pertama": "2023-03-16",
+        "radius_km": 1.31,
+        "tahun": 3,
+        "terakhir": "2026-08-12",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [107.90966, -6.57186],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 7,
+        "deteksi": 30,
+        "frp_rata_mw": 1.2,
+        "hari": 24,
+        "id": "-6.57186,107.90966",
+        "malam": 24,
+        "marker-color": "#d62728",
+        "marker-size": "small",
+        "musim_kebakaran": 19,
+        "pertama": "2012-09-07",
+        "radius_km": 1.33,
+        "tahun": 7,
+        "terakhir": "2026-08-28",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [107.16569, -6.39331],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "type-firms",
+        "bulan": 11,
+        "deteksi": 27,
+        "frp_rata_mw": 6.3,
+        "hari": 23,
+        "id": "-6.39331,107.16569",
+        "malam": 0,
+        "marker-color": "#9467bd",
+        "marker-size": "small",
+        "musim_kebakaran": 13,
+        "pertama": "2015-03-23",
+        "radius_km": 1.92,
+        "tahun": 9,
+        "terakhir": "2024-11-13",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 21
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [106.86922, -6.10861],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 9,
+        "deteksi": 26,
+        "frp_rata_mw": 1.9,
+        "hari": 25,
+        "id": "-6.10861,106.86922",
+        "malam": 25,
+        "marker-color": "#d62728",
+        "marker-size": "small",
+        "musim_kebakaran": 13,
+        "pertama": "2012-09-05",
+        "radius_km": 0.93,
+        "tahun": 7,
+        "terakhir": "2026-09-25",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 10,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [106.70049, -6.12851],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 9,
+        "deteksi": 26,
+        "frp_rata_mw": 1.5,
+        "hari": 20,
+        "id": "-6.12851,106.70049",
+        "malam": 21,
+        "marker-color": "#d62728",
+        "marker-size": "small",
+        "musim_kebakaran": 10,
+        "pertama": "2019-09-13",
+        "radius_km": 1.61,
+        "tahun": 5,
+        "terakhir": "2026-07-27",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [106.91455, -6.23072],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 7,
+        "deteksi": 26,
+        "frp_rata_mw": 2.9,
+        "hari": 21,
+        "id": "-6.23072,106.91455",
+        "malam": 24,
+        "marker-color": "#d62728",
+        "marker-size": "small",
+        "musim_kebakaran": 17,
+        "pertama": "2012-08-21",
+        "radius_km": 1.55,
+        "tahun": 5,
+        "terakhir": "2025-08-08",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [107.09009, -6.35598],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 9,
+        "deteksi": 26,
+        "frp_rata_mw": 1,
+        "hari": 23,
+        "id": "-6.35598,107.09009",
+        "malam": 25,
+        "marker-color": "#d62728",
+        "marker-size": "small",
+        "musim_kebakaran": 18,
+        "pertama": "2013-03-18",
+        "radius_km": 1.68,
+        "tahun": 10,
+        "terakhir": "2026-09-11",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [106.99596, -6.3567],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 6,
+        "deteksi": 26,
+        "frp_rata_mw": 7.1,
+        "hari": 17,
+        "id": "-6.35670,106.99596",
+        "malam": 18,
+        "marker-color": "#d62728",
+        "marker-size": "small",
+        "musim_kebakaran": 20,
+        "pertama": "2015-09-11",
+        "radius_km": 1.61,
+        "tahun": 7,
+        "terakhir": "2026-09-16",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 4
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [107.06787, -6.42033],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 11,
+        "deteksi": 26,
+        "frp_rata_mw": 0.6,
+        "hari": 26,
+        "id": "-6.42033,107.06787",
+        "malam": 25,
+        "marker-color": "#d62728",
+        "marker-size": "small",
+        "musim_kebakaran": 12,
+        "pertama": "2012-04-15",
+        "radius_km": 1.11,
+        "tahun": 10,
+        "terakhir": "2022-07-14",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [106.34435, -6.26867],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 8,
+        "deteksi": 24,
+        "frp_rata_mw": 0.8,
+        "hari": 19,
+        "id": "-6.26867,106.34435",
+        "malam": 24,
+        "marker-color": "#d62728",
+        "marker-size": "small",
+        "musim_kebakaran": 18,
+        "pertama": "2012-02-18",
+        "radius_km": 0.9,
+        "tahun": 5,
+        "terakhir": "2024-08-27",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [106.67697, -6.33823],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "type-firms",
+        "bulan": 10,
+        "deteksi": 24,
+        "frp_rata_mw": 5.6,
+        "hari": 24,
+        "id": "-6.33823,106.67697",
+        "malam": 1,
+        "marker-color": "#9467bd",
+        "marker-size": "small",
+        "musim_kebakaran": 10,
+        "pertama": "2012-08-12",
+        "radius_km": 1.45,
+        "tahun": 13,
+        "terakhir": "2025-03-08",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 15
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [108.34674, -6.48627],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 7,
+        "deteksi": 24,
+        "frp_rata_mw": 1,
+        "hari": 22,
+        "id": "-6.48627,108.34674",
+        "malam": 22,
+        "marker-color": "#d62728",
+        "marker-size": "small",
+        "musim_kebakaran": 16,
+        "pertama": "2012-09-14",
+        "radius_km": 1.63,
+        "tahun": 3,
+        "terakhir": "2026-10-02",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [106.59709, -6.05642],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 9,
+        "deteksi": 22,
+        "frp_rata_mw": 1.9,
+        "hari": 19,
+        "id": "-6.05642,106.59709",
+        "malam": 21,
+        "marker-color": "#d62728",
+        "marker-size": "small",
+        "musim_kebakaran": 13,
+        "pertama": "2016-10-20",
+        "radius_km": 1.75,
+        "tahun": 9,
+        "terakhir": "2026-09-29",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [107.90752, -6.23076],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "type-firms",
+        "bulan": 4,
+        "deteksi": 22,
+        "frp_rata_mw": 6.7,
+        "hari": 13,
+        "id": "-6.23076,107.90752",
+        "malam": 10,
+        "marker-color": "#9467bd",
+        "marker-size": "small",
+        "musim_kebakaran": 15,
+        "pertama": "2014-08-10",
+        "radius_km": 0.86,
+        "tahun": 3,
+        "terakhir": "2024-04-04",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 22,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [108.45474, -7.65314],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 8,
+        "deteksi": 22,
+        "frp_rata_mw": 1.7,
+        "hari": 17,
+        "id": "-7.65314,108.45474",
+        "malam": 19,
+        "marker-color": "#d62728",
+        "marker-size": "small",
+        "musim_kebakaran": 12,
+        "pertama": "2012-07-18",
+        "radius_km": 1.37,
+        "tahun": 4,
+        "terakhir": "2024-08-06",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [106.78574, -6.10976],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 8,
+        "deteksi": 21,
+        "frp_rata_mw": 1.5,
+        "hari": 20,
+        "id": "-6.10976,106.78574",
+        "malam": 21,
+        "marker-color": "#d62728",
+        "marker-size": "small",
+        "musim_kebakaran": 7,
+        "pertama": "2012-02-05",
+        "radius_km": 0.99,
+        "tahun": 9,
+        "terakhir": "2025-08-26",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [107.37244, -6.43701],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 7,
+        "deteksi": 21,
+        "frp_rata_mw": 1.1,
+        "hari": 17,
+        "id": "-6.43701,107.37244",
+        "malam": 20,
+        "marker-color": "#d62728",
+        "marker-size": "small",
+        "musim_kebakaran": 13,
+        "pertama": "2014-03-01",
+        "radius_km": 1.38,
+        "tahun": 5,
+        "terakhir": "2026-07-26",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [106.92265, -6.1507],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 7,
+        "deteksi": 20,
+        "frp_rata_mw": 1.2,
+        "hari": 12,
+        "id": "-6.15070,106.92265",
+        "malam": 20,
+        "marker-color": "#d62728",
+        "marker-size": "small",
+        "musim_kebakaran": 10,
+        "pertama": "2023-09-03",
+        "radius_km": 1.06,
+        "tahun": 3,
+        "terakhir": "2025-01-03",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [106.69826, -6.08894],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "type-firms",
+        "bulan": 8,
+        "deteksi": 19,
+        "frp_rata_mw": 13.1,
+        "hari": 19,
+        "id": "-6.08894,106.69826",
+        "malam": 1,
+        "marker-color": "#9467bd",
+        "marker-size": "small",
+        "musim_kebakaran": 6,
+        "pertama": "2013-03-26",
+        "radius_km": 1.46,
+        "tahun": 10,
+        "terakhir": "2026-08-09",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 10
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [106.34644, -6.45899],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 7,
+        "deteksi": 19,
+        "frp_rata_mw": 0.9,
+        "hari": 18,
+        "id": "-6.45899,106.34644",
+        "malam": 18,
+        "marker-color": "#d62728",
+        "marker-size": "small",
+        "musim_kebakaran": 12,
+        "pertama": "2012-09-29",
+        "radius_km": 1.41,
+        "tahun": 3,
+        "terakhir": "2022-07-19",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [106.55186, -6.98884],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "type-firms",
+        "bulan": 9,
+        "deteksi": 18,
+        "frp_rata_mw": 8.3,
+        "hari": 18,
+        "id": "-6.98884,106.55186",
+        "malam": 0,
+        "marker-color": "#9467bd",
+        "marker-size": "small",
+        "musim_kebakaran": 2,
+        "pertama": "2015-02-28",
+        "radius_km": 1.56,
+        "tahun": 10,
+        "terakhir": "2025-11-30",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 12
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [106.85911, -6.1253],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 6,
+        "deteksi": 17,
+        "frp_rata_mw": 2.3,
+        "hari": 15,
+        "id": "-6.12530,106.85911",
+        "malam": 16,
+        "marker-color": "#d62728",
+        "marker-size": "small",
+        "musim_kebakaran": 10,
+        "pertama": "2014-10-04",
+        "radius_km": 0.83,
+        "tahun": 4,
+        "terakhir": "2017-08-02",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [107.16329, -6.32082],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 8,
+        "deteksi": 17,
+        "frp_rata_mw": 1.5,
+        "hari": 16,
+        "id": "-6.32082,107.16329",
+        "malam": 15,
+        "marker-color": "#d62728",
+        "marker-size": "small",
+        "musim_kebakaran": 10,
+        "pertama": "2017-09-25",
+        "radius_km": 1.35,
+        "tahun": 8,
+        "terakhir": "2026-09-17",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [108.19888, -7.20834],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 6,
+        "deteksi": 17,
+        "frp_rata_mw": 0.6,
+        "hari": 17,
+        "id": "-7.20834,108.19888",
+        "malam": 17,
+        "marker-color": "#d62728",
+        "marker-size": "small",
+        "musim_kebakaran": 14,
+        "pertama": "2014-07-21",
+        "radius_km": 0.75,
+        "tahun": 5,
+        "terakhir": "2020-07-13",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [107.32401, -6.21446],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 6,
+        "deteksi": 15,
+        "frp_rata_mw": 1.1,
+        "hari": 15,
+        "id": "-6.21446,107.32401",
+        "malam": 15,
+        "marker-color": "#d62728",
+        "marker-size": "small",
+        "musim_kebakaran": 12,
+        "pertama": "2021-04-19",
+        "radius_km": 0.75,
+        "tahun": 2,
+        "terakhir": "2022-08-12",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [107.21151, -6.44052],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 8,
+        "deteksi": 15,
+        "frp_rata_mw": 2.4,
+        "hari": 12,
+        "id": "-6.44052,107.21151",
+        "malam": 9,
+        "marker-color": "#d62728",
+        "marker-size": "small",
+        "musim_kebakaran": 10,
+        "pertama": "2018-05-18",
+        "radius_km": 1.24,
+        "tahun": 7,
+        "terakhir": "2025-01-02",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [106.70269, -6.17199],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 7,
+        "deteksi": 14,
+        "frp_rata_mw": 1.3,
+        "hari": 13,
+        "id": "-6.17199,106.70269",
+        "malam": 14,
+        "marker-color": "#d62728",
+        "marker-size": "small",
+        "musim_kebakaran": 10,
+        "pertama": "2020-08-28",
+        "radius_km": 0.75,
+        "tahun": 4,
+        "terakhir": "2023-09-14",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [106.96584, -6.35322],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 6,
+        "deteksi": 14,
+        "frp_rata_mw": 1.5,
+        "hari": 13,
+        "id": "-6.35322,106.96584",
+        "malam": 13,
+        "marker-color": "#d62728",
+        "marker-size": "small",
+        "musim_kebakaran": 12,
+        "pertama": "2012-08-26",
+        "radius_km": 0.83,
+        "tahun": 5,
+        "terakhir": "2024-09-08",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [106.63171, -6.07135],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 6,
+        "deteksi": 13,
+        "frp_rata_mw": 5,
+        "hari": 9,
+        "id": "-6.07135,106.63171",
+        "malam": 13,
+        "marker-color": "#d62728",
+        "marker-size": "small",
+        "musim_kebakaran": 5,
+        "pertama": "2020-07-12",
+        "radius_km": 1.21,
+        "tahun": 6,
+        "terakhir": "2026-07-08",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [106.46656, -5.99944],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "type-firms",
+        "bulan": 5,
+        "deteksi": 11,
+        "frp_rata_mw": 3,
+        "hari": 8,
+        "id": "-5.99944,106.46656",
+        "malam": 6,
+        "marker-color": "#9467bd",
+        "marker-size": "small",
+        "musim_kebakaran": 6,
+        "pertama": "2014-09-17",
+        "radius_km": 1.46,
+        "tahun": 4,
+        "terakhir": "2022-12-17",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 11,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [108.76444, -6.88003],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "type-firms",
+        "bulan": 5,
+        "deteksi": 11,
+        "frp_rata_mw": 16,
+        "hari": 9,
+        "id": "-6.88003,108.76444",
+        "malam": 2,
+        "marker-color": "#9467bd",
+        "marker-size": "small",
+        "musim_kebakaran": 8,
+        "pertama": "2012-09-19",
+        "radius_km": 1.88,
+        "tahun": 6,
+        "terakhir": "2025-10-31",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 6
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [108.48079, -6.98273],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "type-firms",
+        "bulan": 7,
+        "deteksi": 9,
+        "frp_rata_mw": 6.4,
+        "hari": 9,
+        "id": "-6.98273,108.48079",
+        "malam": 0,
+        "marker-color": "#9467bd",
+        "marker-size": "small",
+        "musim_kebakaran": 3,
+        "pertama": "2015-02-12",
+        "radius_km": 0.88,
+        "tahun": 7,
+        "terakhir": "2024-10-29",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 7
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [106.52703, -7.01458],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "type-firms",
+        "bulan": 3,
+        "deteksi": 9,
+        "frp_rata_mw": 3,
+        "hari": 6,
+        "id": "-7.01458,106.52703",
+        "malam": 7,
+        "marker-color": "#9467bd",
+        "marker-size": "small",
+        "musim_kebakaran": 1,
+        "pertama": "2014-01-24",
+        "radius_km": 1.07,
+        "tahun": 3,
+        "terakhir": "2020-09-19",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 9,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [108.53976, -7.37432],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "type-firms",
+        "bulan": 5,
+        "deteksi": 9,
+        "frp_rata_mw": 8.1,
+        "hari": 9,
+        "id": "-7.37432,108.53976",
+        "malam": 0,
+        "marker-color": "#9467bd",
+        "marker-size": "small",
+        "musim_kebakaran": 0,
+        "pertama": "2013-03-10",
+        "radius_km": 1.15,
+        "tahun": 4,
+        "terakhir": "2023-05-23",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 9
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [107.11269, -6.27279],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 5,
+        "deteksi": 8,
+        "frp_rata_mw": 1.9,
+        "hari": 7,
+        "id": "-6.27279,107.11269",
+        "malam": 4,
+        "marker-color": "#d62728",
+        "marker-size": "small",
+        "musim_kebakaran": 1,
+        "pertama": "2012-09-19",
+        "radius_km": 0.82,
+        "tahun": 5,
+        "terakhir": "2026-03-14",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [107.13675, -6.28369],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "keduanya",
+        "bulan": 3,
+        "deteksi": 7,
+        "frp_rata_mw": 12.4,
+        "hari": 5,
+        "id": "-6.28369,107.13675",
+        "malam": 3,
+        "marker-color": "#111111",
+        "marker-size": "small",
+        "musim_kebakaran": 3,
+        "pertama": "2013-10-04",
+        "radius_km": 1.69,
+        "tahun": 4,
+        "terakhir": "2025-11-25",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 4
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [107.08506, -6.31286],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "type-firms",
+        "bulan": 5,
+        "deteksi": 7,
+        "frp_rata_mw": 9.6,
+        "hari": 7,
+        "id": "-6.31286,107.08506",
+        "malam": 0,
+        "marker-color": "#9467bd",
+        "marker-size": "small",
+        "musim_kebakaran": 0,
+        "pertama": "2012-01-17",
+        "radius_km": 1.23,
+        "tahun": 4,
+        "terakhir": "2020-04-14",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 7
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [106.83363, -6.98836],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 3,
+        "deteksi": 7,
+        "frp_rata_mw": 5.4,
+        "hari": 4,
+        "id": "-6.98836,106.83363",
+        "malam": 6,
+        "marker-color": "#d62728",
+        "marker-size": "small",
+        "musim_kebakaran": 7,
+        "pertama": "2023-08-16",
+        "radius_km": 0.75,
+        "tahun": 4,
+        "terakhir": "2026-08-27",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [106.67763, -7.42326],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "type-firms",
+        "bulan": 6,
+        "deteksi": 7,
+        "frp_rata_mw": 3.6,
+        "hari": 6,
+        "id": "-7.42326,106.67763",
+        "malam": 2,
+        "marker-color": "#9467bd",
+        "marker-size": "small",
+        "musim_kebakaran": 3,
+        "pertama": "2019-01-05",
+        "radius_km": 1.16,
+        "tahun": 4,
+        "terakhir": "2026-07-14",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 4,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [106.48052, -6.00961],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "type-firms",
+        "bulan": 3,
+        "deteksi": 6,
+        "frp_rata_mw": 4.3,
+        "hari": 3,
+        "id": "-6.00961,106.48052",
+        "malam": 4,
+        "marker-color": "#9467bd",
+        "marker-size": "small",
+        "musim_kebakaran": 1,
+        "pertama": "2014-09-20",
+        "radius_km": 1.1,
+        "tahun": 3,
+        "terakhir": "2023-03-07",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 6,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [106.47824, -6.10343],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 2,
+        "deteksi": 6,
+        "frp_rata_mw": 1.4,
+        "hari": 6,
+        "id": "-6.10343,106.47824",
+        "malam": 5,
+        "marker-color": "#d62728",
+        "marker-size": "small",
+        "musim_kebakaran": 6,
+        "pertama": "2019-08-30",
+        "radius_km": 1.3,
+        "tahun": 3,
+        "terakhir": "2026-09-29",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [108.59447, -6.69236],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "type-firms",
+        "bulan": 3,
+        "deteksi": 6,
+        "frp_rata_mw": 2.7,
+        "hari": 5,
+        "id": "-6.69236,108.59447",
+        "malam": 6,
+        "marker-color": "#9467bd",
+        "marker-size": "small",
+        "musim_kebakaran": 6,
+        "pertama": "2012-08-26",
+        "radius_km": 1.11,
+        "tahun": 3,
+        "terakhir": "2024-09-12",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 6,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [106.73743, -6.13339],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 2,
+        "deteksi": 4,
+        "frp_rata_mw": 1.1,
+        "hari": 2,
+        "id": "-6.13339,106.73743",
+        "malam": 4,
+        "marker-color": "#d62728",
+        "marker-size": "small",
+        "musim_kebakaran": 1,
+        "pertama": "2020-06-15",
+        "radius_km": 0.75,
+        "tahun": 1,
+        "terakhir": "2020-08-09",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [106.53197, -6.2235],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 2,
+        "deteksi": 4,
+        "frp_rata_mw": 2.4,
+        "hari": 2,
+        "id": "-6.22350,106.53197",
+        "malam": 2,
+        "marker-color": "#d62728",
+        "marker-size": "small",
+        "musim_kebakaran": 4,
+        "pertama": "2023-09-29",
+        "radius_km": 0.75,
+        "tahun": 2,
+        "terakhir": "2024-10-29",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [107.15099, -6.35884],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "type-firms",
+        "bulan": 3,
+        "deteksi": 4,
+        "frp_rata_mw": 6.1,
+        "hari": 4,
+        "id": "-6.35884,107.15099",
+        "malam": 0,
+        "marker-color": "#9467bd",
+        "marker-size": "small",
+        "musim_kebakaran": 1,
+        "pertama": "2018-02-27",
+        "radius_km": 1.15,
+        "tahun": 3,
+        "terakhir": "2025-08-23",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 2
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [107.03585, -6.46018],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "type-firms",
+        "bulan": 2,
+        "deteksi": 4,
+        "frp_rata_mw": 7.7,
+        "hari": 4,
+        "id": "-6.46018,107.03585",
+        "malam": 0,
+        "marker-color": "#9467bd",
+        "marker-size": "small",
+        "musim_kebakaran": 0,
+        "pertama": "2018-03-29",
+        "radius_km": 0.79,
+        "tahun": 3,
+        "terakhir": "2022-03-17",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 4
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [108.52932, -6.52488],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "type-firms",
+        "bulan": 3,
+        "deteksi": 4,
+        "frp_rata_mw": 5.4,
+        "hari": 3,
+        "id": "-6.52488,108.52932",
+        "malam": 0,
+        "marker-color": "#9467bd",
+        "marker-size": "small",
+        "musim_kebakaran": 3,
+        "pertama": "2017-07-20",
+        "radius_km": 0.9,
+        "tahun": 3,
+        "terakhir": "2023-11-10",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 3,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [106.54354, -7.03634],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "type-firms",
+        "bulan": 4,
+        "deteksi": 4,
+        "frp_rata_mw": 3.6,
+        "hari": 4,
+        "id": "-7.03634,106.54354",
+        "malam": 1,
+        "marker-color": "#9467bd",
+        "marker-size": "small",
+        "musim_kebakaran": 3,
+        "pertama": "2018-08-06",
+        "radius_km": 0.82,
+        "tahun": 3,
+        "terakhir": "2026-09-24",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 3,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [108.35337, -7.33],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "type-firms",
+        "bulan": 3,
+        "deteksi": 4,
+        "frp_rata_mw": 8.4,
+        "hari": 4,
+        "id": "-7.33000,108.35337",
+        "malam": 0,
+        "marker-color": "#9467bd",
+        "marker-size": "small",
+        "musim_kebakaran": 1,
+        "pertama": "2018-03-15",
+        "radius_km": 1.01,
+        "tahun": 3,
+        "terakhir": "2021-09-24",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 2
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [107.06539, -6.33063],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 3,
+        "deteksi": 3,
+        "frp_rata_mw": 1.4,
+        "hari": 3,
+        "id": "-6.33063,107.06539",
+        "malam": 2,
+        "marker-color": "#d62728",
+        "marker-size": "small",
+        "musim_kebakaran": 1,
+        "pertama": "2018-04-30",
+        "radius_km": 1,
+        "tahun": 2,
+        "terakhir": "2020-08-16",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [107.27883, -6.3609],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "type-firms",
+        "bulan": 3,
+        "deteksi": 3,
+        "frp_rata_mw": 12.9,
+        "hari": 3,
+        "id": "-6.36090,107.27883",
+        "malam": 0,
+        "marker-color": "#9467bd",
+        "marker-size": "small",
+        "musim_kebakaran": 1,
+        "pertama": "2012-02-25",
+        "radius_km": 1.09,
+        "tahun": 3,
+        "terakhir": "2016-08-28",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 3
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [107.22652, -6.4077],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 2,
+        "deteksi": 3,
+        "frp_rata_mw": 2.6,
+        "hari": 3,
+        "id": "-6.40770,107.22652",
+        "malam": 2,
+        "marker-color": "#d62728",
+        "marker-size": "small",
+        "musim_kebakaran": 1,
+        "pertama": "2018-05-11",
+        "radius_km": 0.75,
+        "tahun": 1,
+        "terakhir": "2018-10-07",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [107.40917, -6.55643],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "type-firms",
+        "bulan": 3,
+        "deteksi": 3,
+        "frp_rata_mw": 5.9,
+        "hari": 3,
+        "id": "-6.55643,107.40917",
+        "malam": 0,
+        "marker-color": "#9467bd",
+        "marker-size": "small",
+        "musim_kebakaran": 1,
+        "pertama": "2017-10-24",
+        "radius_km": 0.75,
+        "tahun": 3,
+        "terakhir": "2026-03-14",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [106.71574, -6.07475],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "type-firms",
+        "bulan": 1,
+        "deteksi": 2,
+        "frp_rata_mw": 1.4,
+        "hari": 1,
+        "id": "-6.07475,106.71574",
+        "malam": 2,
+        "marker-color": "#9467bd",
+        "marker-size": "small",
+        "musim_kebakaran": 2,
+        "pertama": "2014-08-06",
+        "radius_km": 0.75,
+        "tahun": 1,
+        "terakhir": "2014-08-06",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 2,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [106.97414, -6.15739],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 2,
+        "deteksi": 2,
+        "frp_rata_mw": 4.7,
+        "hari": 2,
+        "id": "-6.15739,106.97414",
+        "malam": 0,
+        "marker-color": "#d62728",
+        "marker-size": "small",
+        "musim_kebakaran": 2,
+        "pertama": "2017-08-27",
+        "radius_km": 0.75,
+        "tahun": 2,
+        "terakhir": "2019-09-05",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [106.51938, -6.42462],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 2,
+        "deteksi": 2,
+        "frp_rata_mw": 4.9,
+        "hari": 2,
+        "id": "-6.42462,106.51938",
+        "malam": 0,
+        "marker-color": "#d62728",
+        "marker-size": "small",
+        "musim_kebakaran": 2,
+        "pertama": "2024-10-27",
+        "radius_km": 0.75,
+        "tahun": 2,
+        "terakhir": "2025-08-17",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [108.83702, -7.00629],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 1,
+        "deteksi": 2,
+        "frp_rata_mw": 0.8,
+        "hari": 2,
+        "id": "-7.00629,108.83702",
+        "malam": 2,
+        "marker-color": "#d62728",
+        "marker-size": "small",
+        "musim_kebakaran": 2,
+        "pertama": "2018-09-26",
+        "radius_km": 0.75,
+        "tahun": 2,
+        "terakhir": "2019-09-14",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [106.80448, -6.09101],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "type-firms",
+        "bulan": 1,
+        "deteksi": 1,
+        "frp_rata_mw": 5,
+        "hari": 1,
+        "id": "-6.09101,106.80448",
+        "malam": 1,
+        "marker-color": "#9467bd",
+        "marker-size": "small",
+        "musim_kebakaran": 0,
+        "pertama": "2019-02-23",
+        "radius_km": 0.75,
+        "tahun": 1,
+        "terakhir": "2019-02-23",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 1,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [106.78749, -6.13723],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "type-firms",
+        "bulan": 1,
+        "deteksi": 1,
+        "frp_rata_mw": 3.4,
+        "hari": 1,
+        "id": "-6.13723,106.78749",
+        "malam": 0,
+        "marker-color": "#9467bd",
+        "marker-size": "small",
+        "musim_kebakaran": 1,
+        "pertama": "2025-10-09",
+        "radius_km": 0.75,
+        "tahun": 1,
+        "terakhir": "2025-10-09",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [106.61116, -6.17812],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "type-firms",
+        "bulan": 1,
+        "deteksi": 1,
+        "frp_rata_mw": 3,
+        "hari": 1,
+        "id": "-6.17812,106.61116",
+        "malam": 1,
+        "marker-color": "#9467bd",
+        "marker-size": "small",
+        "musim_kebakaran": 0,
+        "pertama": "2026-01-10",
+        "radius_km": 0.75,
+        "tahun": 1,
+        "terakhir": "2026-01-10",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [106.8868, -6.228],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "type-firms",
+        "bulan": 1,
+        "deteksi": 1,
+        "frp_rata_mw": 24.4,
+        "hari": 1,
+        "id": "-6.22800,106.88680",
+        "malam": 0,
+        "marker-color": "#9467bd",
+        "marker-size": "small",
+        "musim_kebakaran": 1,
+        "pertama": "2014-09-24",
+        "radius_km": 0.75,
+        "tahun": 1,
+        "terakhir": "2014-09-24",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [107.3205, -6.3715],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "type-firms",
+        "bulan": 1,
+        "deteksi": 1,
+        "frp_rata_mw": 10.8,
+        "hari": 1,
+        "id": "-6.37150,107.32050",
+        "malam": 0,
+        "marker-color": "#9467bd",
+        "marker-size": "small",
+        "musim_kebakaran": 0,
+        "pertama": "2020-01-07",
+        "radius_km": 0.75,
+        "tahun": 1,
+        "terakhir": "2020-01-07",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [107.6681, -6.3903],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "type-firms",
+        "bulan": 1,
+        "deteksi": 1,
+        "frp_rata_mw": 5.1,
+        "hari": 1,
+        "id": "-6.39030,107.66810",
+        "malam": 1,
+        "marker-color": "#9467bd",
+        "marker-size": "small",
+        "musim_kebakaran": 1,
+        "pertama": "2015-07-15",
+        "radius_km": 0.75,
+        "tahun": 1,
+        "terakhir": "2015-07-15",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 1
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [108.34584, -6.47953],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 1,
+        "deteksi": 1,
+        "frp_rata_mw": 4.1,
+        "hari": 1,
+        "id": "-6.47953,108.34584",
+        "malam": 0,
+        "marker-color": "#d62728",
+        "marker-size": "small",
+        "musim_kebakaran": 1,
+        "pertama": "2019-09-22",
+        "radius_km": 0.75,
+        "tahun": 1,
+        "terakhir": "2019-09-22",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [107.73072, -7.00526],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "type-firms",
+        "bulan": 1,
+        "deteksi": 1,
+        "frp_rata_mw": 2.6,
+        "hari": 1,
+        "id": "-7.00526,107.73072",
+        "malam": 0,
+        "marker-color": "#9467bd",
+        "marker-size": "small",
+        "musim_kebakaran": 1,
+        "pertama": "2013-10-07",
+        "radius_km": 0.75,
+        "tahun": 1,
+        "terakhir": "2013-10-07",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 0
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "coordinates": [108.2086, -7.41705],
+        "type": "Point"
+      },
+      "properties": {
+        "alasan": "persisten",
+        "bulan": 1,
+        "deteksi": 1,
+        "frp_rata_mw": 8.2,
+        "hari": 1,
+        "id": "-7.41705,108.20860",
+        "malam": 1,
+        "marker-color": "#d62728",
+        "marker-size": "small",
+        "musim_kebakaran": 1,
+        "pertama": "2026-10-10",
+        "radius_km": 0.75,
+        "tahun": 1,
+        "terakhir": "2026-10-10",
+        "type_gunung_api": 0,
+        "type_lepas_pantai": 0,
+        "type_sumber_tetap": 0
+      }
+    }
+  ]
+}

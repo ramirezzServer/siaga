@@ -40,7 +40,8 @@ type Parser struct {
 	product fire.Product
 }
 
-// NewParsers membuat satu Parser per produk NRT, bernama sama dengan konektornya.
+// NewParsers membuat satu Parser per produk NRT yang diterima (termasuk
+// S-NPP untuk replay arsip lama), bernama sama dengan konektornya.
 func NewParsers() []*Parser {
 	out := make([]*Parser, len(fire.Products))
 	for i, p := range fire.Products {
@@ -58,7 +59,8 @@ type Connector struct {
 
 var _ ports.Connector = (*Connector)(nil)
 
-// NewConnectors membuat satu konektor per produk NRT. key wajib diisi.
+// NewConnectors membuat satu konektor per produk NRT yang dipolling
+// (fire.PolledProducts). key wajib diisi.
 func NewConnectors(base, key string, box area.Box) ([]*Connector, error) {
 	if !mapKey.MatchString(key) {
 		return nil, errors.New("FIRMS_MAP_KEY kosong atau formatnya bukan MAP_KEY FIRMS (huruf/angka)")
@@ -66,8 +68,8 @@ func NewConnectors(base, key string, box area.Box) ([]*Connector, error) {
 	if err := box.Validate(); err != nil {
 		return nil, err
 	}
-	out := make([]*Connector, len(fire.Products))
-	for i, p := range fire.Products {
+	out := make([]*Connector, len(fire.PolledProducts))
+	for i, p := range fire.PolledProducts {
 		out[i] = &Connector{Parser: Parser{product: p}, base: strings.TrimRight(base, "/"), key: key, box: box}
 	}
 	return out, nil
@@ -75,7 +77,7 @@ func NewConnectors(base, key string, box area.Box) ([]*Connector, error) {
 
 var mapKey = regexp.MustCompile(`^[A-Za-z0-9]{16,64}$`)
 
-// Name misal "firms-viirs-snpp-nrt".
+// Name misal "firms-viirs-noaa20-nrt".
 func (p *Parser) Name() string {
 	return "firms-" + strings.ReplaceAll(strings.ToLower(string(p.product)), "_", "-")
 }

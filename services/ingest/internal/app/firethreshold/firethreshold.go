@@ -135,21 +135,40 @@ type Variant struct {
 	NoMask  bool
 	Cluster firecluster.ClusterRule
 	Level   firecluster.LevelRule
+	// Selected menandai aturan yang dipakai hazard.fire.* (paling banyak satu).
+	Selected bool
 }
 
-// DefaultVariants mengembalikan aturan PRD apa adanya dan varian yang menguji tiap
-// pilihannya.
+// DefaultVariants mengembalikan aturan PRD, aturan terpilih
+// (firecluster.SelectedRule, ADR 0023), dan varian yang menguji pilihannya:
+// tanpa S-NPP (berhenti 2 Nov 2026), tanpa MODIS (Terra dan Aqua sudah
+// melewati masa tugasnya), dan tanpa saringan sumber tetap.
 func DefaultVariants() []Variant {
-	nominal := firecluster.PRDRule
-	nominal.Name, nominal.WaspadaMin = "Waspada nominal", fire.Nominal
 	passes := firecluster.LevelRule{Name: "lintasan", SiagaCount: 3, Unit: firecluster.Overpasses, WaspadaMin: fire.Nominal, Window: 24 * time.Hour}
+	noSNPP := slices.Clone(firecluster.ExcludedSatellites)
+	cl := firecluster.DefaultClusterRule
 	return []Variant{
-		{Name: "PRD", Cluster: firecluster.DefaultClusterRule, Level: firecluster.PRDRule},
-		{Name: "PRD tanpa S-NPP", Exclude: []string{"S-NPP"}, Cluster: firecluster.DefaultClusterRule, Level: firecluster.PRDRule},
-		{Name: "PRD tanpa saringan", NoMask: true, Cluster: firecluster.DefaultClusterRule, Level: firecluster.PRDRule},
-		{Name: "Waspada nominal", Cluster: firecluster.DefaultClusterRule, Level: nominal},
-		{Name: "Waspada nominal, Siaga ≥ 3 lintasan, tanpa S-NPP", Exclude: []string{"S-NPP"}, Cluster: firecluster.DefaultClusterRule, Level: passes},
+		{Name: "PRD", Cluster: cl, Level: firecluster.PRDRule},
+		{Name: "PRD tanpa S-NPP", Exclude: noSNPP, Cluster: cl, Level: firecluster.PRDRule},
+		{Name: "Waspada nominal, Siaga ≥ 3 lintasan, tanpa S-NPP", Exclude: noSNPP, Cluster: cl, Level: passes},
+		{Name: "Terpilih: Waspada tinggi atau ≥ 2 lintasan, Siaga ≥ 5 deteksi, tanpa S-NPP", Exclude: noSNPP, Cluster: cl, Level: firecluster.SelectedRule, Selected: true},
+		{Name: "Terpilih tanpa MODIS", Exclude: append(slices.Clone(noSNPP), "MODIS"), Cluster: cl, Level: firecluster.SelectedRule},
+		{Name: "Terpilih tanpa saringan", Exclude: noSNPP, NoMask: true, Cluster: cl, Level: firecluster.SelectedRule},
 	}
+}
+
+// SelectedVariant mengembalikan hasil varian terpilih, atau varian pertama
+// bila tidak ada yang ditandai.
+func (r Result) SelectedVariant() (VariantResult, bool) {
+	for _, v := range r.Variants {
+		if v.Variant.Selected {
+			return v, true
+		}
+	}
+	if len(r.Variants) == 0 {
+		return VariantResult{}, false
+	}
+	return r.Variants[0], true
 }
 
 // InventoryRow adalah jumlah deteksi satu wahana satu tahun.

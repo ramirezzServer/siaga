@@ -11,10 +11,15 @@ import (
 )
 
 // StaticRule menentukan sumber panas tetap dari arsip: sel grid yang
-// menyala di banyak hari, bertahun-tahun, dan di banyak bulan kalender
-// (kebakaran vegetasi Jawa Barat musiman, Juli–Oktober), atau yang ditandai
-// FIRMS sebagai gunung api/sumber tetap (kolom type arsip SP). Sel kandidat
-// yang bersebelahan digabung menjadi satu sumber.
+// menyala di banyak hari, bertahun-tahun, di banyak bulan kalender, dan
+// tidak terpusat di musim kebakaran (kebakaran vegetasi Jawa Barat musiman,
+// Juli–Oktober), atau yang ditandai FIRMS sebagai sumber tetap darat atau
+// lepas pantai (kolom type arsip SP). Sel kandidat yang bersebelahan
+// digabung menjadi satu sumber.
+//
+// Type 1 (gunung api) sengaja tidak dihitung: di Jawa Barat FIRMS memberi
+// type 1 pada kebakaran hutan di lereng gunung api (Ciremai, Guntur,
+// Papandayan) pada tahun kering, bukan panas kawah (kalibrasi 1e-3c-1b).
 type StaticRule struct {
 	// CellDeg adalah ukuran sel grid dalam derajat.
 	CellDeg float64
@@ -25,8 +30,21 @@ type StaticRule struct {
 	// siang; nyala industri dan suar gas terlihat siang dan malam.
 	MinDays, MinYears, MinMonths int
 	MinNightShare                float64
+	// MaxSeasonShare adalah bagian deteksi terbesar yang boleh jatuh di
+	// bulan musim kebakaran SeasonFrom..SeasonTo (UTC). Industri dan suar
+	// gas menyala sepanjang tahun (bagian Juli–Oktober ±0,4–0,7 karena langit
+	// kemarau lebih cerah), sedangkan kebakaran lahan berulang dan tanur bata
+	// musiman ±0,85–0,97.
+	MaxSeasonShare       float64
+	SeasonFrom, SeasonTo time.Month
+	// NightOnlyShare: sel dengan bagian deteksi malam paling sedikit ini
+	// lolos tanpa syarat musim. Suar gas kecil hanya terlihat VIIRS di malam
+	// cerah, yang terpusat di kemarau; kebakaran vegetasi tidak pernah
+	// hampir seluruhnya malam.
+	NightOnlyShare float64
 	// Kriteria FIRMS: paling sedikit MinTyped deteksi SP di sel dan bagian
-	// type 1/2 di antaranya paling sedikit TypedShare.
+	// type 2/3 (sumber tetap darat, lepas pantai) di antaranya paling
+	// sedikit TypedShare.
 	MinTyped   int
 	TypedShare float64
 	// MarginKm ditambahkan ke jarak anggota terjauh dari pusat sumber
@@ -36,14 +54,17 @@ type StaticRule struct {
 
 // DefaultStaticRule adalah titik awal kalibrasi (ADR 0023).
 var DefaultStaticRule = StaticRule{
-	CellDeg: 0.005, MinDays: 12, MinYears: 3, MinMonths: 6, MinNightShare: 0.2,
+	CellDeg: 0.005, MinDays: 12, MinYears: 3, MinMonths: 6, MinNightShare: 0.5,
+	MaxSeasonShare: 0.8, SeasonFrom: time.July, SeasonTo: time.October, NightOnlyShare: 0.9,
 	MinTyped: 3, TypedShare: 0.5, MarginKm: 0.5, MinRadiusKm: 0.75,
 }
 
 // Validate memeriksa batas parameter.
 func (r StaticRule) Validate() error {
 	if !(r.CellDeg >= 0.001 && r.CellDeg <= 0.1) || r.MinDays < 1 || r.MinYears < 1 || r.MinMonths < 1 || r.MinMonths > 12 ||
-		!(r.MinNightShare >= 0 && r.MinNightShare <= 1) ||
+		!(r.MinNightShare >= 0 && r.MinNightShare <= 1) || !(r.MaxSeasonShare > 0 && r.MaxSeasonShare <= 1) ||
+		!(r.NightOnlyShare > 0 && r.NightOnlyShare <= 1) ||
+		r.SeasonFrom < time.January || r.SeasonFrom > time.December || r.SeasonTo < r.SeasonFrom || r.SeasonTo > time.December ||
 		r.MinTyped < 1 || !(r.TypedShare > 0 && r.TypedShare <= 1) || !(r.MarginKm >= 0 && r.MarginKm <= 5) ||
 		!(r.MinRadiusKm > 0 && r.MinRadiusKm <= 10) {
 		return fmt.Errorf("%w: %+v", ErrRule, r)
@@ -72,8 +93,10 @@ type Source struct {
 	Years      int
 	Months     int
 	// Typed adalah jumlah deteksi per kolom type (indeks fire.SourceType 0..3).
-	Typed       [4]int
-	Night       int
+	Typed [4]int
+	Night int
+	// Season adalah jumlah deteksi di bulan musim kebakaran aturan.
+	Season      int
 	MeanFRPMW   float64
 	First, Last time.Time
 }
@@ -91,6 +114,7 @@ type cellStat struct {
 	months  map[time.Month]bool
 	typed   [4]int
 	special int
+	season  int
 }
 
 // block menilai sel k bersama 8 tetangganya: geolokasi piksel satu sumber
@@ -98,7 +122,7 @@ type cellStat struct {
 // beberapa sel yang masing-masing belum memenuhi kriteria.
 func block(cells map[cellKey]*cellStat, k cellKey, r StaticRule) (persistent, flagged bool) {
 	days, years, months := map[time.Time]bool{}, map[int]bool{}, map[time.Month]bool{}
-	var typed, special, n, night int
+	var typed, special, n, night, season int
 	for dl := -1; dl <= 1; dl++ {
 		for dn := -1; dn <= 1; dn++ {
 			c := cells[cellKey{k.lat + dl, k.lon + dn}]
@@ -118,11 +142,15 @@ func block(cells map[cellKey]*cellStat, k cellKey, r StaticRule) (persistent, fl
 			special += c.special
 			n += len(c.points)
 			night += c.night
+			season += c.season
 		}
 	}
+	nf := float64(n)
+	// Tidak musiman: tidak terpusat di musim kebakaran, atau hampir seluruhnya malam.
+	steady := float64(season) <= r.MaxSeasonShare*nf || float64(night) >= r.NightOnlyShare*nf
 	persistent = len(days) >= r.MinDays && len(years) >= r.MinYears && len(months) >= r.MinMonths &&
-		float64(night) >= r.MinNightShare*float64(n)
-	flagged = typed >= r.MinTyped && float64(special) >= r.TypedShare*float64(typed)
+		float64(night) >= r.MinNightShare*nf && steady
+	flagged = typed >= r.MinTyped && float64(special) >= r.TypedShare*float64(typed) && len(years) >= r.MinYears && steady
 	return persistent, flagged
 }
 
@@ -146,9 +174,12 @@ func FindStatic(ps []Point, r StaticRule) ([]Source, error) {
 		}
 		day := p.At.UTC().Truncate(24 * time.Hour)
 		c.days[day], c.years[day.Year()], c.months[day.Month()] = true, true, true
+		if day.Month() >= r.SeasonFrom && day.Month() <= r.SeasonTo {
+			c.season++
+		}
 		if p.Type >= fire.VegetationFire && p.Type <= fire.Offshore {
 			c.typed[p.Type]++
-			if p.Type == fire.ActiveVolcano || p.Type == fire.StaticSource {
+			if p.Type == fire.StaticSource || p.Type == fire.Offshore {
 				c.special++
 			}
 		}
@@ -230,6 +261,9 @@ func source(ps []Point, cells map[cellKey]*cellStat, group []cellKey, persistent
 		sumFRP += p.FRPMW
 		if !p.Daytime {
 			s.Night++
+		}
+		if m := p.At.UTC().Month(); m >= r.SeasonFrom && m <= r.SeasonTo {
+			s.Season++
 		}
 		if s.First.IsZero() || p.At.Before(s.First) {
 			s.First = p.At
