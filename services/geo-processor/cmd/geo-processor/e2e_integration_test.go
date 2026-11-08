@@ -9,6 +9,7 @@ import (
 	"maps"
 	"os"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -175,8 +176,9 @@ func TestEndToEnd(t *testing.T) {
 		t.Fatalf("updated %d kali, ingin 1", n)
 	}
 	for subject := range bySubject {
-		switch subject {
-		case "hazard.quake.created", "hazard.quake.updated", "hazard.quake.expired":
+		switch {
+		case subject == "hazard.quake.created", subject == "hazard.quake.updated", strings.HasSuffix(subject, ".expired"):
+			// expired jenis lain bisa datang dari kejadian nyata di database dev.
 		default:
 			t.Fatalf("subjek tak terduga %s", subject)
 		}
@@ -188,10 +190,17 @@ func TestEndToEnd(t *testing.T) {
 	h := up.GetHazard()
 	eq := h.GetEarthquake()
 	// Putaran kedaluwarsa bisa mengakhiri kejadian 2001 sebelum laporan USGS
-	// diproses; setiap expired sebelum updated menambah satu revisi.
+	// diproses; setiap expired kejadian ini sebelum updated menambah satu
+	// revisi. Database uji bisa sama dengan database dev, jadi expired kejadian
+	// gempa nyata yang tertunda (misalnya setelah layanan lama mati) ikut
+	// terbit di sini dan tidak dihitung.
 	wantRev := uint32(2)
 	for _, m := range bySubject["hazard.quake.expired"] {
-		if m.Sequence < bySubject["hazard.quake.updated"][0].Sequence {
+		var e hazardv1.HazardExpired
+		if err := proto.Unmarshal(m.Data, &e); err != nil {
+			t.Fatal(err)
+		}
+		if e.GetHazardId() == h.GetId() && m.Sequence < bySubject["hazard.quake.updated"][0].Sequence {
 			wantRev++
 		}
 	}
@@ -262,14 +271,20 @@ func checkWeather(ctx context.Context, t *testing.T, js jetstream.JetStream) {
 			t.Fatal(err)
 		}
 	}
-	var created, expired []*jetstream.RawStreamMsg
+	// Hanya expired kejadian uji yang dihitung: database uji bisa sama dengan
+	// database dev, dan kejadian cuaca nyata yang tertunda ikut kedaluwarsa.
+	var created []*jetstream.RawStreamMsg
+	var c hazardv1.HazardCreated
+	var e hazardv1.HazardExpired
+	found := false
 	deadline := time.Now().Add(30 * time.Second)
-	for len(created) == 0 || len(expired) == 0 {
+	for !found {
 		if time.Now().After(deadline) {
-			t.Fatalf("hazard.weather.* tidak lengkap dalam 30 detik: created %d, expired %d", len(created), len(expired))
+			t.Fatalf("hazard.weather.* tidak lengkap dalam 30 detik: created %d, expired kejadian uji %v", len(created), found)
 		}
 		time.Sleep(100 * time.Millisecond)
-		created, expired = nil, nil
+		created = nil
+		var expired []*jetstream.RawStreamMsg
 		hazard, err := js.Stream(ctx, streams.Hazard.Name)
 		if err != nil {
 			continue
@@ -285,13 +300,24 @@ func checkWeather(ctx context.Context, t *testing.T, js jetstream.JetStream) {
 				expired = append(expired, m)
 			}
 		}
+		if len(created) == 0 {
+			continue
+		}
+		if err := proto.Unmarshal(created[0].Data, &c); err != nil {
+			t.Fatal(err)
+		}
+		for _, m := range expired {
+			if err := proto.Unmarshal(m.Data, &e); err != nil {
+				t.Fatal(err)
+			}
+			if e.GetHazardId() == c.GetHazard().GetId() {
+				found = true
+				break
+			}
+		}
 	}
 	// Beri waktu pesan Gorontalo diproses, lalu pastikan tetap satu kejadian.
 	time.Sleep(time.Second)
-	var c hazardv1.HazardCreated
-	if err := proto.Unmarshal(created[0].Data, &c); err != nil {
-		t.Fatal(err)
-	}
 	h := c.GetHazard()
 	w := h.GetWeather()
 	if len(created) != 1 || h.GetKind() != hazardv1.HazardKind_HAZARD_KIND_WEATHER || h.GetLevel() != hazardv1.AlertLevel_ALERT_LEVEL_SIAGA ||
@@ -300,11 +326,7 @@ func checkWeather(ctx context.Context, t *testing.T, js jetstream.JetStream) {
 		w.GetHeadlineEn() != "Thunderstorm in test area" || w.GetMessageCount() != 1 || w.GetAreaKm2() <= 0 {
 		t.Fatalf("created %d: %v", len(created), h)
 	}
-	var e hazardv1.HazardExpired
-	if err := proto.Unmarshal(expired[0].Data, &e); err != nil {
-		t.Fatal(err)
-	}
-	if e.GetHazardId() != h.GetId() || e.GetReason() != hazardv1.ExpiryReason_EXPIRY_REASON_ELAPSED || e.GetRevision() != 2 {
+	if e.GetReason() != hazardv1.ExpiryReason_EXPIRY_REASON_ELAPSED || e.GetRevision() != 2 {
 		t.Fatalf("expired %v", &e)
 	}
 	t.Logf("%s: tingkat %s, %d kelurahan/desa terdampak, area %.0f km²", h.GetTitle(), h.GetLevel(), h.GetImpactedRegionCount(), w.GetAreaKm2())
