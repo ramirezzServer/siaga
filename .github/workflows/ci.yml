@@ -97,6 +97,8 @@ jobs:
           fz ./internal/domain/series FuzzWeatherValidate
           fz ./internal/domain/flood FuzzDayMaxSumMatchesCalibration
           fz ./internal/domain/flood FuzzLevelMonotone
+          fz ./internal/domain/fire FuzzLevelMonotone
+          fz ./internal/app/fires FuzzServiceOrderIndependent
           cd ../ingest
           fz ./internal/domain/ratelimit FuzzWindowBound
           fz ./internal/domain/ratelimit FuzzPriorityHeadroom

@@ -77,6 +77,7 @@ message Hazard {
     EarthquakeDetail earthquake = 20;
     WeatherWarningDetail weather = 21;
     FloodDetail flood = 22;
+    FireDetail fire = 23;
   }
 }
 
@@ -219,4 +220,51 @@ message FloodDay {
   uint32 window_hours = 10;
   // true bila discharge_m3s adalah median ensemble, false bila debit tunggal.
   bool from_ensemble = 11;
+}
+
+// Detail kejadian titik api (ADR 0023): deteksi satelit NASA FIRMS di luar
+// sumber panas tetap yang berjarak ≤ 2 km dan berselang ≤ 24 jam dari
+// anggota lain (berantai). Tingkat: Info untuk setiap kejadian, Waspada bila
+// ada deteksi keyakinan tinggi atau terlihat di ≥ 2 lintasan dalam 24 jam,
+// Siaga bila ≥ 5 deteksi dalam 24 jam; tingkat tertinggi selama kejadian
+// aktif. Deteksi satelit, bukan laporan lapangan: bisa juga pembakaran lahan.
+message FireDetail {
+  uint32 detection_count = 1;
+  // Lintasan berbeda (produk + waktu lintas) yang melihat kejadian.
+  uint32 overpass_count = 2;
+  uint32 high_confidence_count = 3;
+  // Hitungan terbesar dalam satu jendela 24 jam: deteksi (dasar Siaga) dan
+  // lintasan (dasar Waspada).
+  uint32 peak_detections_24h = 4;
+  uint32 peak_overpasses_24h = 5;
+  google.protobuf.Timestamp first_detected_at = 6;
+  google.protobuf.Timestamp last_detected_at = 7;
+  // Waktu lintas deteksi pertama yang mencapai tingkat kejadian.
+  google.protobuf.Timestamp level_reached_at = 8;
+  // Waktu SIAGA menerima deteksi terakhir; kejadian berakhir 24 jam setelahnya.
+  google.protobuf.Timestamp last_fetched_at = 9;
+  // Produk FIRMS NRT yang melihat kejadian, misal "VIIRS_NOAA20_NRT".
+  repeated string products = 10;
+  // FRP terbesar di antara deteksi (MW).
+  optional double max_frp_mw = 11;
+  // Semua deteksi anggota, urut waktu.
+  repeated FireMember detections = 12;
+  // Ambang aturan yang dipakai: deteksi dalam 24 jam untuk Siaga dan
+  // lintasan dalam 24 jam untuk Waspada.
+  uint32 siaga_detections = 13;
+  uint32 waspada_overpasses = 14;
+  // ID deteksi yang membuka kejadian (dasar ID kejadian).
+  string opened_by = 15;
+}
+
+// Satu deteksi titik panas anggota kejadian (isi ringkas raw.fire.firms).
+message FireMember {
+  // ID deteksi raw.fire.firms: "<produk>:<yyyymmddThhmm>:<lintang>:<bujur>".
+  string id = 1;
+  siaga.common.v1.Point location = 2;
+  google.protobuf.Timestamp detected_at = 3;
+  string product = 4;
+  // "low", "nominal", atau "high".
+  string confidence = 5;
+  optional double frp_mw = 6;
 }

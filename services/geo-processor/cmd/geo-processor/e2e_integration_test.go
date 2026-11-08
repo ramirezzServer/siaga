@@ -24,6 +24,7 @@ import (
 	"github.com/ramirezzServer/siaga/libs/go/platform/natsx"
 	"github.com/ramirezzServer/siaga/libs/go/platform/natsx/natstest"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/adapters/calibration"
+	"github.com/ramirezzServer/siaga/services/geo-processor/internal/domain/fire"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/domain/flood"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/domain/quake"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/domain/series"
@@ -69,6 +70,8 @@ func TestEndToEnd(t *testing.T) {
 			`DELETE FROM ts.aq_observation WHERE site_id = 'openaq:980001'`,
 			`DELETE FROM ts.station WHERE site_id = 'openaq:980001'`,
 			`DELETE FROM ts.hotspot WHERE region_code = '98.01.01.2001'`,
+			// Titik api: hanya kejadian titik uji (-6.85, 107.03).
+			`DELETE FROM hazard.event WHERE kind = 'fire' AND source_event_id LIKE '%:-6.85000:107.03000'`,
 			`DELETE FROM ts.series WHERE site_id IN ('adm4:98.01.01.2001', 'grid:-6.75:107.00', 'river:uji-e2e', 'openaq:980001')`,
 			`DELETE FROM ts.site WHERE id IN ('adm4:98.01.01.2001', 'grid:-6.75:107.00', 'river:uji-e2e', 'openaq:980001')`,
 			// Banjir: hanya titik uji; ambang asli diselaraskan ulang saat geo-processor start.
@@ -90,7 +93,7 @@ func TestEndToEnd(t *testing.T) {
 
 	cfg := settings{
 		databaseURL: dbURL, natsURL: natsURL, logLevel: slog.LevelInfo, rules: quake.DefaultRules(), weather: weather.DefaultPolicy(),
-		flood: flood.DefaultPolicy(), thresholds: e2eThresholds,
+		flood: flood.DefaultPolicy(), thresholds: e2eThresholds, fire: fire.DefaultPolicy(), static: calibration.LoadFire,
 	}
 	svcCtx, stop := context.WithCancel(ctx)
 	done := make(chan error, 1)
@@ -424,8 +427,9 @@ func keys(m map[string][]*jetstream.RawStreamMsg) map[string]int {
 
 // checkObservations menguji jalur pengukuran: nilai sensor stasiun OpenAQ ke
 // ts.aq_observation dan titik panas FIRMS ke ts.hotspot, keduanya dengan
-// kelurahan/desa dari ref.region; pesan ulangan tidak menambah baris, dan
-// titik panas yang melanggar invarian masuk DLQ.
+// kelurahan/desa dari ref.region; titik panas juga membuka kejadian
+// hazard.fire; pesan ulangan tidak menambah baris, dan titik panas yang
+// melanggar invarian masuk DLQ.
 func checkObservations(ctx context.Context, t *testing.T, js jetstream.JetStream, dbURL string) {
 	t.Helper()
 	now := time.Now().UTC().Truncate(time.Minute)
@@ -460,43 +464,45 @@ func checkObservations(ctx context.Context, t *testing.T, js jetstream.JetStream
 		},
 	}
 	at := now.Add(-2 * time.Hour)
-	fire := &rawv1.FireDetection{
-		Meta:   &rawv1.FetchMeta{Connector: "firms-viirs-snpp-nrt", FetchedAt: timestamppb.New(now), ArchiveKey: "firms/k.csv.gz"},
-		Source: hazardv1.Source_SOURCE_NASA_FIRMS, Id: "VIIRS_SNPP_NRT:" + at.Format("20060102T1504") + ":-6.85000:107.03000",
-		Product: "VIIRS_SNPP_NRT", Satellite: "N", Instrument: "VIIRS", Location: loc, DetectedAt: timestamppb.New(at),
+	hot := &rawv1.FireDetection{
+		Meta:   &rawv1.FetchMeta{Connector: "firms-viirs-noaa20-nrt", FetchedAt: timestamppb.New(now), ArchiveKey: "firms/k.csv.gz"},
+		Source: hazardv1.Source_SOURCE_NASA_FIRMS, Id: "VIIRS_NOAA20_NRT:" + at.Format("20060102T1504") + ":-6.85000:107.03000",
+		Product: "VIIRS_NOAA20_NRT", Satellite: "N20", Instrument: "VIIRS", Location: loc, DetectedAt: timestamppb.New(at),
 		Confidence: rawv1.FireConfidence_FIRE_CONFIDENCE_HIGH, BrightnessK: 367, ScanKm: 0.39, TrackKm: 0.36, Version: "2.0NRT",
 	}
 	publish("raw.aq.openaq", "aq-oa-1", obs)
 	publish("raw.aq.openaq", "aq-oa-1-ulang", obs)
-	publish("raw.fire.firms", "fire-1", fire)
-	broken := proto.CloneOf(fire)
-	broken.Id = "VIIRS_SNPP_NRT:salah"
+	publish("raw.fire.firms", "fire-1", hot)
+	broken := proto.CloneOf(hot)
+	broken.Id = "VIIRS_NOAA20_NRT:salah"
 	publish("raw.fire.firms", "fire-rusak", broken)
 
 	pg := mustPool(ctx, t, dbURL)
 	defer pg.Close()
 	deadline := time.Now().Add(30 * time.Second)
 	for {
-		var readings, hotspots int
+		var readings, hotspots, fireLevel int
 		var region string
 		_ = pg.QueryRow(ctx, `SELECT
 			(SELECT count(*) FROM ts.aq_observation WHERE site_id = 'openaq:980001'),
 			(SELECT count(*) FROM ts.hotspot WHERE id = $1),
-			coalesce((SELECT region_code FROM ts.hotspot WHERE id = $1), '')`, fire.GetId()).Scan(&readings, &hotspots, &region)
+			coalesce((SELECT region_code FROM ts.hotspot WHERE id = $1), ''),
+			coalesce((SELECT level FROM hazard.event WHERE kind = 'fire' AND source_event_id = $1), 0)`, hot.GetId()).Scan(&readings, &hotspots, &region, &fireLevel)
 		var dlq uint64
 		if st, err := js.Stream(ctx, streams.DLQ.Name); err == nil {
 			if info, _ := st.Info(ctx); info != nil {
 				dlq = info.State.Msgs
 			}
 		}
-		if readings == 2 && hotspots == 1 && dlq > dlqBefore {
+		// Keyakinan tinggi: kejadian titik api langsung Waspada.
+		if readings == 2 && hotspots == 1 && fireLevel == 2 && dlq > dlqBefore {
 			if region != "98.01.01.2001" {
 				t.Fatalf("kelurahan titik panas %q", region)
 			}
 			break
 		}
 		if time.Now().After(deadline) {
-			t.Fatalf("pengukuran tidak lengkap dalam 30 detik: sensor %d, titik panas %d, DLQ %d→%d", readings, hotspots, dlqBefore, dlq)
+			t.Fatalf("pengukuran tidak lengkap dalam 30 detik: sensor %d, titik panas %d, tingkat titik api %d, DLQ %d→%d", readings, hotspots, fireLevel, dlqBefore, dlq)
 		}
 		time.Sleep(100 * time.Millisecond)
 	}
@@ -505,7 +511,7 @@ func checkObservations(ctx context.Context, t *testing.T, js jetstream.JetStream
 		WHERE st.site_id = 'openaq:980001'`).Scan(&provider, &region); err != nil || provider != "AirGradient" || region != "98.01.01.2001" {
 		t.Fatalf("stasiun %q di %q, %v", provider, region, err)
 	}
-	t.Logf("pengukuran: 2 sensor stasiun di %s, 1 titik panas VIIRS", region)
+	t.Logf("pengukuran: 2 sensor stasiun di %s, 1 titik panas VIIRS (kejadian titik api Waspada)", region)
 }
 
 // e2eThresholds adalah ambang asli ditambah dua titik uji: debit

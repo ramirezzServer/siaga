@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ramirezzServer/siaga/services/geo-processor/internal/domain/fire"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/domain/flood"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/domain/hazard"
 )
@@ -61,7 +62,7 @@ func TestLoadEmbedded(t *testing.T) {
 // keluaran alat kalibrasi di docs/calibration.
 func TestEmbeddedMatchesCalibration(t *testing.T) {
 	docs := os.DirFS("../../../../../docs/calibration")
-	for _, name := range []string{DischargeFile, RainfallFile} {
+	for _, name := range []string{DischargeFile, RainfallFile, StaticFile} {
 		src, err := fs.ReadFile(docs, name)
 		if err != nil {
 			t.Fatal(err)
@@ -113,5 +114,47 @@ func TestParseErrors(t *testing.T) {
 	bad.Horizon = -1
 	if _, err := Parse(bad, []byte(goodDischarge), []byte(goodRain)); !errors.Is(err, flood.ErrInvalid) {
 		t.Error("aturan tidak valid harus ditolak")
+	}
+}
+
+func TestLoadFire(t *testing.T) {
+	c, err := LoadFire()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(c.Static) < 100 || !c.Period.From.Equal(date("2012-01-10")) || c.Period.To.Before(date("2026-10-01")) {
+		t.Fatalf("%d sumber, periode %v", len(c.Static), c.Period)
+	}
+	// Kilang Balongan dan Indocement Citeureup tersaring; puncak Ciremai tidak.
+	for _, p := range [][2]float64{{-6.378, 108.398}, {-6.479, 106.898}} {
+		if _, ok := c.Static.Match(p[0], p[1]); !ok {
+			t.Errorf("%v tidak tersaring", p)
+		}
+	}
+	if s, ok := c.Static.Match(-6.892, 108.400); ok {
+		t.Errorf("puncak Ciremai tersaring oleh %s", s.ID)
+	}
+}
+
+func TestParseFireErrors(t *testing.T) {
+	head := "# Arsip FIRMS 2012-01-10..2026-10-10 (UTC)\n# 1 sumber\n" + staticHeader + "\n"
+	row := "\"-6.37815,108.39848\",-6.37815,108.39848,2.43,keduanya,18,2572,1387,15,12,182,0,2369,17,1922,1200,3.4,2012-01-21,2026-10-02\n"
+	if c, err := ParseFire([]byte(head + row)); err != nil || len(c.Static) != 1 || c.Static[0].RadiusKm != 2.43 {
+		t.Fatalf("%+v %v", c, err)
+	}
+	for name, s := range map[string]string{
+		"header":  "# Arsip FIRMS 2012-01-10..2026-10-10 (UTC)\n# 0 sumber\nid,lintang\n",
+		"jumlah":  strings.Replace(head, "# 1 sumber", "# 2 sumber", 1) + row,
+		"periode": strings.Replace(head, "# Arsip FIRMS 2012-01-10..2026-10-10 (UTC)\n", "", 1) + row,
+		"tanggal": strings.Replace(head, "2012-01-10", "2012-13-10", 1) + row,
+		"angka":   head + strings.Replace(row, "2.43", "x", 1),
+		"id":      head + strings.Replace(row, "\"-6.37815", "\"-6.37816", 1),
+		"alasan":  head + strings.Replace(row, "keduanya", "lain", 1),
+		"ganda":   strings.Replace(head, "# 1 sumber", "# 2 sumber", 1) + row + row,
+		"kutip":   head + "\"x\n",
+	} {
+		if _, err := ParseFire([]byte(s)); !errors.Is(err, fire.ErrInvalid) {
+			t.Errorf("%s: %v", name, err)
+		}
 	}
 }

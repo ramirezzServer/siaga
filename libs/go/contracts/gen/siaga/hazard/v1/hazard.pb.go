@@ -298,6 +298,7 @@ type Hazard struct {
 	//	*Hazard_Earthquake
 	//	*Hazard_Weather
 	//	*Hazard_Flood
+	//	*Hazard_Fire
 	Detail        isHazard_Detail `protobuf_oneof:"detail"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -479,6 +480,15 @@ func (x *Hazard) GetFlood() *FloodDetail {
 	return nil
 }
 
+func (x *Hazard) GetFire() *FireDetail {
+	if x != nil {
+		if x, ok := x.Detail.(*Hazard_Fire); ok {
+			return x.Fire
+		}
+	}
+	return nil
+}
+
 type isHazard_Detail interface {
 	isHazard_Detail()
 }
@@ -495,11 +505,17 @@ type Hazard_Flood struct {
 	Flood *FloodDetail `protobuf:"bytes,22,opt,name=flood,proto3,oneof"`
 }
 
+type Hazard_Fire struct {
+	Fire *FireDetail `protobuf:"bytes,23,opt,name=fire,proto3,oneof"`
+}
+
 func (*Hazard_Earthquake) isHazard_Detail() {}
 
 func (*Hazard_Weather) isHazard_Detail() {}
 
 func (*Hazard_Flood) isHazard_Detail() {}
+
+func (*Hazard_Fire) isHazard_Detail() {}
 
 // Detail gempa.
 type EarthquakeDetail struct {
@@ -1248,11 +1264,271 @@ func (x *FloodDay) GetFromEnsemble() bool {
 	return false
 }
 
+// Detail kejadian titik api (ADR 0023): deteksi satelit NASA FIRMS di luar
+// sumber panas tetap yang berjarak ≤ 2 km dan berselang ≤ 24 jam dari
+// anggota lain (berantai). Tingkat: Info untuk setiap kejadian, Waspada bila
+// ada deteksi keyakinan tinggi atau terlihat di ≥ 2 lintasan dalam 24 jam,
+// Siaga bila ≥ 5 deteksi dalam 24 jam; tingkat tertinggi selama kejadian
+// aktif. Deteksi satelit, bukan laporan lapangan: bisa juga pembakaran lahan.
+type FireDetail struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	DetectionCount uint32                 `protobuf:"varint,1,opt,name=detection_count,json=detectionCount,proto3" json:"detection_count,omitempty"`
+	// Lintasan berbeda (produk + waktu lintas) yang melihat kejadian.
+	OverpassCount       uint32 `protobuf:"varint,2,opt,name=overpass_count,json=overpassCount,proto3" json:"overpass_count,omitempty"`
+	HighConfidenceCount uint32 `protobuf:"varint,3,opt,name=high_confidence_count,json=highConfidenceCount,proto3" json:"high_confidence_count,omitempty"`
+	// Hitungan terbesar dalam satu jendela 24 jam: deteksi (dasar Siaga) dan
+	// lintasan (dasar Waspada).
+	PeakDetections_24H uint32                 `protobuf:"varint,4,opt,name=peak_detections_24h,json=peakDetections24h,proto3" json:"peak_detections_24h,omitempty"`
+	PeakOverpasses_24H uint32                 `protobuf:"varint,5,opt,name=peak_overpasses_24h,json=peakOverpasses24h,proto3" json:"peak_overpasses_24h,omitempty"`
+	FirstDetectedAt    *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=first_detected_at,json=firstDetectedAt,proto3" json:"first_detected_at,omitempty"`
+	LastDetectedAt     *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=last_detected_at,json=lastDetectedAt,proto3" json:"last_detected_at,omitempty"`
+	// Waktu lintas deteksi pertama yang mencapai tingkat kejadian.
+	LevelReachedAt *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=level_reached_at,json=levelReachedAt,proto3" json:"level_reached_at,omitempty"`
+	// Waktu SIAGA menerima deteksi terakhir; kejadian berakhir 24 jam setelahnya.
+	LastFetchedAt *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=last_fetched_at,json=lastFetchedAt,proto3" json:"last_fetched_at,omitempty"`
+	// Produk FIRMS NRT yang melihat kejadian, misal "VIIRS_NOAA20_NRT".
+	Products []string `protobuf:"bytes,10,rep,name=products,proto3" json:"products,omitempty"`
+	// FRP terbesar di antara deteksi (MW).
+	MaxFrpMw *float64 `protobuf:"fixed64,11,opt,name=max_frp_mw,json=maxFrpMw,proto3,oneof" json:"max_frp_mw,omitempty"`
+	// Semua deteksi anggota, urut waktu.
+	Detections []*FireMember `protobuf:"bytes,12,rep,name=detections,proto3" json:"detections,omitempty"`
+	// Ambang aturan yang dipakai: deteksi dalam 24 jam untuk Siaga dan
+	// lintasan dalam 24 jam untuk Waspada.
+	SiagaDetections   uint32 `protobuf:"varint,13,opt,name=siaga_detections,json=siagaDetections,proto3" json:"siaga_detections,omitempty"`
+	WaspadaOverpasses uint32 `protobuf:"varint,14,opt,name=waspada_overpasses,json=waspadaOverpasses,proto3" json:"waspada_overpasses,omitempty"`
+	// ID deteksi yang membuka kejadian (dasar ID kejadian).
+	OpenedBy      string `protobuf:"bytes,15,opt,name=opened_by,json=openedBy,proto3" json:"opened_by,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FireDetail) Reset() {
+	*x = FireDetail{}
+	mi := &file_siaga_hazard_v1_hazard_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FireDetail) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FireDetail) ProtoMessage() {}
+
+func (x *FireDetail) ProtoReflect() protoreflect.Message {
+	mi := &file_siaga_hazard_v1_hazard_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FireDetail.ProtoReflect.Descriptor instead.
+func (*FireDetail) Descriptor() ([]byte, []int) {
+	return file_siaga_hazard_v1_hazard_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *FireDetail) GetDetectionCount() uint32 {
+	if x != nil {
+		return x.DetectionCount
+	}
+	return 0
+}
+
+func (x *FireDetail) GetOverpassCount() uint32 {
+	if x != nil {
+		return x.OverpassCount
+	}
+	return 0
+}
+
+func (x *FireDetail) GetHighConfidenceCount() uint32 {
+	if x != nil {
+		return x.HighConfidenceCount
+	}
+	return 0
+}
+
+func (x *FireDetail) GetPeakDetections_24H() uint32 {
+	if x != nil {
+		return x.PeakDetections_24H
+	}
+	return 0
+}
+
+func (x *FireDetail) GetPeakOverpasses_24H() uint32 {
+	if x != nil {
+		return x.PeakOverpasses_24H
+	}
+	return 0
+}
+
+func (x *FireDetail) GetFirstDetectedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.FirstDetectedAt
+	}
+	return nil
+}
+
+func (x *FireDetail) GetLastDetectedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.LastDetectedAt
+	}
+	return nil
+}
+
+func (x *FireDetail) GetLevelReachedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.LevelReachedAt
+	}
+	return nil
+}
+
+func (x *FireDetail) GetLastFetchedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.LastFetchedAt
+	}
+	return nil
+}
+
+func (x *FireDetail) GetProducts() []string {
+	if x != nil {
+		return x.Products
+	}
+	return nil
+}
+
+func (x *FireDetail) GetMaxFrpMw() float64 {
+	if x != nil && x.MaxFrpMw != nil {
+		return *x.MaxFrpMw
+	}
+	return 0
+}
+
+func (x *FireDetail) GetDetections() []*FireMember {
+	if x != nil {
+		return x.Detections
+	}
+	return nil
+}
+
+func (x *FireDetail) GetSiagaDetections() uint32 {
+	if x != nil {
+		return x.SiagaDetections
+	}
+	return 0
+}
+
+func (x *FireDetail) GetWaspadaOverpasses() uint32 {
+	if x != nil {
+		return x.WaspadaOverpasses
+	}
+	return 0
+}
+
+func (x *FireDetail) GetOpenedBy() string {
+	if x != nil {
+		return x.OpenedBy
+	}
+	return ""
+}
+
+// Satu deteksi titik panas anggota kejadian (isi ringkas raw.fire.firms).
+type FireMember struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// ID deteksi raw.fire.firms: "<produk>:<yyyymmddThhmm>:<lintang>:<bujur>".
+	Id         string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Location   *v1.Point              `protobuf:"bytes,2,opt,name=location,proto3" json:"location,omitempty"`
+	DetectedAt *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=detected_at,json=detectedAt,proto3" json:"detected_at,omitempty"`
+	Product    string                 `protobuf:"bytes,4,opt,name=product,proto3" json:"product,omitempty"`
+	// "low", "nominal", atau "high".
+	Confidence    string   `protobuf:"bytes,5,opt,name=confidence,proto3" json:"confidence,omitempty"`
+	FrpMw         *float64 `protobuf:"fixed64,6,opt,name=frp_mw,json=frpMw,proto3,oneof" json:"frp_mw,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FireMember) Reset() {
+	*x = FireMember{}
+	mi := &file_siaga_hazard_v1_hazard_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FireMember) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FireMember) ProtoMessage() {}
+
+func (x *FireMember) ProtoReflect() protoreflect.Message {
+	mi := &file_siaga_hazard_v1_hazard_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FireMember.ProtoReflect.Descriptor instead.
+func (*FireMember) Descriptor() ([]byte, []int) {
+	return file_siaga_hazard_v1_hazard_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *FireMember) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *FireMember) GetLocation() *v1.Point {
+	if x != nil {
+		return x.Location
+	}
+	return nil
+}
+
+func (x *FireMember) GetDetectedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.DetectedAt
+	}
+	return nil
+}
+
+func (x *FireMember) GetProduct() string {
+	if x != nil {
+		return x.Product
+	}
+	return ""
+}
+
+func (x *FireMember) GetConfidence() string {
+	if x != nil {
+		return x.Confidence
+	}
+	return ""
+}
+
+func (x *FireMember) GetFrpMw() float64 {
+	if x != nil && x.FrpMw != nil {
+		return *x.FrpMw
+	}
+	return 0
+}
+
 var File_siaga_hazard_v1_hazard_proto protoreflect.FileDescriptor
 
 const file_siaga_hazard_v1_hazard_proto_rawDesc = "" +
 	"\n" +
-	"\x1csiaga/hazard/v1/hazard.proto\x12\x0fsiaga.hazard.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x19siaga/common/v1/geo.proto\"\x95\a\n" +
+	"\x1csiaga/hazard/v1/hazard.proto\x12\x0fsiaga.hazard.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x19siaga/common/v1/geo.proto\"\xc8\a\n" +
 	"\x06Hazard\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12/\n" +
 	"\x04kind\x18\x02 \x01(\x0e2\x1b.siaga.hazard.v1.HazardKindR\x04kind\x121\n" +
@@ -1278,7 +1554,8 @@ const file_siaga_hazard_v1_hazard_proto_rawDesc = "" +
 	"earthquake\x18\x14 \x01(\v2!.siaga.hazard.v1.EarthquakeDetailH\x00R\n" +
 	"earthquake\x12A\n" +
 	"\aweather\x18\x15 \x01(\v2%.siaga.hazard.v1.WeatherWarningDetailH\x00R\aweather\x124\n" +
-	"\x05flood\x18\x16 \x01(\v2\x1c.siaga.hazard.v1.FloodDetailH\x00R\x05floodB\b\n" +
+	"\x05flood\x18\x16 \x01(\v2\x1c.siaga.hazard.v1.FloodDetailH\x00R\x05flood\x121\n" +
+	"\x04fire\x18\x17 \x01(\v2\x1b.siaga.hazard.v1.FireDetailH\x00R\x04fireB\b\n" +
 	"\x06detail\"\xe7\x02\n" +
 	"\x10EarthquakeDetail\x12\x1c\n" +
 	"\tmagnitude\x18\x01 \x01(\x01R\tmagnitude\x12\x19\n" +
@@ -1363,7 +1640,41 @@ const file_siaga_hazard_v1_hazard_proto_rawDesc = "" +
 	"\x12_discharge_max_m3sB\r\n" +
 	"\v_rain_3h_mmB\r\n" +
 	"\v_rain_6h_mmB\x0e\n" +
-	"\f_rain_24h_mm*\xac\x01\n" +
+	"\f_rain_24h_mm\"\x8a\x06\n" +
+	"\n" +
+	"FireDetail\x12'\n" +
+	"\x0fdetection_count\x18\x01 \x01(\rR\x0edetectionCount\x12%\n" +
+	"\x0eoverpass_count\x18\x02 \x01(\rR\roverpassCount\x122\n" +
+	"\x15high_confidence_count\x18\x03 \x01(\rR\x13highConfidenceCount\x12.\n" +
+	"\x13peak_detections_24h\x18\x04 \x01(\rR\x11peakDetections24h\x12.\n" +
+	"\x13peak_overpasses_24h\x18\x05 \x01(\rR\x11peakOverpasses24h\x12F\n" +
+	"\x11first_detected_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\x0ffirstDetectedAt\x12D\n" +
+	"\x10last_detected_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\x0elastDetectedAt\x12D\n" +
+	"\x10level_reached_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\x0elevelReachedAt\x12B\n" +
+	"\x0flast_fetched_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\rlastFetchedAt\x12\x1a\n" +
+	"\bproducts\x18\n" +
+	" \x03(\tR\bproducts\x12!\n" +
+	"\n" +
+	"max_frp_mw\x18\v \x01(\x01H\x00R\bmaxFrpMw\x88\x01\x01\x12;\n" +
+	"\n" +
+	"detections\x18\f \x03(\v2\x1b.siaga.hazard.v1.FireMemberR\n" +
+	"detections\x12)\n" +
+	"\x10siaga_detections\x18\r \x01(\rR\x0fsiagaDetections\x12-\n" +
+	"\x12waspada_overpasses\x18\x0e \x01(\rR\x11waspadaOverpasses\x12\x1b\n" +
+	"\topened_by\x18\x0f \x01(\tR\bopenedByB\r\n" +
+	"\v_max_frp_mw\"\xee\x01\n" +
+	"\n" +
+	"FireMember\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x122\n" +
+	"\blocation\x18\x02 \x01(\v2\x16.siaga.common.v1.PointR\blocation\x12;\n" +
+	"\vdetected_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"detectedAt\x12\x18\n" +
+	"\aproduct\x18\x04 \x01(\tR\aproduct\x12\x1e\n" +
+	"\n" +
+	"confidence\x18\x05 \x01(\tR\n" +
+	"confidence\x12\x1a\n" +
+	"\x06frp_mw\x18\x06 \x01(\x01H\x00R\x05frpMw\x88\x01\x01B\t\n" +
+	"\a_frp_mw*\xac\x01\n" +
 	"\n" +
 	"HazardKind\x12\x1b\n" +
 	"\x17HAZARD_KIND_UNSPECIFIED\x10\x00\x12\x1a\n" +
@@ -1406,7 +1717,7 @@ func file_siaga_hazard_v1_hazard_proto_rawDescGZIP() []byte {
 }
 
 var file_siaga_hazard_v1_hazard_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
-var file_siaga_hazard_v1_hazard_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_siaga_hazard_v1_hazard_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_siaga_hazard_v1_hazard_proto_goTypes = []any{
 	(HazardKind)(0),               // 0: siaga.hazard.v1.HazardKind
 	(AlertLevel)(0),               // 1: siaga.hazard.v1.AlertLevel
@@ -1419,40 +1730,50 @@ var file_siaga_hazard_v1_hazard_proto_goTypes = []any{
 	(*FloodDetail)(nil),           // 8: siaga.hazard.v1.FloodDetail
 	(*RainfallThreshold)(nil),     // 9: siaga.hazard.v1.RainfallThreshold
 	(*FloodDay)(nil),              // 10: siaga.hazard.v1.FloodDay
-	(*timestamppb.Timestamp)(nil), // 11: google.protobuf.Timestamp
-	(*v1.Point)(nil),              // 12: siaga.common.v1.Point
-	(*v1.RegionRef)(nil),          // 13: siaga.common.v1.RegionRef
+	(*FireDetail)(nil),            // 11: siaga.hazard.v1.FireDetail
+	(*FireMember)(nil),            // 12: siaga.hazard.v1.FireMember
+	(*timestamppb.Timestamp)(nil), // 13: google.protobuf.Timestamp
+	(*v1.Point)(nil),              // 14: siaga.common.v1.Point
+	(*v1.RegionRef)(nil),          // 15: siaga.common.v1.RegionRef
 }
 var file_siaga_hazard_v1_hazard_proto_depIdxs = []int32{
 	0,  // 0: siaga.hazard.v1.Hazard.kind:type_name -> siaga.hazard.v1.HazardKind
 	1,  // 1: siaga.hazard.v1.Hazard.level:type_name -> siaga.hazard.v1.AlertLevel
 	2,  // 2: siaga.hazard.v1.Hazard.primary_source:type_name -> siaga.hazard.v1.Source
-	11, // 3: siaga.hazard.v1.Hazard.occurred_at:type_name -> google.protobuf.Timestamp
-	11, // 4: siaga.hazard.v1.Hazard.detected_at:type_name -> google.protobuf.Timestamp
-	11, // 5: siaga.hazard.v1.Hazard.expires_at:type_name -> google.protobuf.Timestamp
-	12, // 6: siaga.hazard.v1.Hazard.location:type_name -> siaga.common.v1.Point
-	13, // 7: siaga.hazard.v1.Hazard.impacted_regions:type_name -> siaga.common.v1.RegionRef
+	13, // 3: siaga.hazard.v1.Hazard.occurred_at:type_name -> google.protobuf.Timestamp
+	13, // 4: siaga.hazard.v1.Hazard.detected_at:type_name -> google.protobuf.Timestamp
+	13, // 5: siaga.hazard.v1.Hazard.expires_at:type_name -> google.protobuf.Timestamp
+	14, // 6: siaga.hazard.v1.Hazard.location:type_name -> siaga.common.v1.Point
+	15, // 7: siaga.hazard.v1.Hazard.impacted_regions:type_name -> siaga.common.v1.RegionRef
 	5,  // 8: siaga.hazard.v1.Hazard.earthquake:type_name -> siaga.hazard.v1.EarthquakeDetail
 	7,  // 9: siaga.hazard.v1.Hazard.weather:type_name -> siaga.hazard.v1.WeatherWarningDetail
 	8,  // 10: siaga.hazard.v1.Hazard.flood:type_name -> siaga.hazard.v1.FloodDetail
-	6,  // 11: siaga.hazard.v1.EarthquakeDetail.corroborating_reports:type_name -> siaga.hazard.v1.SourceReport
-	2,  // 12: siaga.hazard.v1.SourceReport.source:type_name -> siaga.hazard.v1.Source
-	12, // 13: siaga.hazard.v1.SourceReport.location:type_name -> siaga.common.v1.Point
-	11, // 14: siaga.hazard.v1.SourceReport.occurred_at:type_name -> google.protobuf.Timestamp
-	3,  // 15: siaga.hazard.v1.FloodDetail.indicator:type_name -> siaga.hazard.v1.FloodIndicator
-	11, // 16: siaga.hazard.v1.FloodDetail.issued_at:type_name -> google.protobuf.Timestamp
-	11, // 17: siaga.hazard.v1.FloodDetail.peak_date:type_name -> google.protobuf.Timestamp
-	11, // 18: siaga.hazard.v1.FloodDetail.last_exceeded_at:type_name -> google.protobuf.Timestamp
-	10, // 19: siaga.hazard.v1.FloodDetail.days:type_name -> siaga.hazard.v1.FloodDay
-	9,  // 20: siaga.hazard.v1.FloodDetail.rainfall_thresholds:type_name -> siaga.hazard.v1.RainfallThreshold
-	1,  // 21: siaga.hazard.v1.FloodDetail.max_level:type_name -> siaga.hazard.v1.AlertLevel
-	11, // 22: siaga.hazard.v1.FloodDay.date:type_name -> google.protobuf.Timestamp
-	1,  // 23: siaga.hazard.v1.FloodDay.level:type_name -> siaga.hazard.v1.AlertLevel
-	24, // [24:24] is the sub-list for method output_type
-	24, // [24:24] is the sub-list for method input_type
-	24, // [24:24] is the sub-list for extension type_name
-	24, // [24:24] is the sub-list for extension extendee
-	0,  // [0:24] is the sub-list for field type_name
+	11, // 11: siaga.hazard.v1.Hazard.fire:type_name -> siaga.hazard.v1.FireDetail
+	6,  // 12: siaga.hazard.v1.EarthquakeDetail.corroborating_reports:type_name -> siaga.hazard.v1.SourceReport
+	2,  // 13: siaga.hazard.v1.SourceReport.source:type_name -> siaga.hazard.v1.Source
+	14, // 14: siaga.hazard.v1.SourceReport.location:type_name -> siaga.common.v1.Point
+	13, // 15: siaga.hazard.v1.SourceReport.occurred_at:type_name -> google.protobuf.Timestamp
+	3,  // 16: siaga.hazard.v1.FloodDetail.indicator:type_name -> siaga.hazard.v1.FloodIndicator
+	13, // 17: siaga.hazard.v1.FloodDetail.issued_at:type_name -> google.protobuf.Timestamp
+	13, // 18: siaga.hazard.v1.FloodDetail.peak_date:type_name -> google.protobuf.Timestamp
+	13, // 19: siaga.hazard.v1.FloodDetail.last_exceeded_at:type_name -> google.protobuf.Timestamp
+	10, // 20: siaga.hazard.v1.FloodDetail.days:type_name -> siaga.hazard.v1.FloodDay
+	9,  // 21: siaga.hazard.v1.FloodDetail.rainfall_thresholds:type_name -> siaga.hazard.v1.RainfallThreshold
+	1,  // 22: siaga.hazard.v1.FloodDetail.max_level:type_name -> siaga.hazard.v1.AlertLevel
+	13, // 23: siaga.hazard.v1.FloodDay.date:type_name -> google.protobuf.Timestamp
+	1,  // 24: siaga.hazard.v1.FloodDay.level:type_name -> siaga.hazard.v1.AlertLevel
+	13, // 25: siaga.hazard.v1.FireDetail.first_detected_at:type_name -> google.protobuf.Timestamp
+	13, // 26: siaga.hazard.v1.FireDetail.last_detected_at:type_name -> google.protobuf.Timestamp
+	13, // 27: siaga.hazard.v1.FireDetail.level_reached_at:type_name -> google.protobuf.Timestamp
+	13, // 28: siaga.hazard.v1.FireDetail.last_fetched_at:type_name -> google.protobuf.Timestamp
+	12, // 29: siaga.hazard.v1.FireDetail.detections:type_name -> siaga.hazard.v1.FireMember
+	14, // 30: siaga.hazard.v1.FireMember.location:type_name -> siaga.common.v1.Point
+	13, // 31: siaga.hazard.v1.FireMember.detected_at:type_name -> google.protobuf.Timestamp
+	32, // [32:32] is the sub-list for method output_type
+	32, // [32:32] is the sub-list for method input_type
+	32, // [32:32] is the sub-list for extension type_name
+	32, // [32:32] is the sub-list for extension extendee
+	0,  // [0:32] is the sub-list for field type_name
 }
 
 func init() { file_siaga_hazard_v1_hazard_proto_init() }
@@ -1464,15 +1785,18 @@ func file_siaga_hazard_v1_hazard_proto_init() {
 		(*Hazard_Earthquake)(nil),
 		(*Hazard_Weather)(nil),
 		(*Hazard_Flood)(nil),
+		(*Hazard_Fire)(nil),
 	}
 	file_siaga_hazard_v1_hazard_proto_msgTypes[6].OneofWrappers = []any{}
+	file_siaga_hazard_v1_hazard_proto_msgTypes[7].OneofWrappers = []any{}
+	file_siaga_hazard_v1_hazard_proto_msgTypes[8].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_siaga_hazard_v1_hazard_proto_rawDesc), len(file_siaga_hazard_v1_hazard_proto_rawDesc)),
 			NumEnums:      4,
-			NumMessages:   7,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

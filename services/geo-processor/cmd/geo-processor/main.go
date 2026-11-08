@@ -1,12 +1,14 @@
 // Command geo-processor mengonsumsi event raw.* dari NATS JetStream,
 // mengelompokkan laporan BMKG dan USGS menjadi kejadian gempa, menyusun pesan
 // CAP BMKG menjadi kejadian cuaca, menilai debit sungai dan indeks hujan
-// sub-DAS terhadap ambang banjir, menghitung wilayah terdampak, menyimpannya
-// di schema hazard, dan menerbitkan hazard.* lewat outbox transaksional.
+// sub-DAS terhadap ambang banjir, mengelompokkan titik panas FIRMS di luar
+// sumber panas tetap menjadi kejadian titik api, menghitung wilayah
+// terdampak, menyimpannya di schema hazard, dan menerbitkan hazard.* lewat
+// outbox transaksional.
 // Prakiraan cuaca, kualitas udara, debit sungai, dan hujan sub-DAS, nilai
 // sensor stasiun kualitas udara, dan titik panas satelit disimpan ke
-// hypertable schema ts. Ambang banjir disematkan ke binary dan diselaraskan
-// ke schema ref saat start.
+// hypertable schema ts. Ambang banjir dan saringan sumber panas tetap
+// disematkan ke binary dan diselaraskan ke schema ref saat start.
 //
 // Konfigurasi lewat environment variable; lihat config() di bawah.
 package main
@@ -46,11 +48,13 @@ import (
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/adapters/rawweather"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/adapters/telemetry"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/app/consume"
+	"github.com/ramirezzServer/siaga/services/geo-processor/internal/app/fires"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/app/floods"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/app/quakes"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/app/relay"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/app/timeseries"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/app/warnings"
+	"github.com/ramirezzServer/siaga/services/geo-processor/internal/domain/fire"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/domain/flood"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/domain/hotspot"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/domain/quake"
@@ -81,6 +85,9 @@ type settings struct {
 	flood       flood.Policy
 	// thresholds memuat ambang banjir (bawaan: yang disematkan ke binary).
 	thresholds func(flood.Policy) (flood.Calibration, error)
+	fire       fire.Policy
+	// static memuat saringan sumber panas tetap (bawaan: yang disematkan).
+	static func() (fire.Calibration, error)
 }
 
 func config(lookup envx.Lookup) (settings, error) {
@@ -93,6 +100,8 @@ func config(lookup envx.Lookup) (settings, error) {
 		weather:     weather.DefaultPolicy(),
 		flood:       flood.DefaultPolicy(),
 		thresholds:  calibration.Load,
+		fire:        fire.DefaultPolicy(),
+		static:      calibration.LoadFire,
 	}
 	var errs []error
 	level, err := logx.ParseLevel(env.Default("LOG_LEVEL", "info"))
@@ -257,6 +266,29 @@ func serve(ctx context.Context, cfg settings, log *slog.Logger) error {
 	if err != nil {
 		return err
 	}
+	fireCal, err := cfg.static()
+	if err != nil {
+		return fmt.Errorf("saringan titik api: %w", err)
+	}
+	firesvc, err := fires.New(postgres.NewFireStore(pool), hazardpb.FireEncoder{}, cfg.fire, fireCal, time.Now)
+	if err != nil {
+		return err
+	}
+	syncCtx, cancelSync = context.WithTimeout(ctx, 30*time.Second)
+	staticSync, err := firesvc.SyncStatic(syncCtx)
+	cancelSync()
+	if err != nil {
+		return fmt.Errorf("menyelaraskan saringan titik api: %w", err)
+	}
+	log.Info("saringan titik api diselaraskan", slog.Int("sumber_tetap", len(fireCal.Static)),
+		slog.Int("baru", staticSync.Inserted), slog.Int("berubah", staticSync.Updated), slog.Int("dihapus", staticSync.Deleted))
+	fireHazard, err := consume.New(rawseries.DecodeFireDetection, func(ctx context.Context, d hotspot.Detection) (consume.Outcome, error) {
+		res, err := firesvc.Process(ctx, d)
+		return consume.Outcome{Changed: res.Changed, Created: res.Created, Updated: res.Updated, Ended: res.Ended + res.Merged}, err
+	}, []error{hotspot.ErrInvalid, fire.ErrInvalid}, consume.DefaultOptions(), time.Now)
+	if err != nil {
+		return err
+	}
 	tsvc := timeseries.New(postgres.NewSeriesStore(pool), time.Now)
 	forecastBMKG, err := seriesHandler(rawseries.DecodeRegionForecast, tsvc.Weather)
 	if err != nil {
@@ -298,6 +330,7 @@ func serve(ctx context.Context, cfg settings, log *slog.Logger) error {
 		{spec: natsjs.FireFIRMSConsumer, handler: hotspots},
 		{spec: natsjs.FloodDischargeConsumer, handler: floodDischarge},
 		{spec: natsjs.FloodRainConsumer, handler: floodRain},
+		{spec: natsjs.FireHazardConsumer, handler: fireHazard},
 	}
 
 	durables := make([]string, len(consumers))
@@ -323,6 +356,7 @@ func serve(ctx context.Context, cfg settings, log *slog.Logger) error {
 			natsjs.FireFIRMSConsumer.Durable:           hotspots.Snapshot,
 			natsjs.FloodDischargeConsumer.Durable:      floodDischarge.Snapshot,
 			natsjs.FloodRainConsumer.Durable:           floodRain.Snapshot,
+			natsjs.FireHazardConsumer.Durable:          fireHazard.Snapshot,
 		},
 		Relay: outbox.Snapshot,
 		Backlog: func(ctx context.Context) (telemetry.Backlog, error) {
@@ -365,8 +399,9 @@ func serve(ctx context.Context, cfg settings, log *slog.Logger) error {
 				natsjs.FloodDischargeConsumer.Durable: floodDischarge.Snapshot(),
 				natsjs.FloodRainConsumer.Durable:      floodRain.Snapshot(),
 			},
-			"outbox": outbox.Snapshot(), "rules": cfg.rules, "weather_policy": cfg.weather,
-			"flood_calibration": floodStatus(cal),
+			"fire_consumer": fireHazard.Snapshot(),
+			"outbox":        outbox.Snapshot(), "rules": cfg.rules, "weather_policy": cfg.weather,
+			"flood_calibration": floodStatus(cal), "fire_calibration": fireStatus(cfg.fire, fireCal),
 		}
 	}
 	if cfg.httpAddr != "" {
@@ -403,6 +438,7 @@ func serve(ctx context.Context, cfg settings, log *slog.Logger) error {
 	wg.Go(func() { svc.RunExpiry(ctx, 30*time.Second, 100, expired("quake")) })
 	wg.Go(func() { wsvc.RunExpiry(ctx, 30*time.Second, 100, expired("weather")) })
 	wg.Go(func() { fsvc.RunExpiry(ctx, time.Minute, 100, expired("flood")) })
+	wg.Go(func() { firesvc.RunExpiry(ctx, time.Minute, 100, expired("fire")) })
 	for _, c := range consumers {
 		wg.Go(func() {
 			if err := consumeLoop(ctx, js, c, outbox.Wake, log, func() { consumersReady.Add(1) }); err != nil {
@@ -437,6 +473,15 @@ func floodStatus(cal flood.Calibration) map[string]any {
 		"discharge_sites": len(cal.Discharge), "discharge_period": period(cal.DischargeSource.Period),
 		"catchments": len(cal.Rainfall), "rainfall_period": period(cal.RainfallSource.Period),
 		"corrected": corrected, "capped": capped,
+	}
+}
+
+// fireStatus merangkum aturan dan saringan titik api untuk /status.
+func fireStatus(p fire.Policy, cal fire.Calibration) map[string]any {
+	return map[string]any{
+		"static_sources": len(cal.Static), "archive_period": cal.Period.From.Format(time.DateOnly) + ".." + cal.Period.To.Format(time.DateOnly),
+		"link_km": p.LinkKm, "gap": p.Gap.String(), "siaga_detections_24h": p.SiagaCount, "waspada_overpasses_24h": p.WaspadaPasses,
+		"excluded_products": p.Excluded,
 	}
 }
 

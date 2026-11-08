@@ -129,6 +129,11 @@ var (
 		Durable: "geo-processor-hazard-flood-discharge", Filter: "raw.flood.openmeteo",
 		Description: "geo-processor: potensi banjir dari debit GloFAS (hazard.flood.*)",
 	}
+	// Titik api: consumer terpisah dari penyimpanan ts.hotspot (ADR 0023).
+	FireHazardConsumer = ConsumerSpec{
+		Durable: "geo-processor-hazard-fire", Filter: "raw.fire.firms",
+		Description: "geo-processor: kejadian titik api dari deteksi FIRMS (hazard.fire.*)",
+	}
 	FloodRainConsumer = ConsumerSpec{
 		Durable: "geo-processor-hazard-flood-rain", Filter: "raw.rain.openmeteo",
 		Description: "geo-processor: indikasi potensi banjir dari indeks hujan sub-DAS (hazard.flood.*)",

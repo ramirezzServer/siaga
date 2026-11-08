@@ -1,7 +1,8 @@
-// Package calibration membaca ambang banjir yang disematkan ke binary:
-// salinan persis docs/calibration/ambang-banjir-32.csv (make flood-threshold)
-// dan ambang-hujan-sub-das.csv (make rain-threshold), disalin dengan
-// `make calibration-copy` dan diperiksa test. Ambang ikut versi image, jadi
+// Package calibration membaca ambang banjir dan saringan titik api yang
+// disematkan ke binary: salinan persis docs/calibration/ambang-banjir-32.csv
+// (make flood-threshold), ambang-hujan-sub-das.csv (make rain-threshold),
+// dan sumber-panas-tetap-32.csv (make fire-threshold, ADR 0023), disalin
+// dengan `make calibration-copy` dan diperiksa test. Ambang ikut versi image, jadi
 // kalibrasi ulang tahunan cukup commit hasil alat lalu deploy; geo-processor
 // menyelaraskan schema ref saat start (ADR 0021).
 package calibration

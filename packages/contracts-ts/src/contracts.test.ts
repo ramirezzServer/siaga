@@ -225,6 +225,46 @@ describe("kontrak event raw", () => {
     });
     expect(subjects.hazard(HazardKind.FLOOD, "created")).toBe("hazard.flood.created");
   });
+
+  it("kejadian titik api membawa deteksi anggotanya", () => {
+    const event = create(HazardCreatedSchema, {
+      hazard: create(HazardSchema, {
+        kind: HazardKind.WILDFIRE,
+        level: AlertLevel.WASPADA,
+        primarySource: Source.NASA_FIRMS,
+        sourceEventId: "VIIRS_NOAA20_NRT:20230825T0623:-6.86000:108.42500",
+        detail: {
+          case: "fire",
+          value: {
+            detectionCount: 2,
+            overpassCount: 2,
+            peakDetections24h: 2,
+            peakOverpasses24h: 2,
+            products: ["MODIS_NRT", "VIIRS_NOAA20_NRT"],
+            maxFrpMw: 12.5,
+            siagaDetections: 5,
+            waspadaOverpasses: 2,
+            openedBy: "VIIRS_NOAA20_NRT:20230825T0623:-6.86000:108.42500",
+            detections: [
+              {
+                id: "VIIRS_NOAA20_NRT:20230825T0623:-6.86000:108.42500",
+                location: { latitude: -6.86, longitude: 108.425 },
+                product: "VIIRS_NOAA20_NRT",
+                confidence: "nominal",
+                frpMw: 12.5,
+              },
+            ],
+          },
+        },
+      }),
+    });
+    const decoded = fromBinary(HazardCreatedSchema, toBinary(HazardCreatedSchema, event));
+    expect(decoded).toEqual(event);
+    expect(toJson(HazardCreatedSchema, decoded)).toMatchObject({
+      hazard: { kind: "HAZARD_KIND_WILDFIRE", fire: { detectionCount: 2, peakDetections24h: 2 } },
+    });
+    expect(subjects.hazard(HazardKind.WILDFIRE, "expired")).toBe("hazard.fire.expired");
+  });
   it("pengukuran udara stasiun membawa satuan sumber per sensor", () => {
     const obs = create(AirQualityObservationSchema, {
       source: Source.OPENAQ,

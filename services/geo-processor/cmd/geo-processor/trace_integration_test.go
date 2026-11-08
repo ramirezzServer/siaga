@@ -27,6 +27,7 @@ import (
 	"github.com/ramirezzServer/siaga/libs/go/platform/natsx"
 	"github.com/ramirezzServer/siaga/libs/go/platform/natsx/natstest"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/adapters/calibration"
+	"github.com/ramirezzServer/siaga/services/geo-processor/internal/domain/fire"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/domain/flood"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/domain/quake"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/domain/weather"
@@ -81,7 +82,7 @@ func TestTraceFromRawToHazard(t *testing.T) {
 
 	cfg := settings{
 		databaseURL: dbURL, natsURL: natsURL, logLevel: slog.LevelInfo, rules: quake.DefaultRules(), weather: weather.DefaultPolicy(),
-		flood: flood.DefaultPolicy(), thresholds: calibration.Load,
+		flood: flood.DefaultPolicy(), thresholds: calibration.Load, fire: fire.DefaultPolicy(), static: calibration.LoadFire,
 	}
 	svcCtx, stop := context.WithCancel(ctx)
 	done := make(chan error, 1)

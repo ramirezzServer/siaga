@@ -14,7 +14,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file siaga/hazard/v1/hazard.proto.
  */
 export const file_siaga_hazard_v1_hazard: GenFile = /*@__PURE__*/
-  fileDesc("ChxzaWFnYS9oYXphcmQvdjEvaGF6YXJkLnByb3RvEg9zaWFnYS5oYXphcmQudjEiyQUKBkhhemFyZBIKCgJpZBgBIAEoCRIpCgRraW5kGAIgASgOMhsuc2lhZ2EuaGF6YXJkLnYxLkhhemFyZEtpbmQSKgoFbGV2ZWwYAyABKA4yGy5zaWFnYS5oYXphcmQudjEuQWxlcnRMZXZlbBIvCg5wcmltYXJ5X3NvdXJjZRgEIAEoDjIXLnNpYWdhLmhhemFyZC52MS5Tb3VyY2USFwoPc291cmNlX2V2ZW50X2lkGAUgASgJEi8KC29jY3VycmVkX2F0GAYgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIvCgtkZXRlY3RlZF9hdBgHIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASLgoKZXhwaXJlc19hdBgIIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASKAoIbG9jYXRpb24YCSABKAsyFi5zaWFnYS5jb21tb24udjEuUG9pbnQSFAoMYXJlYV9nZW9qc29uGAogASgJEjQKEGltcGFjdGVkX3JlZ2lvbnMYCyADKAsyGi5zaWFnYS5jb21tb24udjEuUmVnaW9uUmVmEg0KBXRpdGxlGAwgASgJEg8KB3N1bW1hcnkYDSABKAkSDQoFZHJpbGwYDiABKAgSEAoIcmV2aXNpb24YDyABKA0SHQoVaW1wYWN0ZWRfcmVnaW9uX2NvdW50GBAgASgNEjcKCmVhcnRocXVha2UYFCABKAsyIS5zaWFnYS5oYXphcmQudjEuRWFydGhxdWFrZURldGFpbEgAEjgKB3dlYXRoZXIYFSABKAsyJS5zaWFnYS5oYXphcmQudjEuV2VhdGhlcldhcm5pbmdEZXRhaWxIABItCgVmbG9vZBgWIAEoCzIcLnNpYWdhLmhhemFyZC52MS5GbG9vZERldGFpbEgAQggKBmRldGFpbCLwAQoQRWFydGhxdWFrZURldGFpbBIRCgltYWduaXR1ZGUYASABKAESEAoIZGVwdGhfa20YAiABKAESGAoQZmVsdF9kZXNjcmlwdGlvbhgDIAEoCRIZChF0c3VuYW1pX3BvdGVudGlhbBgEIAEoCBIUCgxzaGFrZW1hcF91cmwYBSABKAkSPAoVY29ycm9ib3JhdGluZ19yZXBvcnRzGAYgAygLMh0uc2lhZ2EuaGF6YXJkLnYxLlNvdXJjZVJlcG9ydBIWCg5mZWx0X3JhZGl1c19rbRgHIAEoARIWCg5tYWduaXR1ZGVfdHlwZRgIIAEoCSLkAQoMU291cmNlUmVwb3J0EicKBnNvdXJjZRgBIAEoDjIXLnNpYWdhLmhhemFyZC52MS5Tb3VyY2USFwoPc291cmNlX2V2ZW50X2lkGAIgASgJEhEKCW1hZ25pdHVkZRgDIAEoARIoCghsb2NhdGlvbhgEIAEoCzIWLnNpYWdhLmNvbW1vbi52MS5Qb2ludBIvCgtvY2N1cnJlZF9hdBgFIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASEAoIZGVwdGhfa20YBiABKAESEgoKc291cmNlX3VybBgHIAEoCSKpAwoUV2VhdGhlcldhcm5pbmdEZXRhaWwSFAoMY2FwX3NldmVyaXR5GAEgASgJEhEKCWNhcF9ldmVudBgCIAEoCRIQCghoZWFkbGluZRgDIAEoCRITCgtkZXNjcmlwdGlvbhgEIAEoCRITCgtpbnN0cnVjdGlvbhgFIAEoCRIWCg5jYXBfaWRlbnRpZmllchgGIAEoCRIUCgxjYXBfbXNnX3R5cGUYByABKAkSEwoLY2FwX3VyZ2VuY3kYCCABKAkSFQoNY2FwX2NlcnRhaW50eRgJIAEoCRIWCg5jYXBfZXZlbnRfY29kZRgKIAEoCRIUCgxjYXBfZXZlbnRfZW4YCyABKAkSEwoLaGVhZGxpbmVfZW4YDCABKAkSFgoOZGVzY3JpcHRpb25fZW4YDSABKAkSFgoOaW5zdHJ1Y3Rpb25fZW4YDiABKAkSEQoJYXJlYV9kZXNjGA8gASgJEg8KB3dlYl91cmwYECABKAkSEgoKc291cmNlX3VybBgRIAEoCRIQCghhcmVhX2ttMhgSIAEoARIVCg1tZXNzYWdlX2NvdW50GBMgASgNIuUDCgtGbG9vZERldGFpbBIyCglpbmRpY2F0b3IYASABKA4yHy5zaWFnYS5oYXphcmQudjEuRmxvb2RJbmRpY2F0b3ISDwoHc2l0ZV9pZBgCIAEoCRIRCglzaXRlX25hbWUYAyABKAkSDQoFcml2ZXIYBCABKAkSDQoFbW9kZWwYBSABKAkSLQoJaXNzdWVkX2F0GAYgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBItCglwZWFrX2RhdGUYByABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEhAKCHBvc3NpYmxlGAggASgIEjQKEGxhc3RfZXhjZWVkZWRfYXQYCSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEicKBGRheXMYCiADKAsyGS5zaWFnYS5oYXphcmQudjEuRmxvb2REYXkSIAoYZGlzY2hhcmdlX3RocmVzaG9sZHNfbTNzGAsgAygBEj8KE3JhaW5mYWxsX3RocmVzaG9sZHMYDCADKAsyIi5zaWFnYS5oYXphcmQudjEuUmFpbmZhbGxUaHJlc2hvbGQSLgoJbWF4X2xldmVsGA0gASgOMhsuc2lhZ2EuaGF6YXJkLnYxLkFsZXJ0TGV2ZWwiQAoRUmFpbmZhbGxUaHJlc2hvbGQSFAoMd2luZG93X2hvdXJzGAEgASgNEhUKDXRocmVzaG9sZHNfbW0YAiADKAEiswMKCEZsb29kRGF5EigKBGRhdGUYASABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEioKBWxldmVsGAIgASgOMhsuc2lhZ2EuaGF6YXJkLnYxLkFsZXJ0TGV2ZWwSEAoIcG9zc2libGUYAyABKAgSGgoNZGlzY2hhcmdlX20zcxgEIAEoAUgAiAEBEh4KEWRpc2NoYXJnZV9wNzVfbTNzGAUgASgBSAGIAQESHgoRZGlzY2hhcmdlX21heF9tM3MYBiABKAFIAogBARIXCgpyYWluXzNoX21tGAcgASgBSAOIAQESFwoKcmFpbl82aF9tbRgIIAEoAUgEiAEBEhgKC3JhaW5fMjRoX21tGAkgASgBSAWIAQESFAoMd2luZG93X2hvdXJzGAogASgNEhUKDWZyb21fZW5zZW1ibGUYCyABKAhCEAoOX2Rpc2NoYXJnZV9tM3NCFAoSX2Rpc2NoYXJnZV9wNzVfbTNzQhQKEl9kaXNjaGFyZ2VfbWF4X20zc0INCgtfcmFpbl8zaF9tbUINCgtfcmFpbl82aF9tbUIOCgxfcmFpbl8yNGhfbW0qrAEKCkhhemFyZEtpbmQSGwoXSEFaQVJEX0tJTkRfVU5TUEVDSUZJRUQQABIaChZIQVpBUkRfS0lORF9FQVJUSFFVQUtFEAESFwoTSEFaQVJEX0tJTkRfV0VBVEhFUhACEhUKEUhBWkFSRF9LSU5EX0ZMT09EEAMSGAoUSEFaQVJEX0tJTkRfV0lMREZJUkUQBBIbChdIQVpBUkRfS0lORF9BSVJfUVVBTElUWRAFKocBCgpBbGVydExldmVsEhsKF0FMRVJUX0xFVkVMX1VOU1BFQ0lGSUVEEAASFAoQQUxFUlRfTEVWRUxfSU5GTxABEhcKE0FMRVJUX0xFVkVMX1dBU1BBREEQAhIVChFBTEVSVF9MRVZFTF9TSUFHQRADEhYKEkFMRVJUX0xFVkVMX0JBSEFZQRAEKpUBCgZTb3VyY2USFgoSU09VUkNFX1VOU1BFQ0lGSUVEEAASDwoLU09VUkNFX0JNS0cQARIPCgtTT1VSQ0VfVVNHUxACEhUKEVNPVVJDRV9PUEVOX01FVEVPEAMSFQoRU09VUkNFX05BU0FfRklSTVMQBBIRCg1TT1VSQ0VfT1BFTkFREAUSEAoMU09VUkNFX0RSSUxMEAYqdAoORmxvb2RJbmRpY2F0b3ISHwobRkxPT0RfSU5ESUNBVE9SX1VOU1BFQ0lGSUVEEAASHQoZRkxPT0RfSU5ESUNBVE9SX0RJU0NIQVJHRRABEiIKHkZMT09EX0lORElDQVRPUl9SQUlORkFMTF9JTkRFWBACQtABChNjb20uc2lhZ2EuaGF6YXJkLnYxQgtIYXphcmRQcm90b1ABWk5naXRodWIuY29tL3JhbWlyZXp6U2VydmVyL3NpYWdhL2xpYnMvZ28vY29udHJhY3RzL2dlbi9zaWFnYS9oYXphcmQvdjE7aGF6YXJkdjGiAgNTSFiqAg9TaWFnYS5IYXphcmQuVjHKAg9TaWFnYVxIYXphcmRcVjHiAhtTaWFnYVxIYXphcmRcVjFcR1BCTWV0YWRhdGHqAhFTaWFnYTo6SGF6YXJkOjpWMWIGcHJvdG8z", [file_google_protobuf_timestamp, file_siaga_common_v1_geo]);
+  fileDesc("ChxzaWFnYS9oYXphcmQvdjEvaGF6YXJkLnByb3RvEg9zaWFnYS5oYXphcmQudjEi9gUKBkhhemFyZBIKCgJpZBgBIAEoCRIpCgRraW5kGAIgASgOMhsuc2lhZ2EuaGF6YXJkLnYxLkhhemFyZEtpbmQSKgoFbGV2ZWwYAyABKA4yGy5zaWFnYS5oYXphcmQudjEuQWxlcnRMZXZlbBIvCg5wcmltYXJ5X3NvdXJjZRgEIAEoDjIXLnNpYWdhLmhhemFyZC52MS5Tb3VyY2USFwoPc291cmNlX2V2ZW50X2lkGAUgASgJEi8KC29jY3VycmVkX2F0GAYgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIvCgtkZXRlY3RlZF9hdBgHIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASLgoKZXhwaXJlc19hdBgIIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASKAoIbG9jYXRpb24YCSABKAsyFi5zaWFnYS5jb21tb24udjEuUG9pbnQSFAoMYXJlYV9nZW9qc29uGAogASgJEjQKEGltcGFjdGVkX3JlZ2lvbnMYCyADKAsyGi5zaWFnYS5jb21tb24udjEuUmVnaW9uUmVmEg0KBXRpdGxlGAwgASgJEg8KB3N1bW1hcnkYDSABKAkSDQoFZHJpbGwYDiABKAgSEAoIcmV2aXNpb24YDyABKA0SHQoVaW1wYWN0ZWRfcmVnaW9uX2NvdW50GBAgASgNEjcKCmVhcnRocXVha2UYFCABKAsyIS5zaWFnYS5oYXphcmQudjEuRWFydGhxdWFrZURldGFpbEgAEjgKB3dlYXRoZXIYFSABKAsyJS5zaWFnYS5oYXphcmQudjEuV2VhdGhlcldhcm5pbmdEZXRhaWxIABItCgVmbG9vZBgWIAEoCzIcLnNpYWdhLmhhemFyZC52MS5GbG9vZERldGFpbEgAEisKBGZpcmUYFyABKAsyGy5zaWFnYS5oYXphcmQudjEuRmlyZURldGFpbEgAQggKBmRldGFpbCLwAQoQRWFydGhxdWFrZURldGFpbBIRCgltYWduaXR1ZGUYASABKAESEAoIZGVwdGhfa20YAiABKAESGAoQZmVsdF9kZXNjcmlwdGlvbhgDIAEoCRIZChF0c3VuYW1pX3BvdGVudGlhbBgEIAEoCBIUCgxzaGFrZW1hcF91cmwYBSABKAkSPAoVY29ycm9ib3JhdGluZ19yZXBvcnRzGAYgAygLMh0uc2lhZ2EuaGF6YXJkLnYxLlNvdXJjZVJlcG9ydBIWCg5mZWx0X3JhZGl1c19rbRgHIAEoARIWCg5tYWduaXR1ZGVfdHlwZRgIIAEoCSLkAQoMU291cmNlUmVwb3J0EicKBnNvdXJjZRgBIAEoDjIXLnNpYWdhLmhhemFyZC52MS5Tb3VyY2USFwoPc291cmNlX2V2ZW50X2lkGAIgASgJEhEKCW1hZ25pdHVkZRgDIAEoARIoCghsb2NhdGlvbhgEIAEoCzIWLnNpYWdhLmNvbW1vbi52MS5Qb2ludBIvCgtvY2N1cnJlZF9hdBgFIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASEAoIZGVwdGhfa20YBiABKAESEgoKc291cmNlX3VybBgHIAEoCSKpAwoUV2VhdGhlcldhcm5pbmdEZXRhaWwSFAoMY2FwX3NldmVyaXR5GAEgASgJEhEKCWNhcF9ldmVudBgCIAEoCRIQCghoZWFkbGluZRgDIAEoCRITCgtkZXNjcmlwdGlvbhgEIAEoCRITCgtpbnN0cnVjdGlvbhgFIAEoCRIWCg5jYXBfaWRlbnRpZmllchgGIAEoCRIUCgxjYXBfbXNnX3R5cGUYByABKAkSEwoLY2FwX3VyZ2VuY3kYCCABKAkSFQoNY2FwX2NlcnRhaW50eRgJIAEoCRIWCg5jYXBfZXZlbnRfY29kZRgKIAEoCRIUCgxjYXBfZXZlbnRfZW4YCyABKAkSEwoLaGVhZGxpbmVfZW4YDCABKAkSFgoOZGVzY3JpcHRpb25fZW4YDSABKAkSFgoOaW5zdHJ1Y3Rpb25fZW4YDiABKAkSEQoJYXJlYV9kZXNjGA8gASgJEg8KB3dlYl91cmwYECABKAkSEgoKc291cmNlX3VybBgRIAEoCRIQCghhcmVhX2ttMhgSIAEoARIVCg1tZXNzYWdlX2NvdW50GBMgASgNIuUDCgtGbG9vZERldGFpbBIyCglpbmRpY2F0b3IYASABKA4yHy5zaWFnYS5oYXphcmQudjEuRmxvb2RJbmRpY2F0b3ISDwoHc2l0ZV9pZBgCIAEoCRIRCglzaXRlX25hbWUYAyABKAkSDQoFcml2ZXIYBCABKAkSDQoFbW9kZWwYBSABKAkSLQoJaXNzdWVkX2F0GAYgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBItCglwZWFrX2RhdGUYByABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEhAKCHBvc3NpYmxlGAggASgIEjQKEGxhc3RfZXhjZWVkZWRfYXQYCSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEicKBGRheXMYCiADKAsyGS5zaWFnYS5oYXphcmQudjEuRmxvb2REYXkSIAoYZGlzY2hhcmdlX3RocmVzaG9sZHNfbTNzGAsgAygBEj8KE3JhaW5mYWxsX3RocmVzaG9sZHMYDCADKAsyIi5zaWFnYS5oYXphcmQudjEuUmFpbmZhbGxUaHJlc2hvbGQSLgoJbWF4X2xldmVsGA0gASgOMhsuc2lhZ2EuaGF6YXJkLnYxLkFsZXJ0TGV2ZWwiQAoRUmFpbmZhbGxUaHJlc2hvbGQSFAoMd2luZG93X2hvdXJzGAEgASgNEhUKDXRocmVzaG9sZHNfbW0YAiADKAEiswMKCEZsb29kRGF5EigKBGRhdGUYASABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEioKBWxldmVsGAIgASgOMhsuc2lhZ2EuaGF6YXJkLnYxLkFsZXJ0TGV2ZWwSEAoIcG9zc2libGUYAyABKAgSGgoNZGlzY2hhcmdlX20zcxgEIAEoAUgAiAEBEh4KEWRpc2NoYXJnZV9wNzVfbTNzGAUgASgBSAGIAQESHgoRZGlzY2hhcmdlX21heF9tM3MYBiABKAFIAogBARIXCgpyYWluXzNoX21tGAcgASgBSAOIAQESFwoKcmFpbl82aF9tbRgIIAEoAUgEiAEBEhgKC3JhaW5fMjRoX21tGAkgASgBSAWIAQESFAoMd2luZG93X2hvdXJzGAogASgNEhUKDWZyb21fZW5zZW1ibGUYCyABKAhCEAoOX2Rpc2NoYXJnZV9tM3NCFAoSX2Rpc2NoYXJnZV9wNzVfbTNzQhQKEl9kaXNjaGFyZ2VfbWF4X20zc0INCgtfcmFpbl8zaF9tbUINCgtfcmFpbl82aF9tbUIOCgxfcmFpbl8yNGhfbW0iogQKCkZpcmVEZXRhaWwSFwoPZGV0ZWN0aW9uX2NvdW50GAEgASgNEhYKDm92ZXJwYXNzX2NvdW50GAIgASgNEh0KFWhpZ2hfY29uZmlkZW5jZV9jb3VudBgDIAEoDRIbChNwZWFrX2RldGVjdGlvbnNfMjRoGAQgASgNEhsKE3BlYWtfb3ZlcnBhc3Nlc18yNGgYBSABKA0SNQoRZmlyc3RfZGV0ZWN0ZWRfYXQYBiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEjQKEGxhc3RfZGV0ZWN0ZWRfYXQYByABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEjQKEGxldmVsX3JlYWNoZWRfYXQYCCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEjMKD2xhc3RfZmV0Y2hlZF9hdBgJIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASEAoIcHJvZHVjdHMYCiADKAkSFwoKbWF4X2ZycF9tdxgLIAEoAUgAiAEBEi8KCmRldGVjdGlvbnMYDCADKAsyGy5zaWFnYS5oYXphcmQudjEuRmlyZU1lbWJlchIYChBzaWFnYV9kZXRlY3Rpb25zGA0gASgNEhoKEndhc3BhZGFfb3ZlcnBhc3NlcxgOIAEoDRIRCglvcGVuZWRfYnkYDyABKAlCDQoLX21heF9mcnBfbXciuAEKCkZpcmVNZW1iZXISCgoCaWQYASABKAkSKAoIbG9jYXRpb24YAiABKAsyFi5zaWFnYS5jb21tb24udjEuUG9pbnQSLwoLZGV0ZWN0ZWRfYXQYAyABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEg8KB3Byb2R1Y3QYBCABKAkSEgoKY29uZmlkZW5jZRgFIAEoCRITCgZmcnBfbXcYBiABKAFIAIgBAUIJCgdfZnJwX213KqwBCgpIYXphcmRLaW5kEhsKF0hBWkFSRF9LSU5EX1VOU1BFQ0lGSUVEEAASGgoWSEFaQVJEX0tJTkRfRUFSVEhRVUFLRRABEhcKE0hBWkFSRF9LSU5EX1dFQVRIRVIQAhIVChFIQVpBUkRfS0lORF9GTE9PRBADEhgKFEhBWkFSRF9LSU5EX1dJTERGSVJFEAQSGwoXSEFaQVJEX0tJTkRfQUlSX1FVQUxJVFkQBSqHAQoKQWxlcnRMZXZlbBIbChdBTEVSVF9MRVZFTF9VTlNQRUNJRklFRBAAEhQKEEFMRVJUX0xFVkVMX0lORk8QARIXChNBTEVSVF9MRVZFTF9XQVNQQURBEAISFQoRQUxFUlRfTEVWRUxfU0lBR0EQAxIWChJBTEVSVF9MRVZFTF9CQUhBWUEQBCqVAQoGU291cmNlEhYKElNPVVJDRV9VTlNQRUNJRklFRBAAEg8KC1NPVVJDRV9CTUtHEAESDwoLU09VUkNFX1VTR1MQAhIVChFTT1VSQ0VfT1BFTl9NRVRFTxADEhUKEVNPVVJDRV9OQVNBX0ZJUk1TEAQSEQoNU09VUkNFX09QRU5BURAFEhAKDFNPVVJDRV9EUklMTBAGKnQKDkZsb29kSW5kaWNhdG9yEh8KG0ZMT09EX0lORElDQVRPUl9VTlNQRUNJRklFRBAAEh0KGUZMT09EX0lORElDQVRPUl9ESVNDSEFSR0UQARIiCh5GTE9PRF9JTkRJQ0FUT1JfUkFJTkZBTExfSU5ERVgQAkLQAQoTY29tLnNpYWdhLmhhemFyZC52MUILSGF6YXJkUHJvdG9QAVpOZ2l0aHViLmNvbS9yYW1pcmV6elNlcnZlci9zaWFnYS9saWJzL2dvL2NvbnRyYWN0cy9nZW4vc2lhZ2EvaGF6YXJkL3YxO2hhemFyZHYxogIDU0hYqgIPU2lhZ2EuSGF6YXJkLlYxygIPU2lhZ2FcSGF6YXJkXFYx4gIbU2lhZ2FcSGF6YXJkXFYxXEdQQk1ldGFkYXRh6gIRU2lhZ2E6OkhhemFyZDo6VjFiBnByb3RvMw", [file_google_protobuf_timestamp, file_siaga_common_v1_geo]);
 
 /**
  * Kejadian bahaya yang sudah dinormalisasi dan dideduplikasi oleh geo-processor.
@@ -153,6 +153,12 @@ export type Hazard = Message<"siaga.hazard.v1.Hazard"> & {
      */
     value: FloodDetail;
     case: "flood";
+  } | {
+    /**
+     * @generated from field: siaga.hazard.v1.FireDetail fire = 23;
+     */
+    value: FireDetail;
+    case: "fire";
   } | { case: undefined; value?: undefined };
 };
 
@@ -628,6 +634,168 @@ export type FloodDay = Message<"siaga.hazard.v1.FloodDay"> & {
  */
 export const FloodDaySchema: GenMessage<FloodDay> = /*@__PURE__*/
   messageDesc(file_siaga_hazard_v1_hazard, 6);
+
+/**
+ * Detail kejadian titik api (ADR 0023): deteksi satelit NASA FIRMS di luar
+ * sumber panas tetap yang berjarak ≤ 2 km dan berselang ≤ 24 jam dari
+ * anggota lain (berantai). Tingkat: Info untuk setiap kejadian, Waspada bila
+ * ada deteksi keyakinan tinggi atau terlihat di ≥ 2 lintasan dalam 24 jam,
+ * Siaga bila ≥ 5 deteksi dalam 24 jam; tingkat tertinggi selama kejadian
+ * aktif. Deteksi satelit, bukan laporan lapangan: bisa juga pembakaran lahan.
+ *
+ * @generated from message siaga.hazard.v1.FireDetail
+ */
+export type FireDetail = Message<"siaga.hazard.v1.FireDetail"> & {
+  /**
+   * @generated from field: uint32 detection_count = 1;
+   */
+  detectionCount: number;
+
+  /**
+   * Lintasan berbeda (produk + waktu lintas) yang melihat kejadian.
+   *
+   * @generated from field: uint32 overpass_count = 2;
+   */
+  overpassCount: number;
+
+  /**
+   * @generated from field: uint32 high_confidence_count = 3;
+   */
+  highConfidenceCount: number;
+
+  /**
+   * Hitungan terbesar dalam satu jendela 24 jam: deteksi (dasar Siaga) dan
+   * lintasan (dasar Waspada).
+   *
+   * @generated from field: uint32 peak_detections_24h = 4;
+   */
+  peakDetections24h: number;
+
+  /**
+   * @generated from field: uint32 peak_overpasses_24h = 5;
+   */
+  peakOverpasses24h: number;
+
+  /**
+   * @generated from field: google.protobuf.Timestamp first_detected_at = 6;
+   */
+  firstDetectedAt?: Timestamp | undefined;
+
+  /**
+   * @generated from field: google.protobuf.Timestamp last_detected_at = 7;
+   */
+  lastDetectedAt?: Timestamp | undefined;
+
+  /**
+   * Waktu lintas deteksi pertama yang mencapai tingkat kejadian.
+   *
+   * @generated from field: google.protobuf.Timestamp level_reached_at = 8;
+   */
+  levelReachedAt?: Timestamp | undefined;
+
+  /**
+   * Waktu SIAGA menerima deteksi terakhir; kejadian berakhir 24 jam setelahnya.
+   *
+   * @generated from field: google.protobuf.Timestamp last_fetched_at = 9;
+   */
+  lastFetchedAt?: Timestamp | undefined;
+
+  /**
+   * Produk FIRMS NRT yang melihat kejadian, misal "VIIRS_NOAA20_NRT".
+   *
+   * @generated from field: repeated string products = 10;
+   */
+  products: string[];
+
+  /**
+   * FRP terbesar di antara deteksi (MW).
+   *
+   * @generated from field: optional double max_frp_mw = 11;
+   */
+  maxFrpMw?: number | undefined;
+
+  /**
+   * Semua deteksi anggota, urut waktu.
+   *
+   * @generated from field: repeated siaga.hazard.v1.FireMember detections = 12;
+   */
+  detections: FireMember[];
+
+  /**
+   * Ambang aturan yang dipakai: deteksi dalam 24 jam untuk Siaga dan
+   * lintasan dalam 24 jam untuk Waspada.
+   *
+   * @generated from field: uint32 siaga_detections = 13;
+   */
+  siagaDetections: number;
+
+  /**
+   * @generated from field: uint32 waspada_overpasses = 14;
+   */
+  waspadaOverpasses: number;
+
+  /**
+   * ID deteksi yang membuka kejadian (dasar ID kejadian).
+   *
+   * @generated from field: string opened_by = 15;
+   */
+  openedBy: string;
+};
+
+/**
+ * Describes the message siaga.hazard.v1.FireDetail.
+ * Use `create(FireDetailSchema)` to create a new message.
+ */
+export const FireDetailSchema: GenMessage<FireDetail> = /*@__PURE__*/
+  messageDesc(file_siaga_hazard_v1_hazard, 7);
+
+/**
+ * Satu deteksi titik panas anggota kejadian (isi ringkas raw.fire.firms).
+ *
+ * @generated from message siaga.hazard.v1.FireMember
+ */
+export type FireMember = Message<"siaga.hazard.v1.FireMember"> & {
+  /**
+   * ID deteksi raw.fire.firms: "<produk>:<yyyymmddThhmm>:<lintang>:<bujur>".
+   *
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * @generated from field: siaga.common.v1.Point location = 2;
+   */
+  location?: Point | undefined;
+
+  /**
+   * @generated from field: google.protobuf.Timestamp detected_at = 3;
+   */
+  detectedAt?: Timestamp | undefined;
+
+  /**
+   * @generated from field: string product = 4;
+   */
+  product: string;
+
+  /**
+   * "low", "nominal", atau "high".
+   *
+   * @generated from field: string confidence = 5;
+   */
+  confidence: string;
+
+  /**
+   * @generated from field: optional double frp_mw = 6;
+   */
+  frpMw?: number | undefined;
+};
+
+/**
+ * Describes the message siaga.hazard.v1.FireMember.
+ * Use `create(FireMemberSchema)` to create a new message.
+ */
+export const FireMemberSchema: GenMessage<FireMember> = /*@__PURE__*/
+  messageDesc(file_siaga_hazard_v1_hazard, 8);
 
 /**
  * Jenis bahaya yang dipantau SIAGA.
