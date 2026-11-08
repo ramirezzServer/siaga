@@ -2,9 +2,9 @@
 
 Dokumen ini adalah titik lanjut untuk sesi kerja berikutnya, termasuk chat baru dengan asisten AI. Perbarui setiap akhir sesi.
 
-## Status: Fase 1e-3c-1b ditulis asisten (2026-11-08), menunggu diterapkan dan diverifikasi di WSL; 1e-3c-1a terverifikasi
+## Status: Fase 1e-3c-1b terverifikasi di WSL (2026-11-09); berikutnya 1e-3c-2
 
-Fase 0 sampai 1e-3c-1a ter-commit dan terverifikasi, CI hijau (terakhir `113225c`, run #30, 20 Okt). Fase 1e dipecah: **1e-1** arsip Garage + replay, **1e-2a** OpenTelemetry + dashboard, **1e-2b** deploy (**1e-2b-1** image + CI + manifest, **1e-2b-2** Garage dan Collector di cluster, SOPS, default deny, **1e-2b-3** retensi dan backup arsip), **1e-3** backfill + kalibrasi. 1e-3 dipecah lagi: **1e-3a** pengisian ulang OpenAQ, replay prakiraan BMKG + OpenAQ, peta pemeriksaan titik sungai, **1e-3b** reanalisis GloFAS → ambang banjir → `hazard.flood.*` (**1e-3b-1** pemilihan sel dari reanalisis; **1e-3b-2a** alat ambang banjir dan ambang indeks hujan 7 sub-DAS; **1e-3b-2b** konektor hujan sub-DAS, ambang di geo-processor, `hazard.flood.*`, bagian ini), **1e-3c** dipecah (ADR 0023): **1e-3c-1a** arsip FIRMS dan laporan kalibrasi titik api, **1e-3c-1b** saringan dan aturan terpilih, `hazard.fire.*` (bagian ini), **1e-3c-2** set berlabel T4 dan radius dirasakan, **1e-3c-3** replay CAP.
+Fase 0 sampai 1e-3c-1b ter-commit dan terverifikasi. CI terakhir hijau `113225c` (run #30, 20 Okt); run #31 (`9cff71c`) merah karena CVE baru `golang.org/x/net` dan balapan start PostgreSQL di CI, diperbaiki di commit `fix(deps)` sesudahnya (lihat bagian verifikasi 1e-3c-1b). Fase 1e dipecah: **1e-1** arsip Garage + replay, **1e-2a** OpenTelemetry + dashboard, **1e-2b** deploy (**1e-2b-1** image + CI + manifest, **1e-2b-2** Garage dan Collector di cluster, SOPS, default deny, **1e-2b-3** retensi dan backup arsip), **1e-3** backfill + kalibrasi. 1e-3 dipecah lagi: **1e-3a** pengisian ulang OpenAQ, replay prakiraan BMKG + OpenAQ, peta pemeriksaan titik sungai, **1e-3b** reanalisis GloFAS → ambang banjir → `hazard.flood.*` (**1e-3b-1** pemilihan sel dari reanalisis; **1e-3b-2a** alat ambang banjir dan ambang indeks hujan 7 sub-DAS; **1e-3b-2b** konektor hujan sub-DAS, ambang di geo-processor, `hazard.flood.*`, bagian ini), **1e-3c** dipecah (ADR 0023): **1e-3c-1a** arsip FIRMS dan laporan kalibrasi titik api, **1e-3c-1b** saringan dan aturan terpilih, `hazard.fire.*` (bagian ini), **1e-3c-2** set berlabel T4 dan radius dirasakan, **1e-3c-3** replay CAP.
 
 ### Fase 1e-3c-1b: saringan sumber panas tetap, aturan tingkat, dan `hazard.fire.*`
 
@@ -46,6 +46,13 @@ Saat consumer baru pertama kali jalan, stream `RAW` dibaca dari awal (7 hari): d
 
 PRD di Project diselaraskan 2026-11-08: baris titik api di tabel tingkat peringatan (Info setiap kejadian di luar sumber panas tetap, Waspada keyakinan tinggi atau ≥ 2 lintasan, Siaga ≥ 5 deteksi dalam 24 jam), paragraf penjelasan saringan dan S-NPP, kedaluwarsa titik api sejak deteksi terakhir diterima, dan baris kalibrasi titik api di Keputusan lanjutan.
 
+### Verifikasi di WSL (1e-3c-1b, 2026-11-09)
+
+- `make check` dan hook lulus; commit `27eb659`, `e9cf754`, `aa177c9`. Migrasi 00008 naik; `make geo` menyelaraskan 139 sumber tetap dan menjalankan consumer `geo-processor-hazard-fire`. `make fire-threshold ARGS=-offline` dari cache WSL identik (hanya baris "Dibuat"). `make archive-maintain` lulus: 12 bagian baru ke B2 (`siaga-cadangan-ac1236`), 9.824 objek lama dihapus setelah dicadangkan.
+- `make test-integration` lulus setelah `9cff71c`: `TestEndToEnd` sebelumnya salah hitung revisi karena dua kejadian gempa nyata di database dev (geo-processor mati sejak ±21 Okt) baru dikedaluwarsakan oleh geo-processor uji; kini hanya `expired` dengan `hazard_id` kejadian uji yang dihitung (gempa dan cuaca), dan `*.expired` jenis lain diterima.
+- CI run #31: Trivy menandai **CVE-2026-78661** (`golang.org/x/net/html`, HIGH, diperbaiki v0.62.0) di binary ingest, geo-processor, import-regions → `golang.org/x/net` v0.62.0 (ikut naik: x/crypto v0.58.0, x/sys v0.49.0, x/text v0.43.0). Job PostgreSQL gagal karena `pg_isready` lewat socket Unix lulus saat server sementara initdb masih hidup, lalu `psql` kena "the database system is shutting down"; pemeriksaan kini lewat TCP (`-h 127.0.0.1`), di CI dan healthcheck Compose.
+- `git push` dari WSL gagal "Could not resolve host" (DNS putus-nyambung, lihat temuan); berhasil dengan `git -c http.curloptResolve=github.com:443:<IP dari getent> push`.
+
 ### Temuan yang perlu ditindaklanjuti (1e-3c-1b)
 
 - **Belum ada area dan wilayah terdampak kejadian titik api**; alert-engine menghitung ≤ 10 km dari daftar deteksi (fase 3). Nama desa/kecamatan untuk judul juga belum ada.
@@ -53,8 +60,10 @@ PRD di Project diselaraskan 2026-11-08: baris titik api di tabel tingkat peringa
 - Pembakaran tebu dan jerami kini menjadi kejadian Info/Waspada (disengaja). Bila terlalu ramai di dekat lokasi pengguna, saringan per kategori lahan bisa dibahas di fase 3.
 - **Jaringan WSL ke FIRMS**: IPv4 WSL ke `198.118.194.34:443` timeout, Windows lewat IPv6. Polling FIRMS di ingest WSL ikut gagal selama itu. Solusi permanen (mode jaringan `mirrored` di `.wslconfig`) bisa mengganggu integrasi Docker Desktop, jadi belum dipakai; dibahas dulu sebelum diubah.
 - Ingest dan geo-processor kemungkinan mati sejak ±21 Okt (celah data kedua). Titik api tertutup arsip NRT hanya untuk kalibrasi; `ts.hotspot` tidak diisi ulang.
-- **Belum dicek** (perlu login): pemakaian bucket B2 dan status Grafana Cloud setelah trial habis.
-- `modcache-pecahan/` di titipan masih berisi `golang.org/x/net` v0.58.0; workspace asisten memakai clone `golang/net` v0.60.0 lewat `replace` di `go.work` sementara. Jalankan `ekspor-modcache.sh` bila sempat.
+- **DNS WSL putus-nyambung** (2026-11-09): `resolv.conf` manual (`1.1.1.1`, `8.8.8.8`, `options use-vc`) kadang tidak menjawab sama sekali, padahal `ping 1.1.1.1` lancar; saat dicek ulang, UDP dan TCP sama-sama berhasil. Bila terulang, jalankan `cek-dns.py` di titipan saat gagal untuk membedakan UDP dan TCP sebelum mengubah apa pun.
+- Mailpit gagal start di `make up` (`ports are not available … 127.0.0.1:1025 … /forwards/expose returned unexpected status: 500`); cek `netsh interface ipv4 show excludedportrange protocol=tcp` di Windows.
+- B2 terbukti aktif (backup 2026-11-09). **Belum dicek** (perlu login): status Grafana Cloud setelah trial habis.
+- `modcache-pecahan/` di titipan masih berisi `golang.org/x/net` v0.58.0; workspace asisten memakai clone `golang/{net,crypto,sys,term,text,sync}` dan `go.mod` x/tools lewat `replace` di `go.work` sementara. Jalankan `ekspor-modcache.sh` setelah `go.mod` x/net v0.62.0 ter-commit.
 
 ### Fase 1e-3c-1a: arsip FIRMS dan laporan kalibrasi titik api
 
