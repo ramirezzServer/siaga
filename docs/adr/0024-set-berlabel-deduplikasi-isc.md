@@ -1,0 +1,40 @@
+# 0024. Set berlabel deduplikasi gempa dari ISC Bulletin
+
+Tanggal: 2026-11-09 · Status: diterima untuk alat dan metode (1e-3c-2a); ambang deduplikasi diputuskan ulang di 1e-3c-2c setelah laporan dari data ISC asli ada
+
+## Konteks
+
+PRD T4 meminta presisi dan recall deduplikasi BMKG–USGS ≥ 99% pada set berlabel dari data historis. ADR 0008 memilih ambang bawaan (≤ 30 dtk, ≤ 100 km, selisih magnitudo ≤ 1,0) dari katalog RepoGempa BMKG × USGS Jawa Barat 2008–2023, tetapi presisinya hanya diukur tidak langsung (uji geser waktu) karena kedua katalog tidak punya label pasangan. ADR 0008 juga mencatat bahwa set berlabel manual akan disusun dari arsip replay di fase 1e.
+
+Yang diukur 2026-11-09 sebelum kode ditulis (catatan sesi di titipan, `catatan-1e-3c-2.md`):
+
+- **Arsip real-time terlalu kecil.** Arsip ingest yang dipulihkan dari B2 (24 Sep–2 Okt dan 20 Okt 2026) berisi 73 gempa BMKG dan 28 gempa USGS di kotak Indonesia, dengan 10 pasangan dalam ≤ 5 menit dan ≤ 300 km. Semuanya lolos ambang bawaan (selisih maks 3,8 dtk, 38 km, 0,4). Untuk 99% dibutuhkan ratusan pasangan, termasuk gempa susulan yang berdekatan.
+- **Solusi USGS di feed real-time Indonesia sudah ditinjau.** Ke-28 gempa USGS pertama terlihat berstatus `reviewed` dan hanya satu yang berganti solusi; jeda kejadian ke terbit 16–20 menit untuk M5, ratusan menit untuk M4,3–4,6. Kekhawatiran ADR 0008 tentang solusi otomatis USGS menit-menit pertama ternyata kecil untuk jalur SIAGA.
+- **ISC Bulletin mengelompokkan origin semua agensi per kejadian.** Layanan FDSN event ISC (`includeallorigins=true`, QuakeML 1.2) memuat origin agensi DJA (BMKG) dan NEIC (USGS) di kejadian ISC yang sama. Q1 2023 (13 minggu): 3.242 kejadian ber-DJA (selalu satu origin DJA per kejadian), 731 ber-NEIC (sebagian dengan 3–7 origin NEIC, misal Mww dan mb di origin berbeda), 601 kejadian ber-NEIC punya DJA, semuanya dalam jendela ≤ 300 dtk/300 km. Satu minggu Indonesia 0,5–5 MB dan dijawab dalam 7–20 detik.
+- **Periode.** Bulletin menyatakan data sejak 2024-11-01 belum ditinjau ISC. Origin DJA ada di kejadian ISC sampai ±Okt 2024 (Agu 2024: 22 dari 33 gempa M4,5+ punya DJA dan NEIC; minggu 7 Nov 2024 masih 13 kejadian ber-DJA, 2025-03, 2025-12, 2026-09: tidak ada). Minggu pertama 2021 berisi 159 kejadian ber-DJA, minggu terakhir Okt 2024 hanya 17, jadi negatif (origin DJA kejadian lain di sekitar NEIC) lebih jarang di akhir periode.
+- **Tipe magnitudo DJA.** Selisih |M_DJA − M_NEIC| pada pasangan Q1 2023 (p50/p95/maks): Mw 0,10/0,37/0,52, MLv 0,26/0,69/1,33, Mjma 0,25/0,64, mb 0,21/0,61, mB 0,60/0,94/1,23. Feed BMKG hanya memberi satu `Magnitude` tanpa tipe.
+- **Hasil awal** (Q1 2023, eksplorasi di browser, cocokkan per NEIC): ambang bawaan recall 98,8%, presisi 99,8%; 30 dtk/120 km/1,0 recall 99,3%, presisi sama; ambang PRD recall 96,3%, presisi 98,8%. Untuk NEIC M ≥ 4,3 ambang bawaan 99,1%/100%. Yang terlewat terutama gempa laut jauh dengan selisih jarak 112–167 km dan selisih magnitudo > 1.
+
+## Keputusan
+
+1. **Label dari ISC Bulletin.** Origin DJA dan NEIC di kejadian ISC yang sama adalah pasangan positif; origin DJA di kejadian ISC lain di dalam jendela kandidat adalah negatif. ISC mengelompokkan origin agensi berdasarkan fase stasiun, bukan ambang jarak-waktu kita, jadi labelnya independen dari aturan yang diuji.
+2. **`make dedup-labels`** (ingest, `cmd/dedup-labels`, pola `fire-threshold`): satu request FDSN event per minggu, 2021-01-01 s.d. 2024-10-31 (200 minggu), kotak Indonesia ingest (−12..7 LU, 94..142 BT), berurutan dengan jeda 2 detik; jawaban disimpan ter-gzip di `.cache/isc/<tahun>/<tanggal>.d<hari>.xml.gz`; `-plan`, `-offline`, `-max-requests`. 204 menjadi minggu kosong; 429/5xx/jaringan/jawaban bukan QuakeML diulang lima kali dengan jeda 30 dtk bertingkat (Retry-After dihormati); galat klien lain berhenti. Kejadian yang terbawa dua minggu dihitung sekali.
+3. **Origin wakil per agensi**: origin yang membawa tipe magnitudo berprioritas tertinggi milik agensi itu sendiri. DJA: Mw > Mwp > MLv > Mjma > mb > mB; NEIC: Mww > Mwc > Mwb > Mwr > mb > Ms_20. Origin tanpa magnitudo berprioritas dilewati (di feed BMKG selalu ada magnitudo). Magnitudo lain origin wakil ikut ditulis (`magnitudo_lain`), supaya pilihan tipe bisa diubah tanpa mengambil ulang.
+4. **Isi set**: origin NEIC wakil M ≥ 4,0 (feed USGS SIAGA M 2,5+, tetapi untuk Indonesia jarang di bawah 4) dan setiap origin DJA wakil dalam ≤ 300 dtk dan ≤ 300 km dari salah satunya (sama dengan `calibrate.Candidate`). Hasilnya `docs/calibration/dedup-berlabel.csv`, dihasilkan, jangan diedit. Kolom: `dasar_label`, `kejadian_label`, `sumber`, `id`, `waktu_utc`, `lintang`, `bujur`, `kedalaman_km`, `magnitudo`, `tipe_magnitudo`, `magnitudo_lain`, `catatan`.
+5. **Pasangan arsip real-time** di `docs/calibration/dedup-arsip.csv` (kolom sama, `dasar_label=arsip`), disusun manual: 10 pasangan, setiap baris USGS menyebut place USGS, selisih, dan alasan bahwa wilayahnya sama dengan Wilayah BMKG. Label dua basis tidak pernah dicampur.
+6. **Pengukuran** (`calibrate-dedup -labels`, geo-processor): untuk setiap origin USGS, positif bila ada BMKG berlabel sama; TP pasangan berlabel sama, FP pasangan berlabel lain, FN positif yang bukan TP; presisi TP/(TP+FP), recall TP/positif. Dua cara:
+   - **Pasangan**: BMKG dengan skor `quake.Rule.Match` terbaik yang lolos ambang lintas sumber.
+   - **Simulasi**: semua origin diputar lewat `quake.Settle` menurut urutan kedatangan (BMKG 3 menit, USGS 20 menit setelah kejadian, dari arsip real-time) dengan kandidat seperti geo-processor (kejadian yang punya anggota dalam jendela maks(lintas sumber, revisi)); pasangannya BMKG yang berlaku di kejadian akhir. Simulasi juga menghitung kejadian yang memuat dua origin satu sumber dari label berbeda (gabungan salah lewat ambang revisi).
+
+   Subset: semua, USGS M ≥ 4,3, USGS M ≥ 4,5, episenter USGS di kotak Jawa Barat (−9..−5,5, 105..109,5). Uji geser ±2–10 menit per 1.000 USGS juga dihitung, sebagai batas bawah karena set hanya memuat DJA di sekitar NEIC. Ambang yang dibandingkan: bawaan, PRD, 120 dan 150 km, 20 dan 60 dtk, magnitudo 0,7 dan 1,3, serta 120 km + 1,3; ambang revisi tetap `DefaultRevisionRule`. Laporan `docs/calibration/dedup-berlabel.md`, dihasilkan.
+
+7. **Ambang layanan belum diubah di 1e-3c-2a.** Keputusan ambang (misal 120 km) diambil di 1e-3c-2c dari laporan data ISC asli, dengan syarat recall naik tanpa menambah FP atau gabungan salah di subset mirip feed (USGS M ≥ 4,3) dan di Jawa Barat. PRD di Project diselaraskan bila ambang berubah.
+8. **Sitasi.** ISC meminta setiap pemakaian data dikutip: International Seismological Centre (2026), On-line Bulletin, https://doi.org/10.31905/D808B830; prosedur lokasi: Bondár dan Storchak (2011), Geophys. J. Int. 186, 1220–1244, doi:10.1111/j.1365-246X.2011.05107.x; pengumpulan data agensi: Willemann dan Storchak (2001), Seis. Res. Lett. 72, 440–453, doi:10.1785/gssrl.72.4.440. Sitasi ada di komentar CSV, laporan, dan README. CSV hanya memuat parameter origin terpilih (waktu, lokasi, kedalaman, magnitudo), bukan bulletin utuh; bila ISC berkeberatan, CSV dikeluarkan dari repo dan dibuat ulang lokal dari cache.
+
+## Konsekuensi
+
+- T4 akhirnya diukur langsung dengan ribuan pasangan dan negatif nyata dari gempa susulan, memakai fungsi domain yang sama dengan layanan (`Rule.Match`, `Settle`).
+- Label ISC mencerminkan solusi final agensi yang dikirim ke ISC, bukan solusi pertama di feed. Arsip real-time menunjukkan USGS Indonesia sudah ditinjau saat terbit; BMKG bisa merevisi, jadi pasangan arsip real-time tetap dikumpulkan selama ingest berjalan dan ditambahkan ke `dedup-arsip.csv`.
+- Origin DJA berkurang menjelang akhir 2024, jadi negatif lebih banyak dari 2021–2023.
+- Workspace asisten dan shell desktop app tidak menjangkau ISC; browser bawaan bisa. Alat dijalankan di WSL; bila WSL juga tidak menjangkau ISC, binary Windows dipakai seperti `fire-threshold.exe` (1e-3c-1a).
+- Radius dirasakan (1e-3c-2b) memakai jalur lain: arsip `gempadirasakan` BMKG dan DYFI USGS.

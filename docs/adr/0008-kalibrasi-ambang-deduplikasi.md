@@ -31,3 +31,5 @@ Keduanya dikunci ke commit di `scripts/fetch-calibration-data.sh`, dan laporan d
 - Recall 98,5% masih di bawah target T4 99%. Sisa yang terlewat adalah pasangan dengan selisih jarak > 100 km atau magnitudo > 1,0; melonggarkan jarak ke 120 km hanya menambah 0,2 poin sambil menaikkan gabungan salah kebetulan. Kalibrasi berikutnya memakai arsip payload real-time ingest (fase 1e), yang mencerminkan solusi otomatis, bukan katalog final.
 - Presisi diukur tidak langsung (uji geser waktu), karena kedua katalog tidak punya label pasangan resmi. Set berlabel manual untuk T4 disusun dari arsip replay di fase 1e.
 - Katalog BMKG yang dipakai berhenti di Januari 2023. Katalog v2 (sampai 2026) hanya tersedia sebagai arsip HTML yang harus diolah skrip Python pihak ketiga; belum dipakai.
+
+Catatan 2026-11-09: set berlabel T4 disusun dari ISC Bulletin (origin DJA dan NEIC per kejadian ISC, 2021–Okt 2024) ditambah pasangan arsip real-time, dan diukur dengan `Rule.Match` dan `Settle` (ADR 0024). Ambang di ADR ini tetap berlaku sampai laporan itu ditinjau di 1e-3c-2c.

@@ -27,6 +27,7 @@ make ingest           # tarik BMKG, USGS, Open-Meteo, OpenAQ, FIRMS ke NATS, ars
 make geo              # gempa + cuaca + banjir → hazard.*, deret waktu → ts.* (status: :8082/status)
 make check            # lint + test
 make calibrate-dedup  # ukur ambang deduplikasi dengan katalog historis BMKG + USGS
+make dedup-labels     # set berlabel T4 dari ISC Bulletin 2021–Okt 2024 (DJA vs NEIC per kejadian ISC) + arsip real-time → presisi/recall ambang deduplikasi (±200 request sekali, lalu dari .cache/isc, ADR 0024)
 make river-snap       # pilih sel GloFAS untuk 38 titik pantau sungai dari reanalisis 2020–2022 (±4.300 panggilan sekali, lalu dari cache), peta cek .cache/titik-sungai.geojson
 make flood-threshold  # ambang banjir 38 titik dari reanalisis GloFAS 1997–2024 + uji banjir tercatat (±3.100 panggilan sekali, lalu dari cache)
 make rain-threshold   # ambang indeks hujan 7 sub-DAS Citarum Hulu dari arsip ECMWF IFS 2017–2024 (±1.000 panggilan sekali)
