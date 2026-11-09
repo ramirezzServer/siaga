@@ -17,6 +17,10 @@ type Box struct {
 // 7,82–5,81 LS) dengan sedikit kelonggaran.
 var JawaBarat = Box{West: 106.3, South: -7.9, East: 108.9, North: -5.7}
 
+// Indonesia adalah kotak pantauan gempa USGS di ingest (quake.InIndonesiaBox)
+// dan batas Validate.
+var Indonesia = Box{West: 94, South: -12, East: 142, North: 7}
+
 // ParseBox membaca "barat,selatan,timur,utara".
 func ParseBox(s string) (Box, error) {
 	parts := strings.Split(s, ",")

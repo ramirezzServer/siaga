@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Potongan jawaban ISC FDSN event (includeallorigins=true, diambil 2026-11-09)
+     untuk test: kejadian ISC 625597758 (8 Jan 2023), 625554142 (15 Jan 2023),
+     625610809 dan 625610810 (gempa susulan 18 Jan 2023), dan 637056312 (hanya DJA).
+     Elemen yang tidak dibaca (quality, originUncertainty, sebagian origin agensi lain)
+     dipangkas. Kejadian smi:SIAGA/evid=uji-* buatan sendiri untuk kasus tepi.
+     Sumber: International Seismological Centre, On-line Bulletin, https://doi.org/10.31905/D808B830 -->
+<q:quakeml xmlns:q="http://quakeml.org/xmlns/quakeml/1.2" xmlns="http://quakeml.org/xmlns/bed/1.2">
+  <eventParameters publicID="smi:ISC/bulletin">
+    <creationInfo>
+      <agencyID>ISC</agencyID>
+      <creationTime>2026-11-09T02:38:51</creationTime>
+    </creationInfo>
+    <description>ISC Bulletin</description>
+    <comment>
+      <text>Data on or after 2024/11/01 have not been reviewed by the ISC.</text>
+    </comment>
+    <event publicID="smi:ISC/evid=625597758">
+      <preferredOriginID>smi:ISC/origid=637484792</preferredOriginID>
+      <description>
+        <text>Halmahera</text>
+        <type>Flinn-Engdahl region</type>
+      </description>
+      <type>earthquake</type>
+      <typeCertainty>suspected</typeCertainty>
+      <comment>
+        <text>Event reviewed by the ISC</text>
+      </comment>
+      <creationInfo>
+        <agencyID>ISC</agencyID>
+        <author>ISC</author>
+      </creationInfo>
+      <origin publicID="smi:ISC/origid=637484792">
+        <time>
+          <value>2023-01-08T20:02:04.96Z</value>
+          <uncertainty>0.55</uncertainty>
+        </time>
+        <latitude>
+          <value>1.5819</value>
+        </latitude>
+        <longitude>
+          <value>128.2781</value>
+        </longitude>
+        <depth>
+          <value>82588.1</value>
+        </depth>
+        <creationInfo>
+          <author>ISC</author>
+          <agencyID>ISC</agencyID>
+        </creationInfo>
+        <evaluationMode>manual</evaluationMode>
+        <evaluationStatus>reviewed</evaluationStatus>
+      </origin>
+      <origin publicID="smi:ISC/origid=619549760">
+        <time>
+          <value>2023-01-08T20:02:04.76Z</value>
+        </time>
+        <latitude>
+          <value>1.5855</value>
+        </latitude>
+        <longitude>
+          <value>128.4161</value>
+        </longitude>
+        <depth>
+          <value>80400.0</value>
+        </depth>
+        <creationInfo>
+          <author>IDC</author>
+          <agencyID>IDC</agencyID>
+        </creationInfo>
+      </origin>
+      <origin publicID="smi:ISC/origid=619770658">
+        <time>
+          <value>2023-01-08T20:02:04.79Z</value>
+          <uncertainty>1.01</uncertainty>
+        </time>
+        <latitude>
+          <value>1.5274</value>
+        </latitude>
+        <longitude>
+          <value>128.2405</value>
+        </longitude>
+        <depth>
+          <value>81611.0</value>
+        </depth>
+        <quality>
+          <usedPhaseCount>28</usedPhaseCount>
+          <standardError>0.5000</standardError>
+        </quality>
+        <creationInfo>
+          <author>NEIC</author>
+          <agencyID>NEIC</agencyID>
+        </creationInfo>
+      </origin>
+      <origin publicID="smi:ISC/origid=631703347">
+        <time>
+          <value>2023-01-08T20:02:05.10Z</value>
+          <uncertainty>0.20</uncertainty>
+        </time>
+        <latitude>
+          <value>1.6000</value>
+        </latitude>
+        <longitude>
+          <value>128.2900</value>
+        </longitude>
+        <depth>
+          <value>63000.0</value>
+        </depth>
+        <creationInfo>
+          <author>DJA</author>
+          <agencyID>DJA</agencyID>
+        </creationInfo>
+      </origin>
+      <magnitude publicID="smi:ISC/magid=645885854">
+        <mag>
+          <value>4.19</value>
+          <uncertainty>0.27</uncertainty>
+        </mag>
+        <type>mb</type>
+        <originID>smi:ISC/origid=637484792</originID>
+        <stationCount>16</stationCount>
+        <stationMagnitudeContribution>
+          <stationMagnitudeID>smi:ISC/ampmagid=748054870</stationMagnitudeID>
+          <weight>1.0</weight>
+        </stationMagnitudeContribution>
+        <creationInfo>
+          <author>ISC</author>
+        </creationInfo>
+      </magnitude>
+      <magnitude publicID="smi:ISC/magid=626000001">
+        <mag>
+          <value>3.70</value>
+        </mag>
+        <type>mb</type>
+        <originID>smi:ISC/origid=619549760</originID>
+        <creationInfo>
+          <author>IDC</author>
+        </creationInfo>
+      </magnitude>
+      <magnitude publicID="smi:ISC/magid=626000002">
+        <mag>
+          <value>4.30</value>
+        </mag>
+        <type>mb</type>
+        <originID>smi:ISC/origid=619770658</originID>
+        <creationInfo>
+          <author>NEIC</author>
+        </creationInfo>
+      </magnitude>
+      <magnitude publicID="smi:ISC/magid=640152200">
+        <mag>
+          <value>4.31</value>
+        </mag>
+        <type>Mjma</type>
+        <originID>smi:ISC/origid=631703347</originID>
+        <creationInfo>
+          <author>DJA</author>
+        </creationInfo>
+      </magnitude>
+      <magnitude publicID="smi:ISC/magid=640152201">
+        <mag>
+          <value>4.38</value>
+        </mag>
+        <type>MLv</type>
+        <originID>smi:ISC/origid=631703347</originID>
+        <creationInfo>
+          <author>DJA</author>
+        </creationInfo>
+      </magnitude>
+      <preferredMagnitudeID>smi:ISC/magid=645885854</preferredMagnitudeID>
+    </event>
+    <event publicID="smi:ISC/evid=625554142">
+      <type>earthquake</type>
+      <origin publicID="smi:ISC/origid=620100001"><time><value>2023-01-15T22:29:58.90Z</value></time><latitude><value>2.0042</value></latitude><longitude><value>98.0141</value></longitude><depth><value>10000.0</value></depth><creationInfo><author>NEIC</author><agencyID>NEIC</agencyID></creationInfo></origin>
+      <origin publicID="smi:ISC/origid=620100002"><time><value>2023-01-15T22:29:58.90Z</value></time><latitude><value>2.0042</value></latitude><longitude><value>98.0141</value></longitude><depth><value>10000.0</value></depth><creationInfo><author>NEIC</author><agencyID>NEIC</agencyID></creationInfo></origin>
+      <origin publicID="smi:ISC/origid=620100003"><time><value>2023-01-15T22:29:58.90Z</value></time><latitude><value>2.0045</value></latitude><longitude><value>98.0143</value></longitude><depth><value>10000.0</value></depth><creationInfo><author>NEIC</author><agencyID>NEIC</agencyID></creationInfo></origin>
+      <origin publicID="smi:ISC/origid=620100004"><time><value>2023-01-15T22:29:58.90Z</value></time><latitude><value>2.0045</value></latitude><longitude><value>98.0143</value></longitude><depth><value>10000.0</value></depth><creationInfo><author>NEIC</author><agencyID>NEIC</agencyID></creationInfo></origin>
+      <origin publicID="smi:ISC/origid=620100005"><time><value>2023-01-15T22:29:58.94Z</value></time><latitude><value>1.9837</value></latitude><longitude><value>97.9979</value></longitude><depth><value>10000.0</value></depth><creationInfo><author>NEIC</author><agencyID>NEIC</agencyID></creationInfo></origin>
+      <origin publicID="smi:ISC/origid=631703500"><time><value>2023-01-15T22:30:03.00Z</value></time><latitude><value>1.9700</value></latitude><longitude><value>97.9100</value></longitude><depth><value>10000.0</value></depth><creationInfo><author>DJA</author><agencyID>DJA</agencyID></creationInfo></origin>
+      <origin publicID="smi:ISC/origid=620100006"><time><value>2023-01-15T22:30:04.10Z</value></time><latitude><value>1.4045</value></latitude><longitude><value>97.6141</value></longitude><creationInfo><author>NEIC</author><agencyID>NEIC</agencyID></creationInfo></origin>
+      <magnitude><mag><value>6.00</value></mag><type>Mwb</type><originID>smi:ISC/origid=620100001</originID><creationInfo><author>NEIC</author></creationInfo></magnitude>
+      <magnitude><mag><value>6.10</value></mag><type>Mwc</type><originID>smi:ISC/origid=620100003</originID><creationInfo><author>NEIC</author></creationInfo></magnitude>
+      <magnitude><mag><value>6.10</value></mag><type>Mww</type><originID>smi:ISC/origid=620100004</originID><creationInfo><author>NEIC</author></creationInfo></magnitude>
+      <magnitude><mag><value>6.10</value></mag><type>mb</type><originID>smi:ISC/origid=620100005</originID><creationInfo><author>NEIC</author></creationInfo></magnitude>
+      <magnitude><mag><value>6.00</value></mag><type>Ms_20</type><originID>smi:ISC/origid=620100005</originID><creationInfo><author>NEIC</author></creationInfo></magnitude>
+      <magnitude><mag><value>6.08</value></mag><type>mb</type><originID>smi:ISC/origid=631703500</originID><creationInfo><author>DJA</author></creationInfo></magnitude>
+      <magnitude><mag><value>6.38</value></mag><type>mB</type><originID>smi:ISC/origid=631703500</originID><creationInfo><author>DJA</author></creationInfo></magnitude>
+      <magnitude><mag><value>6.51</value></mag><type>MLv</type><originID>smi:ISC/origid=631703500</originID><creationInfo><author>DJA</author></creationInfo></magnitude>
+      <magnitude><mag><value>6.16</value></mag><type>Mw</type><originID>smi:ISC/origid=631703500</originID><creationInfo><author>DJA</author></creationInfo></magnitude>
+      <magnitude><mag><value>6.10</value></mag><type>Mwp</type><originID>smi:ISC/origid=631703500</originID><creationInfo><author>DJA</author></creationInfo></magnitude>
+    </event>
+    <event publicID="smi:ISC/evid=625610809">
+      <type>earthquake</type>
+      <origin publicID="smi:ISC/origid=620012961"><time><value>2023-01-18T06:19:13.68Z</value></time><latitude><value>2.8239</value></latitude><longitude><value>127.0179</value></longitude><depth><value>35000.0</value></depth><creationInfo><author>NEIC</author><agencyID>NEIC</agencyID></creationInfo></origin>
+      <origin publicID="smi:ISC/origid=631703691"><time><value>2023-01-18T06:19:14.50Z</value></time><latitude><value>2.8200</value></latitude><longitude><value>127.1000</value></longitude><depth><value>28000.0</value></depth><creationInfo><author>DJA</author><agencyID>DJA</agencyID></creationInfo></origin>
+      <magnitude><mag><value>5.10</value></mag><type>mb</type><originID>smi:ISC/origid=620012961</originID><creationInfo><author>NEIC</author></creationInfo></magnitude>
+      <magnitude><mag><value>5.37</value></mag><type>mb</type><originID>smi:ISC/origid=631703691</originID><creationInfo><author>DJA</author></creationInfo></magnitude>
+      <magnitude><mag><value>6.04</value></mag><type>Mjma</type><originID>smi:ISC/origid=631703691</originID><creationInfo><author>DJA</author></creationInfo></magnitude>
+      <magnitude><mag><value>5.52</value></mag><type>MLv</type><originID>smi:ISC/origid=631703691</originID><creationInfo><author>DJA</author></creationInfo></magnitude>
+    </event>
+    <event publicID="smi:ISC/evid=625610810">
+      <type>earthquake</type>
+      <origin publicID="smi:ISC/origid=620012962"><time><value>2023-01-18T06:21:53.43Z</value></time><latitude><value>2.5854</value></latitude><longitude><value>126.9129</value></longitude><depth><value>55297.0</value></depth><creationInfo><author>NEIC</author><agencyID>NEIC</agencyID></creationInfo></origin>
+      <origin publicID="smi:ISC/origid=631703690"><time><value>2023-01-18T06:21:52.90Z</value></time><latitude><value>2.8300</value></latitude><longitude><value>127.1100</value></longitude><depth><value>24000.0</value></depth><creationInfo><author>DJA</author><agencyID>DJA</agencyID></creationInfo></origin>
+      <magnitude><mag><value>4.40</value></mag><type>mb</type><originID>smi:ISC/origid=620012962</originID><creationInfo><author>NEIC</author></creationInfo></magnitude>
+      <magnitude><mag><value>5.54</value></mag><type>Mjma</type><originID>smi:ISC/origid=631703690</originID><creationInfo><author>DJA</author></creationInfo></magnitude>
+      <magnitude><mag><value>4.65</value></mag><type>MLv</type><originID>smi:ISC/origid=631703690</originID><creationInfo><author>DJA</author></creationInfo></magnitude>
+    </event>
+    <event publicID="smi:ISC/evid=637056312">
+      <type>earthquake</type>
+      <origin publicID="smi:ISC/origid=631703319"><time><value>2023-01-08T00:40:31.90Z</value></time><latitude><value>-8.2500</value></latitude><longitude><value>115.5100</value></longitude><depth><value>11000.0</value></depth><creationInfo><author>DJA</author><agencyID>DJA</agencyID></creationInfo></origin>
+      <magnitude><mag><value>3.58</value></mag><type>Mjma</type><originID>smi:ISC/origid=631703319</originID><creationInfo><author>DJA</author></creationInfo></magnitude>
+      <magnitude><mag><value>3.63</value></mag><type>MLv</type><originID>smi:ISC/origid=631703319</originID><creationInfo><author>DJA</author></creationInfo></magnitude>
+    </event>
+    <event publicID="smi:SIAGA/evid=uji-kecil">
+      <type>earthquake</type>
+      <origin publicID="smi:SIAGA/origid=uji-kecil-neic"><time><value>2023-01-18T10:00:00.00Z</value></time><latitude><value>-7.0</value></latitude><longitude><value>107.0</value></longitude><creationInfo><author>NEIC</author><agencyID>NEIC</agencyID></creationInfo></origin>
+      <origin publicID="smi:SIAGA/origid=uji-kecil-dja"><time><value>2023-01-18T10:00:02.00Z</value></time><latitude><value>-7.1</value></latitude><longitude><value>107.1</value></longitude><creationInfo><author>DJA</author><agencyID>DJA</agencyID></creationInfo></origin>
+      <magnitude><mag><value>3.90</value></mag><type>mb</type><originID>smi:SIAGA/origid=uji-kecil-neic</originID><creationInfo><author>NEIC</author></creationInfo></magnitude>
+    </event>
+  </eventParameters>
+</q:quakeml>
