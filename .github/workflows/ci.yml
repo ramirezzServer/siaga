@@ -122,6 +122,8 @@ jobs:
           fz ./internal/domain/threshold FuzzLevel
           fz ./internal/domain/firecluster FuzzClusterLinked
           fz ./internal/domain/firecluster FuzzEvaluateMonotone
+          fz ./internal/adapters/quakeml FuzzParse
+          fz ./internal/domain/quakelabel FuzzBuildOrderIndependent
           cd ../../libs/go/platform
           fz ./otelx FuzzValidTraceParent
 

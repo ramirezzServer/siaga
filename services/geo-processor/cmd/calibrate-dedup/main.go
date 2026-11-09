@@ -2,8 +2,10 @@
 // terhadap katalog historis dan menulis laporannya sebagai Markdown.
 //
 //	calibrate-dedup -bmkg katalog_gempa.csv -usgs a.csv,b.csv -out docs/calibration/dedup-gempa.md
+//	calibrate-dedup -labels dedup-berlabel.csv,dedup-arsip.csv -out docs/calibration/dedup-berlabel.md
 //
-// Data diunduh dengan scripts/fetch-calibration-data.sh (make calibrate-dedup).
+// Katalog diunduh dengan scripts/fetch-calibration-data.sh (make
+// calibrate-dedup). Set berlabel ISC dibuat make dedup-labels (ADR 0024).
 package main
 
 import (
@@ -55,12 +57,19 @@ func run(args []string, stdout io.Writer) error {
 		toFlag    = fs.String("to", "", "akhir periode YYYY-MM-DD, eksklusif (default: akhir tumpang tindih)")
 		out       = fs.String("out", "", "file Markdown keluaran (default: stdout)")
 		misses    = fs.Int("misses", 15, "jumlah contoh gempa terlewat")
+		labels    = fs.String("labels", "", "set berlabel (CSV dedup-labels), dipisah koma; menggantikan -bmkg/-usgs")
 	)
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
+	if *labels != "" {
+		if *bmkgFiles != "" || *usgsFiles != "" {
+			return errors.New("-labels tidak bisa digabung dengan -bmkg/-usgs")
+		}
+		return runLabels(*labels, *out, *misses, stdout)
+	}
 	if *bmkgFiles == "" || *usgsFiles == "" {
-		return errors.New("-bmkg dan -usgs wajib diisi")
+		return errors.New("-bmkg dan -usgs (atau -labels) wajib diisi")
 	}
 	box, err := parseBox(*boxFlag)
 	if err != nil {
@@ -86,11 +95,39 @@ func run(args []string, stdout io.Writer) error {
 		BMKGSources: names(*bmkgFiles), USGSSources: names(*usgsFiles),
 		Command: "make calibrate-dedup",
 	})
-	if *out == "" {
-		_, err = io.WriteString(stdout, md)
+	return write(*out, md, stdout)
+}
+
+func runLabels(list, out string, misses int, stdout io.Writer) error {
+	var rows []ports.LabeledOrigin
+	for _, path := range strings.Split(list, ",") {
+		path = strings.TrimSpace(path)
+		f, err := os.Open(filepath.Clean(path))
+		if err != nil {
+			return err
+		}
+		rs, err := catalog.ReadLabels(f)
+		_ = f.Close()
+		if err != nil {
+			return fmt.Errorf("%s: %w", path, err)
+		}
+		fmt.Fprintf(os.Stderr, "%s: %d origin berlabel\n", path, len(rs))
+		rows = append(rows, rs...)
+	}
+	rep, err := calibrate.EvaluateLabels(rows, calibrate.DefaultLabelRules(), calibrate.DefaultSubsets(), misses)
+	if err != nil {
 		return err
 	}
-	return os.WriteFile(*out, []byte(md), 0o644) //nolint:gosec // laporan publik untuk repo, bukan rahasia
+	md := calibrate.LabelMarkdown(rep, calibrate.LabelMeta{Sources: names(list), Command: "make dedup-labels"})
+	return write(out, md, stdout)
+}
+
+func write(out, md string, stdout io.Writer) error {
+	if out == "" {
+		_, err := io.WriteString(stdout, md)
+		return err
+	}
+	return os.WriteFile(out, []byte(md), 0o644) //nolint:gosec // laporan publik untuk repo, bukan rahasia
 }
 
 func load(list string, read func(io.Reader) ([]ports.CatalogEvent, int, error)) ([]ports.CatalogEvent, error) {

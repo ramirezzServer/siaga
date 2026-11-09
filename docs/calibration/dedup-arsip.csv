@@ -1,0 +1,24 @@
+# Pasangan BMKG–USGS dari arsip payload real-time ingest (24 Sep–2 Okt dan 20 Okt 2026), diberi label manual (ADR 0024).
+# Diedit manual: setiap pasangan dicek dengan membandingkan Wilayah BMKG dan place USGS; alasan di kolom catatan.
+# Kandidat: semua gempa USGS di kotak Indonesia yang punya gempa BMKG <= 5 menit dan <= 300 km (10 dari 28 gempa USGS; tiap USGS hanya punya satu kandidat).
+dasar_label,kejadian_label,sumber,id,waktu_utc,lintang,bujur,kedalaman_km,magnitudo,tipe_magnitudo,magnitudo_lain,catatan
+arsip,arsip-01,bmkg,20260924002635,2026-09-24T00:26:35Z,-1.60,138.93,10.0,4.3,,,Wilayah: 36 km timur laut Sarmi
+arsip,arsip-01,usgs,us6000tx7g,2026-09-24T00:26:38.374Z,-1.8133,138.7809,35.0,4.6,mb,,"place: 223 km WNW of Abepura, Indonesia; sama: pesisir utara Papua (Sarmi vs barat laut Abepura); selisih 3,4 dtk, 28,9 km, M 0,3"
+arsip,arsip-02,bmkg,20260924033028,2026-09-24T03:30:28Z,-8.32,119.25,12.0,4.6,,,Wilayah: 57 km timur Kota Bima
+arsip,arsip-02,usgs,us6000tx8q,2026-09-24T03:30:26.013Z,-8.3300,119.3665,10.0,4.5,mb,,"place: 31 km NNW of Komodo, Indonesia; sama: Selat Sape (timur Bima vs utara Komodo); selisih 2,0 dtk, 12,9 km, M 0,1"
+arsip,arsip-03,bmkg,20260925134730,2026-09-25T13:47:30Z,-7.04,105.22,10.0,4.7,,,Wilayah: 58 km barat daya Sumur
+arsip,arsip-03,usgs,us6000txkc,2026-09-25T13:47:26.836Z,-6.9267,105.3554,10.0,4.7,mb,,"place: 80 km SW of Labuan, Indonesia; sama: Samudra Hindia barat daya Banten (Sumur vs Labuan); selisih 3,2 dtk, 19,5 km, M 0,0"
+arsip,arsip-04,bmkg,20260925193929,2026-09-25T19:39:29Z,-8.23,120.31,9.0,4.9,,,Wilayah: 46 km utara Ruteng-Manggarai
+arsip,arsip-04,usgs,us6000txnq,2026-09-25T19:39:29.552Z,-8.2281,120.4296,14.5,4.8,mb,,"place: 42 km N of Ruteng, Indonesia; sama: laut utara Ruteng (keduanya menyebut Ruteng); selisih 0,6 dtk, 13,2 km, M 0,1"
+arsip,arsip-05,bmkg,20260926193702,2026-09-26T19:37:02Z,-8.10,120.28,10.0,4.9,,,"Wilayah: 61 km utara Ruteng, Manggarai"
+arsip,arsip-05,usgs,us6000txur,2026-09-26T19:37:01.212Z,-8.1581,120.3294,10.0,5.0,mb,,"place: 52 km NNW of Ruteng, Indonesia; sama: laut utara Ruteng (keduanya menyebut Ruteng); selisih 0,8 dtk, 8,4 km, M 0,1"
+arsip,arsip-06,bmkg,20260930023554,2026-09-30T02:35:54Z,4.84,95.14,5.0,4.1,,,Wilayah: 54 km barat laut Calang-Aceh Jaya
+arsip,arsip-06,usgs,us6000tyh0,2026-09-30T02:35:50.369Z,4.6488,94.8515,33.9,4.5,mb,,"place: 112 km SSW of Banda Aceh, Indonesia; sama: laut barat Aceh (barat laut Calang vs barat daya Banda Aceh); selisih 3,6 dtk, 38,4 km, M 0,4"
+arsip,arsip-07,bmkg,20260930105851,2026-09-30T10:58:51Z,-10.02,123.65,10.0,4.7,,,Wilayah: 26 km Barat Kab. Kupang
+arsip,arsip-07,usgs,us6000tyjb,2026-09-30T10:58:50.586Z,-9.9243,123.6462,19.4,5.0,mb,,"place: 27 km N of Kupang, Indonesia; sama: Teluk Kupang (keduanya menyebut Kupang); selisih 0,4 dtk, 10,6 km, M 0,3"
+arsip,arsip-08,bmkg,20261001142000,2026-10-01T14:20:00Z,-7.07,120.80,10.0,5.1,,,Wilayah: 111 km Tenggara SELAYAR-SULSEL
+arsip,arsip-08,usgs,us6000tyua,2026-10-01T14:19:59.078Z,-7.0805,120.9136,10.0,5.0,mb,,"place: 176 km NNE of Ruteng, Indonesia; sama: Laut Flores antara Selayar dan Flores (tenggara Selayar vs utara Ruteng); selisih 0,9 dtk, 12,6 km, M 0,1"
+arsip,arsip-09,bmkg,20261002064810,2026-10-02T06:48:10Z,-8.00,120.88,17.0,4.3,,,Wilayah: 82 km Timur Laut RUTENG-MANGGARAI-NTT
+arsip,arsip-09,usgs,us6000tyzy,2026-10-02T06:48:06.954Z,-7.9511,121.0985,10.0,4.5,mb,,"place: 101 km NE of Ruteng, Indonesia; sama: laut timur laut Ruteng (keduanya menyebut Ruteng); selisih 3,0 dtk, 24,7 km, M 0,2"
+arsip,arsip-10,bmkg,20261020162935,2026-10-20T16:29:35Z,3.79,95.72,74.0,5.4,,,Wilayah: 59 km BaratDaya MEULABOH-ACEHBARAT
+arsip,arsip-10,usgs,us6000u3nc,2026-10-20T16:29:38.818Z,4.0005,95.9930,75.9,5.0,mww,,"place: 21 km SW of Meulaboh, Indonesia; sama: barat daya Meulaboh (keduanya menyebut Meulaboh, kedalaman 74 vs 76 km); selisih 3,8 dtk, 38,3 km, M 0,4"

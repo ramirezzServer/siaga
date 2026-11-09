@@ -51,3 +51,40 @@ func TestRunWritesReport(t *testing.T) {
 		}
 	}
 }
+
+func TestRunLabels(t *testing.T) {
+	dir := t.TempDir()
+	labels := filepath.Join(dir, "berlabel.csv")
+	head := "# komentar\ndasar_label,kejadian_label,sumber,id,waktu_utc,lintang,bujur,kedalaman_km,magnitudo,tipe_magnitudo,magnitudo_lain,catatan\n"
+	if err := os.WriteFile(labels, []byte(head+
+		"isc,1,bmkg,b1,2023-01-18T06:19:14.50Z,2.82,127.1,28,5.5,MLv,,\n"+
+		"isc,1,usgs,u1,2023-01-18T06:19:13.68Z,2.8239,127.0179,35,5.1,mb,,\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	arsip := "../../../../docs/calibration/dedup-arsip.csv"
+	md := filepath.Join(dir, "laporan.md")
+	if err := run([]string{"-labels", labels + "," + arsip, "-out", md}, &bytes.Buffer{}); err != nil {
+		t.Fatal(err)
+	}
+	b, err := os.ReadFile(filepath.Clean(md))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Contains(b, []byte("## Basis `isc`")) || !bytes.Contains(b, []byte("## Basis `arsip`")) || !bytes.Contains(b, []byte("dedup-arsip.csv` (sha256")) {
+		t.Fatalf("laporan:\n%s", b)
+	}
+	var out bytes.Buffer
+	if err := run([]string{"-labels", labels}, &out); err != nil || !strings.Contains(out.String(), "Basis `isc`") {
+		t.Fatalf("stdout: %v\n%s", err, out.String())
+	}
+	for _, args := range [][]string{
+		{"-labels", labels, "-bmkg", labels},
+		{"-labels", filepath.Join(dir, "tidak-ada.csv")},
+		{"-labels", labels + "," + labels},
+		{"-labels", md},
+	} {
+		if err := run(args, &out); err == nil {
+			t.Errorf("%v seharusnya gagal", args)
+		}
+	}
+}

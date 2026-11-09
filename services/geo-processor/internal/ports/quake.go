@@ -133,3 +133,18 @@ type CatalogEvent struct {
 	ID string
 	quake.Origin
 }
+
+// LabeledOrigin adalah satu origin di set berlabel deduplikasi (PRD T4,
+// ADR 0024): origin BMKG dan USGS yang Label-nya sama adalah kejadian yang
+// sama. Basis membedakan label ISC Bulletin ("isc") dari label manual arsip
+// real-time ("arsip"); label hanya dibandingkan di dalam satu basis.
+type LabeledOrigin struct {
+	Basis string
+	Label string
+	Key   quake.IdentityKey
+	quake.Origin
+	// DepthKm NaN bila tidak dilaporkan.
+	DepthKm       float64
+	MagnitudeType string
+	Note          string
+}
