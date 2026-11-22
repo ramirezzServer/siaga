@@ -69,6 +69,26 @@ func (c *QuakeConnector) Request() ports.Request {
 // Parse membaca payload. Satu gempa yang rusak menjadi Rejection; payload yang
 // strukturnya berubah menjadi galat supaya kegagalan sumber cepat terlihat.
 func (c *QuakeConnector) Parse(body []byte, fetchedAt time.Time) ([]ports.Event, []ports.Rejection, error) {
+	reports, rejected, err := ParseQuakeReports(body, c.feed, fetchedAt)
+	if err != nil {
+		return nil, nil, err
+	}
+	var events []ports.Event
+	for _, rep := range reports {
+		ev, err := rawpb.NewQuakeEvent(rep)
+		if err != nil {
+			rejected = append(rejected, ports.Rejection{Key: rep.EventID, Reason: err})
+			continue
+		}
+		events = append(events, ev)
+	}
+	return events, rejected, nil
+}
+
+// ParseQuakeReports membaca payload feed gempa BMKG menjadi laporan domain
+// yang sudah lolos Validate, dipakai juga alat kalibrasi (felt-data) yang
+// membaca arsip. Aturannya sama dengan Parse.
+func ParseQuakeReports(body []byte, feed quake.Feed, fetchedAt time.Time) ([]quake.Report, []ports.Rejection, error) {
 	var doc struct {
 		Infogempa *struct {
 			Gempa json.RawMessage `json:"gempa"`
@@ -96,12 +116,12 @@ func (c *QuakeConnector) Parse(body []byte, fetchedAt time.Time) ([]ports.Event,
 		return nil, nil, fmt.Errorf("%w: Infogempa.gempa bukan objek atau daftar", ErrStructure)
 	}
 
-	var events []ports.Event
+	var reports []quake.Report
 	var rejected []ports.Rejection
 	seen := map[string]bool{}
 	for i, r := range records {
 		key := fmt.Sprintf("#%d %s", i, r.DateTime)
-		rep, err := r.toReport(c.feed)
+		rep, err := r.toReport(feed)
 		if err == nil {
 			err = rep.Validate(fetchedAt)
 		}
@@ -113,14 +133,9 @@ func (c *QuakeConnector) Parse(body []byte, fetchedAt time.Time) ([]ports.Event,
 			continue
 		}
 		seen[rep.EventID] = true
-		ev, err := rawpb.NewQuakeEvent(rep)
-		if err != nil {
-			rejected = append(rejected, ports.Rejection{Key: key, Reason: err})
-			continue
-		}
-		events = append(events, ev)
+		reports = append(reports, rep)
 	}
-	return events, rejected, nil
+	return reports, rejected, nil
 }
 
 // text menerima string, angka, atau null dari JSON, supaya perubahan kecil
