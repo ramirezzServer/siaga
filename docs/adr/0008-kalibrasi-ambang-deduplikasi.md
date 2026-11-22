@@ -1,6 +1,6 @@
 # 0008. Ambang deduplikasi gempa hasil kalibrasi
 
-Tanggal: 2026-09-24 · Status: diterima
+Tanggal: 2026-09-24 · Status: diterima; ambang lintas sumber diganti ADR 0025 (2026-11-22), ambang revisi tetap
 
 ## Konteks
 
@@ -33,3 +33,5 @@ Keduanya dikunci ke commit di `scripts/fetch-calibration-data.sh`, dan laporan d
 - Katalog BMKG yang dipakai berhenti di Januari 2023. Katalog v2 (sampai 2026) hanya tersedia sebagai arsip HTML yang harus diolah skrip Python pihak ketiga; belum dipakai.
 
 Catatan 2026-11-09: set berlabel T4 disusun dari ISC Bulletin (origin DJA dan NEIC per kejadian ISC, 2021–Okt 2024) ditambah pasangan arsip real-time, dan diukur dengan `Rule.Match` dan `Settle` (ADR 0024). Ambang di ADR ini tetap berlaku sampai laporan itu ditinjau di 1e-3c-2c.
+
+Catatan 2026-11-22: ambang lintas sumber diganti ≤ 20 dtk (≤ 60 dtk bila salah satu origin M ≥ 6), ≤ 150 km, ≤ 1,3 (ADR 0025). Di katalog ini recall naik 98,5% → 99,1% dengan gabungan salah yang sama (0,20 jam, 1,71 menit per 1.000). Alasan ADR ini menolak 20 dtk (solusi otomatis USGS) tidak berlaku untuk feed Indonesia (ADR 0024). Ambang lama tersimpan sebagai `quake.ADR0008CrossSourceRule`.
