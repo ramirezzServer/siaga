@@ -2,9 +2,9 @@
 
 Dokumen ini adalah titik lanjut untuk sesi kerja berikutnya, termasuk chat baru dengan asisten AI. Perbarui setiap akhir sesi.
 
-## Status: Fase 1e-3c-3 dititipkan (2026-11-22); berikutnya verifikasi di WSL
+## Status: Fase 1e-3c-3 terverifikasi di WSL (2026-11-22); berikutnya fix dokumen CAP basi
 
-Fase 0 sampai 1e-3c-2b ter-commit dan terverifikasi; `main` di `7e35256` (catatan verifikasi 1e-3c-2b), CI hijau semua. Fase 1e-3c-3 (replay CAP, ADR 0027) dititipkan sebagai `terapkan-fase-1e-3c-3.sh`. Fase 1e dipecah: **1e-1** arsip Garage + replay, **1e-2a** OpenTelemetry + dashboard, **1e-2b** deploy (**1e-2b-1** image + CI + manifest, **1e-2b-2** Garage dan Collector di cluster, SOPS, default deny, **1e-2b-3** retensi dan backup arsip), **1e-3** backfill + kalibrasi. 1e-3 dipecah lagi: **1e-3a** pengisian ulang OpenAQ, replay prakiraan BMKG + OpenAQ, peta pemeriksaan titik sungai, **1e-3b** reanalisis GloFAS → ambang banjir → `hazard.flood.*` (**1e-3b-1** pemilihan sel dari reanalisis; **1e-3b-2a** alat ambang banjir dan ambang indeks hujan 7 sub-DAS; **1e-3b-2b** konektor hujan sub-DAS, ambang di geo-processor, `hazard.flood.*`), **1e-3c** dipecah (ADR 0023): **1e-3c-1a** arsip FIRMS dan laporan kalibrasi titik api, **1e-3c-1b** saringan dan aturan terpilih, `hazard.fire.*`, **1e-3c-2** set berlabel T4 dan radius dirasakan (ADR 0024: **1e-3c-2a** alat dan set berlabel T4 dari ISC Bulletin; **1e-3c-2c** keputusan ambang, ADR 0025; **1e-3c-2b** radius dirasakan, ADR 0026), **1e-3c-3** replay CAP.
+Fase 0 sampai 1e-3c-3 ter-commit dan terverifikasi; `main` di `5265daf` (ADR 0027). Replay penuh arsip CAP menemukan dokumen basi (file CAP belum ditimpa saat entri RSS baru muncul) yang membuat Poller menerbitkan ulang pesan lama dan melewatkan pesan baru; perbaikannya berikutnya. Fase 1e dipecah: **1e-1** arsip Garage + replay, **1e-2a** OpenTelemetry + dashboard, **1e-2b** deploy (**1e-2b-1** image + CI + manifest, **1e-2b-2** Garage dan Collector di cluster, SOPS, default deny, **1e-2b-3** retensi dan backup arsip), **1e-3** backfill + kalibrasi. 1e-3 dipecah lagi: **1e-3a** pengisian ulang OpenAQ, replay prakiraan BMKG + OpenAQ, peta pemeriksaan titik sungai, **1e-3b** reanalisis GloFAS → ambang banjir → `hazard.flood.*` (**1e-3b-1** pemilihan sel dari reanalisis; **1e-3b-2a** alat ambang banjir dan ambang indeks hujan 7 sub-DAS; **1e-3b-2b** konektor hujan sub-DAS, ambang di geo-processor, `hazard.flood.*`), **1e-3c** dipecah (ADR 0023): **1e-3c-1a** arsip FIRMS dan laporan kalibrasi titik api, **1e-3c-1b** saringan dan aturan terpilih, `hazard.fire.*`, **1e-3c-2** set berlabel T4 dan radius dirasakan (ADR 0024: **1e-3c-2a** alat dan set berlabel T4 dari ISC Bulletin; **1e-3c-2c** keputusan ambang, ADR 0025; **1e-3c-2b** radius dirasakan, ADR 0026), **1e-3c-3** replay CAP.
 
 ### Fase 1e-3c-3: replay CAP dan pembanding replay dengan stream RAW
 
@@ -32,9 +32,15 @@ make replay FROM=2026-11-17 CONNECTORS=bmkg-cap ARGS="-compare raw.weather.bmkg"
 
 Yang dilaporkan: tabel kedua perintah (baris `bmkg-cap`: payload, event, ditolak, rusak, gagal parse; baris `raw.weather.bmkg`: replay, stream, cocok) dan baris contoh di bawahnya. "Hanya stream" wajar untuk pesan yang terbit saat arsip gagal ditulis; "hanya replay" berarti replay berbeda dengan polling dan perlu dilaporkan beserta contohnya.
 
+### Verifikasi di WSL (1e-3c-3, 2026-11-22)
+
+- `terapkan-fase-1e-3c-3.sh`: `make check` dan hook lulus; commit `4ea8eec`, `5265daf`, di-push. Ingest jalan lagi sejak 22 Nov ±14.05 WIB.
+- `make replay CONNECTORS=bmkg-cap ARGS="-publish=false -strict"` (arsip Garage sejak 25 Sep): 447 payload, 50 event, 7 ditolak, 0 rusak, 0 gagal parse. Yang ditolak: 3 entri RSS ber-`guid` ganda (RSS 27 Sep, ditolak `ParseFeed` di polling maupun replay) dan 4 dokumen di tengah arsip (27 Sep 12.01 UTC dan 20 Okt 12.18 UTC) yang identifier-nya sudah keluar dari RSS terakhir.
+- `make replay FROM=… CONNECTORS=bmkg-cap ARGS="-compare raw.weather.bmkg"` untuk 22 Nov 14.05–22.20 WIB: replay 10, stream 10, cocok 10.
+
 ### Temuan yang perlu ditindaklanjuti (1e-3c-3)
 
-- Arsip penuh sejak 25 Sep belum pernah diputar dengan feed CAP; perintah pertama di atas memastikan semua payload `bmkg-cap` terbaca. Penolakan `ErrNoContext` di awal arsip (dokumen sebelum RSS pertama) wajar; di tengah arsip berarti `guid` ≠ `identifier` dan perlu dilaporkan.
+- **Dokumen CAP basi.** Keempat dokumen 27 Sep/20 Okt bukan `guid` ≠ `identifier` secara umum: BMKG sudah mengganti entrinya di RSS dengan pesan baru yang menautkan file yang sama, tetapi file itu masih berisi pesan lama. Poller memakai dokumen itu tanpa memeriksa identifier, menerbitkan ulang isi pesan lama, lalu menganggap entri baru selesai, jadi pesan barunya tidak diambil lagi sampai entrinya berubah atau ingest dijalankan ulang. Perlu fix Poller dan pemeriksaan apakah pesan 27 Sep/20 Okt akhirnya terbit.
 - `make replay FROM=…` yang menerbitkan (bukan `-compare`) bisa menolak dokumen pertama bila RSS terakhir diarsipkan sebelum `FROM`; mulai satu hari lebih awal, pesan yang sudah ada ditolak broker sebagai duplikat.
 - Urutan pesan antarperingatan dalam satu detik tidak bisa diketahui dari kunci arsip (ADR 0027). Tidak berpengaruh ke geo-processor (rantai pesan CAP per identifier).
 
@@ -715,7 +721,7 @@ Target demo fase 1: dashboard Grafana berisi data live semua sumber.
 - [x] **1e-3c-2a** `make dedup-labels`: set berlabel T4 dari ISC Bulletin 2021–Okt 2024 (DJA vs NEIC per kejadian ISC) + 10 pasangan arsip real-time, presisi/recall dengan `Rule.Match` dan simulasi `Settle` (ADR 0024). Terverifikasi di WSL; CI hijau (`212f156`).
 - [x] **1e-3c-2c** Ambang lintas sumber 20 dtk (60 dtk untuk M ≥ 6), 150 km, 1,3 dari set berlabel ISC: recall 99,7%, presisi 99,9%; laporan dengan semua FP dan pembanding satu parameter (ADR 0025), PRD diselaraskan. Terverifikasi di WSL (`4a99e85`).
 - [x] **1e-3c-2b** Radius dirasakan R = 10^(0,35M + 0,46) dari arsip `gempadirasakan` BMKG (gazetir Kemendagri semua tingkat, jarak ke tepi wilayah) dan DYFI USGS sebagai pemeriksa, `make felt-radius` (ADR 0026). Terverifikasi di WSL (`a6aef0f`).
-- [ ] **1e-3c-3** Replay CAP: RSS, dokumen id, dan terjemahan dipasangkan lagi (`identifier` = `guid`, jendela terjemahan 1 menit) menjadi pesan yang sama dengan polling, diuji bolak-balik dengan Poller asli; `replay -compare` membandingkan ID pesan replay dengan stream RAW (ADR 0027). Dititipkan, menunggu verifikasi WSL.
+- [x] **1e-3c-3** Replay CAP: RSS, dokumen id, dan terjemahan dipasangkan lagi (`identifier` = `guid`, jendela terjemahan 1 menit) menjadi pesan yang sama dengan polling, diuji bolak-balik dengan Poller asli; `replay -compare` membandingkan ID pesan replay dengan stream RAW (ADR 0027). Terverifikasi di WSL (`5265daf`): arsip penuh 447 payload terbaca, `-compare` 22 Nov cocok 10/10.
 
 Catatan tertunda (dari sesi 28 Sep, di luar fase):
 
