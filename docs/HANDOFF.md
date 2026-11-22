@@ -2,9 +2,35 @@
 
 Dokumen ini adalah titik lanjut untuk sesi kerja berikutnya, termasuk chat baru dengan asisten AI. Perbarui setiap akhir sesi.
 
-## Status: Fase 1e-3c-3 terverifikasi di WSL (2026-11-22); berikutnya fix dokumen CAP basi
+## Status: Fix dokumen CAP basi dititipkan (2026-11-22); berikutnya verifikasi di WSL
 
-Fase 0 sampai 1e-3c-3 ter-commit dan terverifikasi; `main` di `5265daf` (ADR 0027). Replay penuh arsip CAP menemukan dokumen basi (file CAP belum ditimpa saat entri RSS baru muncul) yang membuat Poller menerbitkan ulang pesan lama dan melewatkan pesan baru; perbaikannya berikutnya. Fase 1e dipecah: **1e-1** arsip Garage + replay, **1e-2a** OpenTelemetry + dashboard, **1e-2b** deploy (**1e-2b-1** image + CI + manifest, **1e-2b-2** Garage dan Collector di cluster, SOPS, default deny, **1e-2b-3** retensi dan backup arsip), **1e-3** backfill + kalibrasi. 1e-3 dipecah lagi: **1e-3a** pengisian ulang OpenAQ, replay prakiraan BMKG + OpenAQ, peta pemeriksaan titik sungai, **1e-3b** reanalisis GloFAS → ambang banjir → `hazard.flood.*` (**1e-3b-1** pemilihan sel dari reanalisis; **1e-3b-2a** alat ambang banjir dan ambang indeks hujan 7 sub-DAS; **1e-3b-2b** konektor hujan sub-DAS, ambang di geo-processor, `hazard.flood.*`), **1e-3c** dipecah (ADR 0023): **1e-3c-1a** arsip FIRMS dan laporan kalibrasi titik api, **1e-3c-1b** saringan dan aturan terpilih, `hazard.fire.*`, **1e-3c-2** set berlabel T4 dan radius dirasakan (ADR 0024: **1e-3c-2a** alat dan set berlabel T4 dari ISC Bulletin; **1e-3c-2c** keputusan ambang, ADR 0025; **1e-3c-2b** radius dirasakan, ADR 0026), **1e-3c-3** replay CAP.
+Fase 0 sampai 1e-3c-3 ter-commit dan terverifikasi; `main` di catatan verifikasi 1e-3c-3 (di atas `5265daf`, ADR 0027). Replay penuh arsip CAP menemukan dokumen basi (file CAP belum ditimpa saat entri RSS baru muncul) yang membuat Poller menerbitkan ulang pesan lama dan melewatkan pesan baru; fix-nya (ADR 0028) dititipkan sebagai `terapkan-fix-cap-basi.sh`. Fase 1e dipecah: **1e-1** arsip Garage + replay, **1e-2a** OpenTelemetry + dashboard, **1e-2b** deploy (**1e-2b-1** image + CI + manifest, **1e-2b-2** Garage dan Collector di cluster, SOPS, default deny, **1e-2b-3** retensi dan backup arsip), **1e-3** backfill + kalibrasi. 1e-3 dipecah lagi: **1e-3a** pengisian ulang OpenAQ, replay prakiraan BMKG + OpenAQ, peta pemeriksaan titik sungai, **1e-3b** reanalisis GloFAS → ambang banjir → `hazard.flood.*` (**1e-3b-1** pemilihan sel dari reanalisis; **1e-3b-2a** alat ambang banjir dan ambang indeks hujan 7 sub-DAS; **1e-3b-2b** konektor hujan sub-DAS, ambang di geo-processor, `hazard.flood.*`), **1e-3c** dipecah (ADR 0023): **1e-3c-1a** arsip FIRMS dan laporan kalibrasi titik api, **1e-3c-1b** saringan dan aturan terpilih, `hazard.fire.*`, **1e-3c-2** set berlabel T4 dan radius dirasakan (ADR 0024: **1e-3c-2a** alat dan set berlabel T4 dari ISC Bulletin; **1e-3c-2c** keputusan ambang, ADR 0025; **1e-3c-2b** radius dirasakan, ADR 0026), **1e-3c-3** replay CAP.
+
+### Fix: dokumen CAP basi (ADR 0028)
+
+Keputusan lengkap di ADR 0028. Temuan dari verifikasi 1e-3c-3: 4 dokumen di tengah arsip (27 Sep 12.01 UTC, 20 Okt 12.18 UTC) berisi pesan yang entrinya sudah diganti di RSS. Poller lama menerbitkan ulang isi pesan lama untuk entri baru dan tidak pernah mengambil dokumen pesan baru.
+
+| Bagian      | Isi                                                                                                                                                                                                                                                    | Terverifikasi di workspace asisten                                                                                                                               |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Poller      | `identifier` ≠ `guid` → `capfeed.ErrStale`: tidak terbit, dicatat sebagai kegagalan, diambil lagi tiap polling sampai `MaxStaleAttempts` (bawaan 30, ±1 jam; terpisah dari `MaxAttempts`); terjemahan basi → pesan terbit tanpa terjemahan lalu revisi | `TestStalePrimaryIsRetriedThenPublished`, `TestStaleTranslationIsRetried`, `TestStaleGivesUp`; coverage capfeed 94,7%                                            |
+| Replay      | State entri yang keluar dari RSS dilupakan (yang menunggu terbit dulu), sama dengan Poller; dokumen ber-guid lama ditolak `ErrStale` ("sudah keluar dari RSS"), guid yang belum pernah ada tetap `ErrNoContext`                                        | `TestReplayStaleDocuments` gagal tanpa perubahan replay (terjemahan basi menjadi revisi pesan lama yang tidak pernah terbit)                                     |
+| Bolak-balik | Operasi "file ditimpa" di dunia sintetis (identifier baru, entri lama diganti, file masih berisi pesan lama 0–3 request per bahasa); skenario "file ditimpa" dan "file ditimpa menyerah", seed fuzz baru                                               | Dengan Poller lama kedua skenario gagal (2 pesan, harus 3 dan 1); `FuzzReplayRoundTrip` ±47 ribu eksekusi (150 + 60 dtk) tanpa beda                              |
+| Pemeriksa   | `cek-cap-basi.sh` + `cek-cap-basi.py` (titipan, tidak di-commit): salin `bmkg-cap` dari Garage, cari dokumen basi, entri RSS yang saat itu menautkan file yang sama, dan apakah dokumen pesan entri itu pernah diambil                                 | Diuji dengan `testdata/arsip` 1 Okt yang diubah (dokumen 11.32.005 disalin ke 12.04.08, dokumen 12.32.005 dibuang)                                               |
+| Repo        | ADR 0028, catatan ADR 0009 butir 1 dan ADR 0027                                                                                                                                                                                                        | golangci-lint 2.15.0 bersih di ingest (juga tag integration), semua test ingest `-race`; test integrasi tidak dijalankan (jalur Garage/PostgreSQL tidak berubah) |
+
+### Langkah di WSL (fix dokumen CAP basi)
+
+```bash
+make archive-maintain                                                       # seperti biasa saat mulai sesi
+bash "/mnt/c/KULIAH/PROJECT CODE/siaga-titipan/terapkan-fix-cap-basi.sh"   # cek hash, catat verifikasi 1e-3c-3, terapkan fix, make check, commit
+git push
+bash "/mnt/c/KULIAH/PROJECT CODE/siaga-titipan/cek-cap-basi.sh"            # apakah pesan 27 Sep/20 Okt akhirnya terbit; hasil juga di titipan/cek-cap-basi.txt
+make replay CONNECTORS=bmkg-cap ARGS="-publish=false -strict"              # 4 dokumen kini ErrStale "sudah keluar dari RSS"
+# hentikan make ingest yang sedang jalan (Ctrl+C), lalu jalankan lagi supaya Poller baru dipakai
+make ingest
+```
+
+Yang dilaporkan: isi `cek-cap-basi.txt` (atau keluaran skrip) dan tabel `make replay` (baris `bmkg-cap` dan contoh penolakannya). `cek-cap-basi.sh` juga mengemas salinan arsip CAP sebagai `arsip-cap.tar` di titipan untuk diperiksa asisten.
 
 ### Fase 1e-3c-3: replay CAP dan pembanding replay dengan stream RAW
 
@@ -773,6 +799,8 @@ Workspace cloud asisten tidak bisa menjangkau `proxy.golang.org`, `go.dev`, atau
 - Sesi 1e-2b-3: workspace baru; Go 1.27.1 dibangun dari tag (bootstrap Go 1.24.7, ±6 menit), modul dari `modcache-pecahan/` (tiga bagian di-stage, disambung, `GOPROXY=file://… GOSUMDB=off GOTOOLCHAIN=local`; `GOFLAGS` dikosongkan). Rilis GitHub yang dipakai: golangci-lint 2.13.2, kustomize 5.7.1, kubeconform 0.7.0 (skema dari raw.githubusercontent.com terjangkau), sops 3.13.3, age 1.3.2. Source Garage v2.3.0 dari mirror `deuxfleurs-org/garage` (sparse checkout `src/api`, `src/model`, `doc/book`) untuk memastikan dukungan lifecycle; source CLI `Backblaze/B2_Command_Line_Tool` untuk sintaks `key create`/`bucket create` dan keluaran `account authorize`. Dokumen backblaze.com terjangkau lewat WebFetch. Rasio kompresi diukur dengan sampel satu hari UTC penuh (`ukur-arsip.sh` menulis `sampel-arsip-<tgl>.tar` ke titipan).
 
 - Sesi 1e-3c-3: Go 1.27.3 dari `modcache-pecahan/` (tiga bagian di-stage dalam dua panggilan) dengan `GOPROXY=file://… GOSUMDB=off GOTOOLCHAIN=go1.27.3`; golangci-lint 2.15.0 dari rilis GitHub (cek checksum). Repo di-clone dari GitHub (`main` 7e35256). Sampel arsip CAP dari `sampel-arsip-2026-10-01.tar` di titipan; nats-server dalam proses (`natstest`) untuk `jsread` dan `-compare`.
+
+- Sesi fix dokumen CAP basi: sama dengan 1e-3c-3 (Go 1.27.3 dari `modcache-pecahan/`, golangci-lint 2.15.0 dari rilis GitHub), repo di-clone dari GitHub (`main` 5265daf). Arsip CAP penuh tidak ada di workspace (Garage hanya di WSL), jadi pemeriksaan 27 Sep/20 Okt dititipkan sebagai skrip.
 
 Karena itu `go.sum` dari asisten tidak dipakai: patch tidak menyertakan `go.sum`/`go.work.sum`, dan `make deps` di WSL yang membuatnya.
 

@@ -31,5 +31,6 @@ Yang diperiksa di arsip asli (sampel 2026-10-01, 53 objek `bmkg-cap`, dua pering
 - `make replay` kini memutar 15 feed (`replay -list`). Uji replay CAP T3 bisa dijalankan terhadap arsip sejak 25 Sep (`bmkg-cap` disimpan selamanya, ADR 0022), dan `-compare` memastikannya terhadap data asli 7 hari terakhir.
 - Pesan CAP yang terbit tanpa terjemahan muncul di replay ±1 menit setelah dokumen utamanya, bukan saat aslinya (±20 dtk); urutan terhadap feed lain di menit itu bisa berbeda. Isi dan ID pesan sama.
 - Bila BMKG suatu saat memakai `guid` RSS yang berbeda dari `identifier` CAP, semua dokumen ditolak `ErrNoContext` dan `-compare` gagal; test `TestInspectRealPayloads` mengunci asumsi ini pada rekaman asli.
+- Replay penuh pertama menemukan dokumen basi: file masih berisi pesan lama saat entri pesan barunya sudah ada di RSS. Poller kini mengambil ulang dokumen seperti itu, dan replay melupakan state entri yang keluar dari RSS (ADR 0028).
 - Pesan yang terbit saat arsip gagal ditulis (kunci arsip kosong) tidak bisa diputar ulang dan muncul sebagai "hanya stream" di `-compare`.
 - `-compare` juga bisa dipakai untuk feed lain yang memiliki subjeknya sendiri (misal `bmkg-prakiraan` → `raw.forecast.bmkg`). Untuk subjek bersama (`raw.quake.bmkg` dipakai tiga konektor gempa BMKG), pilih semua konektornya.
