@@ -2,9 +2,9 @@
 
 Dokumen ini adalah titik lanjut untuk sesi kerja berikutnya, termasuk chat baru dengan asisten AI. Perbarui setiap akhir sesi.
 
-## Status: Fase 1e-3c-2c ditulis asisten (2026-11-22), menunggu diterapkan di WSL
+## Status: Fase 1e-3c-2c terverifikasi di WSL (2026-11-22); berikutnya 1e-3c-2b
 
-Fase 0 sampai 1e-3c-2a ter-commit dan terverifikasi; `main` di `212f156` (set berlabel T4 dari ISC Bulletin), CI hijau semua. Fase 1e dipecah: **1e-1** arsip Garage + replay, **1e-2a** OpenTelemetry + dashboard, **1e-2b** deploy (**1e-2b-1** image + CI + manifest, **1e-2b-2** Garage dan Collector di cluster, SOPS, default deny, **1e-2b-3** retensi dan backup arsip), **1e-3** backfill + kalibrasi. 1e-3 dipecah lagi: **1e-3a** pengisian ulang OpenAQ, replay prakiraan BMKG + OpenAQ, peta pemeriksaan titik sungai, **1e-3b** reanalisis GloFAS → ambang banjir → `hazard.flood.*` (**1e-3b-1** pemilihan sel dari reanalisis; **1e-3b-2a** alat ambang banjir dan ambang indeks hujan 7 sub-DAS; **1e-3b-2b** konektor hujan sub-DAS, ambang di geo-processor, `hazard.flood.*`), **1e-3c** dipecah (ADR 0023): **1e-3c-1a** arsip FIRMS dan laporan kalibrasi titik api, **1e-3c-1b** saringan dan aturan terpilih, `hazard.fire.*`, **1e-3c-2** set berlabel T4 dan radius dirasakan (ADR 0024: **1e-3c-2a** alat dan set berlabel T4 dari ISC Bulletin; **1e-3c-2c** keputusan ambang, ADR 0025, PRD, bagian ini, dikerjakan sebelum 2b; **1e-3c-2b** radius dirasakan), **1e-3c-3** replay CAP.
+Fase 0 sampai 1e-3c-2c ter-commit dan terverifikasi; `main` di `4a99e85` (ADR 0025). Fase 1e dipecah: **1e-1** arsip Garage + replay, **1e-2a** OpenTelemetry + dashboard, **1e-2b** deploy (**1e-2b-1** image + CI + manifest, **1e-2b-2** Garage dan Collector di cluster, SOPS, default deny, **1e-2b-3** retensi dan backup arsip), **1e-3** backfill + kalibrasi. 1e-3 dipecah lagi: **1e-3a** pengisian ulang OpenAQ, replay prakiraan BMKG + OpenAQ, peta pemeriksaan titik sungai, **1e-3b** reanalisis GloFAS → ambang banjir → `hazard.flood.*` (**1e-3b-1** pemilihan sel dari reanalisis; **1e-3b-2a** alat ambang banjir dan ambang indeks hujan 7 sub-DAS; **1e-3b-2b** konektor hujan sub-DAS, ambang di geo-processor, `hazard.flood.*`), **1e-3c** dipecah (ADR 0023): **1e-3c-1a** arsip FIRMS dan laporan kalibrasi titik api, **1e-3c-1b** saringan dan aturan terpilih, `hazard.fire.*`, **1e-3c-2** set berlabel T4 dan radius dirasakan (ADR 0024: **1e-3c-2a** alat dan set berlabel T4 dari ISC Bulletin; **1e-3c-2c** keputusan ambang, ADR 0025, PRD, bagian ini, dikerjakan sebelum 2b; **1e-3c-2b** radius dirasakan), **1e-3c-3** replay CAP.
 
 ### Fase 1e-3c-2c: ambang deduplikasi lintas sumber dari set berlabel ISC
 
@@ -35,6 +35,12 @@ make geo                          # log start: dedup_cross_source={MaxTimeDelta:
 ```
 
 Bila `make dedup-labels ARGS=-offline` atau `make calibrate-dedup` mengubah file, laporkan `git diff --stat` dan beberapa baris pertama diff.
+
+### Verifikasi di WSL (1e-3c-2c, 2026-11-22)
+
+- `terapkan-fase-1e-3c-2c.sh`: `make check` dan hook lulus; commit `b2b143a`, `4a99e85`, di-push. Percobaan pertama berhenti di cek repo karena working tree sudah berisi patch tanpa commit; `git apply -R --check` memastikan isinya sama persis dengan patch, termasuk `dedup-berlabel.md` dan `dedup-gempa.md` hasil `make dedup-labels ARGS=-offline` dan `make calibrate-dedup` di WSL (laporan WSL identik dengan workspace asisten).
+- `make test-integration` lulus semua setelah geo-processor lama (jalan sejak 9 Nov) dihentikan. Percobaan pertama gagal di `TestQuakePipelineInDatabase` (`outbox [hazard.quake.updated]`): relay outbox geo-processor yang masih jalan mengambil pesan `hazard.quake.created` milik test, bukan akibat ambang baru.
+- `make geo`: log start `dedup_cross_source={MaxTimeDelta:20s MaxDistanceKm:150 MaxMagnitudeDelta:1.3 LargeMagnitude:6 LargeTimeDelta:1m0s}`; 38 titik debit, 7 sub-DAS, 139 sumber panas tetap diselaraskan tanpa perubahan.
 
 ### Temuan yang perlu ditindaklanjuti (1e-3c-2c)
 
@@ -633,7 +639,7 @@ Target demo fase 1: dashboard Grafana berisi data live semua sumber.
 - [x] **1e-3c-1a** `make fire-threshold`: arsip FIRMS SP lalu NRT per wahana 2012–kemarin dengan cache potongan 5 hari dan pengaman kuota MAP_KEY, sumber panas tetap, varian aturan tingkat, uji 9 kebakaran tercatat (ADR 0023). Terverifikasi di WSL (arsip lewat Windows); CI hijau.
 - [x] **1e-3c-1b** Saringan sumber tetap disetel (139 sumber), aturan V4 (Waspada tinggi atau ≥ 2 lintasan, Siaga ≥ 5 deteksi, tanpa S-NPP), `hazard.fire.created|updated|expired` di geo-processor (saringan disematkan, kedaluwarsa 24 jam, acuan bersama dengan firecluster), konektor S-NPP dibuang (ADR 0023). Terverifikasi di WSL; CI hijau (`dad5e27`).
 - [x] **1e-3c-2a** `make dedup-labels`: set berlabel T4 dari ISC Bulletin 2021–Okt 2024 (DJA vs NEIC per kejadian ISC) + 10 pasangan arsip real-time, presisi/recall dengan `Rule.Match` dan simulasi `Settle` (ADR 0024). Terverifikasi di WSL; CI hijau (`212f156`).
-- [ ] **1e-3c-2c** Ambang lintas sumber 20 dtk (60 dtk untuk M ≥ 6), 150 km, 1,3 dari set berlabel ISC: recall 99,7%, presisi 99,9%; laporan dengan semua FP dan pembanding satu parameter (ADR 0025), PRD diselaraskan. Ditulis asisten; menunggu diterapkan di WSL.
+- [x] **1e-3c-2c** Ambang lintas sumber 20 dtk (60 dtk untuk M ≥ 6), 150 km, 1,3 dari set berlabel ISC: recall 99,7%, presisi 99,9%; laporan dengan semua FP dan pembanding satu parameter (ADR 0025), PRD diselaraskan. Terverifikasi di WSL (`4a99e85`).
 - [ ] **1e-3c-2b** Radius dirasakan dari arsip `gempadirasakan` BMKG dan DYFI USGS (rencana di `catatan-1e-3c-2.md` titipan, bagian 3 dan 4).
 - [ ] **1e-3c-3** Replay CAP (pasangkan dokumen id/en dengan entri RSS, ADR 0018 butir 8).
 
