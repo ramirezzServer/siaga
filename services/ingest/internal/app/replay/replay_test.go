@@ -240,13 +240,16 @@ func TestRunSkipsBadPayloads(t *testing.T) {
 		t.Fatal(err)
 	}
 	f := rep.Feeds[0]
-	if f.Payloads != 5 || f.Corrupt != 3 || f.ParseErrors != 2 || f.Rejected != 1 || f.Published != 2 || len(f.Samples) != 5 {
+	if f.Payloads != 5 || f.Corrupt != 3 || f.ParseErrors != 2 || f.Rejected != 1 || f.Published != 2 || len(f.Samples) != 6 {
 		t.Fatalf("%+v", f)
 	}
-	for _, s := range f.Samples[:MaxSamples/2] {
+	for _, s := range f.Samples {
 		if s == "" {
 			t.Fatal("contoh kosong")
 		}
+	}
+	if !slices.ContainsFunc(f.Samples, func(s string) bool { return strings.HasPrefix(s, "ditolak b: ") }) {
+		t.Fatalf("contoh penolakan tidak ada: %q", f.Samples)
 	}
 }
 
@@ -422,4 +425,90 @@ func FuzzRunOrdered(f *testing.F) {
 			t.Fatalf("replay ulang: %+v, %v", rep.Totals(), err)
 		}
 	})
+}
+
+// deferred menunda setiap payload "kunci=isi" sampai 2 detik setelah waktu
+// ambilnya, dengan FetchMeta payload asal; "RUSAK" gagal Add, "tolak"
+// menjadi penolakan, isi "sama" diberi tanda Seen.
+type deferred struct {
+	name  string
+	queue []Emission
+	rej   []ports.Rejection
+	calls []time.Time
+}
+
+func (d *deferred) Name() string { return d.name }
+func (d *deferred) Parse([]byte, time.Time) ([]ports.Event, []ports.Rejection, error) {
+	return nil, nil, errors.New("tidak dipakai")
+}
+
+func (d *deferred) Add(p Payload) error {
+	if string(p.Body) == "RUSAK" {
+		return errors.New("format berubah")
+	}
+	k, v, _ := strings.Cut(string(p.Body), "=")
+	if v == "tolak" {
+		d.rej = append(d.rej, ports.Rejection{Key: k, Reason: errors.New("tidak valid")})
+		return nil
+	}
+	d.queue = append(d.queue, Emission{
+		Event: event{subject: "raw.uji.tunda", key: k, val: v, at: p.FetchedAt},
+		Meta:  ports.FetchMeta{FetchedAt: p.FetchedAt, ArchiveKey: p.Key, PayloadSHA256: p.SHA256},
+		Seen:  v == "sama",
+	})
+	return nil
+}
+
+func (d *deferred) Due(t time.Time) Batch {
+	d.calls = append(d.calls, t)
+	var b Batch
+	b.Rejections, d.rej = d.rej, nil
+	for len(d.queue) > 0 && (t.IsZero() || d.queue[0].Meta.FetchedAt.Add(2*time.Second).Before(t)) {
+		b.Emissions = append(b.Emissions, d.queue[0])
+		d.queue = d.queue[1:]
+	}
+	return b
+}
+
+func TestRunDeferredFeed(t *testing.T) {
+	a := &memArchive{objs: map[string][]byte{}}
+	k1 := put(t, a, "tunda", t0, "a=1")
+	put(t, a, "biasa", t0.Add(time.Second), "x=1")
+	put(t, a, "biasa", t0.Add(3*time.Second), "x=2")
+	put(t, a, "tunda", t0.Add(4*time.Second), "RUSAK")
+	put(t, a, "tunda", t0.Add(5*time.Second), "b=tolak")
+	put(t, a, "tunda", t0.Add(6*time.Second), "c=sama")
+	put(t, a, "tunda", t0.Add(7*time.Second), "d=")
+	put(t, a, "tunda", t0.Add(8*time.Second), "e=5")
+	d := &deferred{name: "tunda"}
+	pub := &publisher{}
+	rep, err := New(a, pub, &clock{now: t0}).Run(t.Context(), []Feed{feed{"biasa"}, d}, Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	f := rep.Feeds[1]
+	if f.Payloads != 6 || f.Events != 4 || f.Published != 2 || f.AlreadySeen != 1 || f.Rejected != 1 || f.ParseErrors != 2 {
+		t.Fatalf("%+v", f)
+	}
+	// Pesan tertunda terbit di posisi waktunya di antara feed lain, dengan
+	// FetchMeta payload asalnya, dan sisanya di akhir.
+	var got []string
+	for _, m := range pub.msgs {
+		got = append(got, string(m.Data[:strings.IndexByte(string(m.Data), '|')])+"@"+m.FetchedAt.Format("05"))
+	}
+	if want := []string{"1@01", "1@00", "2@03", "5@08"}; !slices.Equal(got, want) {
+		t.Fatalf("urutan %q, ingin %q", got, want)
+	}
+	if !strings.Contains(string(pub.msgs[1].Data), "|tunda|") || !strings.Contains(string(pub.msgs[1].Data), k1) {
+		t.Fatalf("FetchMeta %s", pub.msgs[1].Data)
+	}
+	if last := d.calls[len(d.calls)-1]; !last.IsZero() {
+		t.Fatalf("Due terakhir %v, ingin nol", last)
+	}
+
+	pub.err = errors.New("NATS mati")
+	d = &deferred{name: "tunda"}
+	if _, err := New(a, pub, &clock{now: t0}).Run(t.Context(), []Feed{d}, Options{}); !errors.Is(err, pub.err) {
+		t.Fatalf("galat %v", err)
+	}
 }

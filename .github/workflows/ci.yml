@@ -129,6 +129,7 @@ jobs:
           fz ./internal/adapters/quakeml FuzzParse
           fz ./internal/domain/quakelabel FuzzBuildOrderIndependent
           fz ./internal/adapters/dyfi FuzzParseCells
+          fz ./internal/app/capfeed FuzzReplayRoundTrip
           cd ../../libs/go/platform
           fz ./otelx FuzzValidTraceParent
 

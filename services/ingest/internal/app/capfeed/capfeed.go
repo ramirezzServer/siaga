@@ -226,13 +226,13 @@ func (p *Poller) processItem(ctx context.Context, st *itemState, res *poll.Resul
 			p.reject(res, it.Key, err)
 			return nil
 		}
-		if err := d.w.Validate(d.fetchedAt); err != nil {
+		relevant, err := acceptPrimary(d)
+		switch {
+		case err != nil:
 			st.final = true
 			p.reject(res, it.Key, err)
 			return nil
-		}
-		if !d.w.Relevant() {
-			// Latihan, uji, draft, Ack, dan Error tidak diteruskan.
+		case !relevant:
 			st.final = true
 			return nil
 		}
@@ -255,7 +255,7 @@ func (p *Poller) processItem(ctx context.Context, st *itemState, res *poll.Resul
 			p.failure(res, it.Key+" ["+lang+"]", err)
 			continue
 		}
-		if _, err := st.primary.w.WithTranslation(d.w); err != nil {
+		if err := checkTranslation(st.primary, d); err != nil {
 			st.settled[lang] = true
 			p.failure(res, it.Key+" ["+lang+"]", err)
 			continue
@@ -264,20 +264,7 @@ func (p *Poller) processItem(ctx context.Context, st *itemState, res *poll.Resul
 		st.settled[lang] = true
 	}
 
-	w := st.primary.w
-	for _, lang := range slices.Sorted(maps.Keys(st.extra)) {
-		merged, err := w.WithTranslation(st.extra[lang].w)
-		if err != nil {
-			return fmt.Errorf("%s: menggabungkan terjemahan %s: %w", p.src.Name(), it.Key, err) // sudah diperiksa di atas
-		}
-		w = merged
-	}
-	if err := w.Validate(st.primary.fetchedAt); err != nil {
-		st.final = true
-		p.reject(res, it.Key, err)
-		return nil
-	}
-	ev, err := p.src.Event(w)
+	ev, err := build(p.src, st.primary, st.extra)
 	if err != nil {
 		st.final = true
 		p.reject(res, it.Key, err)
@@ -309,6 +296,41 @@ func (p *Poller) processItem(ctx context.Context, st *itemState, res *poll.Resul
 	}
 	st.published = sum
 	return nil
+}
+
+// acceptPrimary memeriksa dokumen bahasa utama: galat berarti peringatan
+// ditolak, relevant false berarti diabaikan (latihan, uji, draft, Ack, dan
+// Error tidak diteruskan). Dipakai polling dan replay.
+func acceptPrimary(d *doc) (relevant bool, err error) {
+	if err := d.w.Validate(d.fetchedAt); err != nil {
+		return false, err
+	}
+	return d.w.Relevant(), nil
+}
+
+// checkTranslation memastikan dokumen bahasa tambahan adalah terjemahan
+// pesan yang sama; galat berarti terjemahan itu dilewati.
+func checkTranslation(primary, d *doc) error {
+	_, err := primary.w.WithTranslation(d.w)
+	return err
+}
+
+// build menggabungkan terjemahan ke dokumen utama urut kode bahasa,
+// memvalidasi hasilnya pada waktu ambil dokumen utama, lalu membungkusnya
+// sebagai event. Galat berarti peringatan ditolak. Dipakai polling dan replay.
+func build(src Source, primary *doc, extra map[string]*doc) (ports.Event, error) {
+	w := primary.w
+	for _, lang := range slices.Sorted(maps.Keys(extra)) {
+		merged, err := w.WithTranslation(extra[lang].w)
+		if err != nil {
+			return nil, fmt.Errorf("menggabungkan terjemahan %s: %w", lang, err)
+		}
+		w = merged
+	}
+	if err := w.Validate(primary.fetchedAt); err != nil {
+		return nil, err
+	}
+	return src.Event(w)
 }
 
 // errFetch menandai kegagalan mengambil dokumen (sementara, dicoba lagi).

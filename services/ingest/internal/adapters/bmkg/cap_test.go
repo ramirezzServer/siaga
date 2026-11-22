@@ -2,6 +2,7 @@ package bmkg
 
 import (
 	"errors"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -273,6 +274,52 @@ func TestParseDetailErrors(t *testing.T) {
 	}
 }
 
+func TestInspectRealPayloads(t *testing.T) {
+	c := NewCAPFeed(DefaultCAPBaseURL)
+	cases := map[string]ports.FeedPayload{
+		"nowcast-rss-id.xml":              {List: true},
+		"cap-id-CGT20260924002_alert.xml": {Identifier: "2.49.0.1.360.0.2026.09.24.07.75.002", Language: "id"},
+		"cap-en-CGT20260924002_alert.xml": {Identifier: "2.49.0.1.360.0.2026.09.24.07.75.002", Language: "en"},
+	}
+	for name, want := range cases {
+		got, err := c.Inspect(fixture(t, name))
+		if err != nil || got != want {
+			t.Errorf("%s: %+v, %v; ingin %+v", name, got, err, want)
+		}
+	}
+	// Identifier dokumen sama dengan guid entri RSS-nya (dasar pemasangan replay).
+	items, _, err := c.ParseFeed(fixture(t, "nowcast-rss-id.xml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, f := range []string{"cap-id-CGT20260924002_alert.xml", "cap-id-CSU20260924001_alert.xml"} {
+		p, err := c.Inspect(fixture(t, f))
+		if err != nil {
+			t.Fatal(err)
+		}
+		file := strings.TrimPrefix(f, "cap-id-")
+		if !slices.ContainsFunc(items, func(it ports.FeedItem) bool { return it.Key == p.Identifier && it.File == file }) {
+			t.Errorf("%s: identifier %s tidak ada sebagai guid entri %s di RSS", f, p.Identifier, file)
+		}
+	}
+	tanpaBahasa := `<alert xmlns="urn:oasis:names:tc:emergency:cap:1.1"><identifier> a.b </identifier><info><language></language></info></alert>`
+	if got, err := c.Inspect([]byte(tanpaBahasa)); err != nil || got != (ports.FeedPayload{Identifier: "a.b"}) {
+		t.Errorf("CAP 1.1 tanpa bahasa: %+v, %v", got, err)
+	}
+	for name, body := range map[string]string{
+		"bukan XML":           "{}",
+		"akar lain":           `<feed xmlns="http://www.w3.org/2005/Atom"/>`,
+		"alert tanpa ns":      `<alert><identifier>a</identifier></alert>`,
+		"tanpa identifier":    `<alert xmlns="urn:oasis:names:tc:emergency:cap:1.2"><info/></alert>`,
+		"rss bernamespace":    `<rss xmlns="urn:x"/>`,
+		"charset tak dikenal": `<?xml version="1.0" encoding="ISO-8859-1"?><rss/>`,
+	} {
+		if _, err := c.Inspect([]byte(body)); !errors.Is(err, ErrStructure) {
+			t.Errorf("%s: galat %v, ingin ErrStructure", name, err)
+		}
+	}
+}
+
 // Properti: ParseFeed dan ParseDetail tidak pernah panik; dokumen yang
 // terbaca dan lolos Validate selalu bisa dibungkus menjadi event.
 func FuzzParseCAPDocuments(f *testing.F) {
@@ -282,6 +329,13 @@ func FuzzParseCAPDocuments(f *testing.F) {
 	c := NewCAPFeed(DefaultCAPBaseURL)
 	f.Fuzz(func(t *testing.T, body []byte) {
 		_, _, _ = c.ParseFeed(body)
+		// Inspect sejalan dengan parser: yang dianggap dokumen CAP punya
+		// identifier yang sama dengan hasil ParseDetail.
+		if p, err := c.Inspect(body); err == nil && !p.List {
+			if w, err := c.ParseDetail(ports.FeedItem{File: "x.xml"}, "id", body); err == nil && w.Identifier != p.Identifier {
+				t.Fatalf("Inspect %q, ParseDetail %q", p.Identifier, w.Identifier)
+			}
+		}
 		w, err := c.ParseDetail(ports.FeedItem{File: "x.xml"}, "id", body)
 		if err != nil || w.Validate(capFetchedAt) != nil {
 			return

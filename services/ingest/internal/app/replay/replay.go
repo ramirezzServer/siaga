@@ -64,6 +64,50 @@ func archives(f Feed) []string {
 	return []string{f.Name()}
 }
 
+// DeferredFeed dipenuhi feed yang event-nya tidak bisa dibentuk dari satu
+// payload saja, misal peringatan CAP: entri RSS, dokumen bahasa Indonesia,
+// dan terjemahannya tersimpan sebagai payload terpisah, dan event terbit
+// sekali dengan FetchMeta dokumen utama setelah terjemahannya ditunggu.
+//
+// Replayer memanggil Add untuk setiap payload feed itu (tanpa menerbitkan
+// apa pun), dan Due sebelum memutar payload mana pun (semua feed) dengan
+// waktu ambil t, serta sekali dengan t nol di akhir replay untuk semua sisa.
+// Dengan begitu event tertunda terbit di posisi waktunya di antara feed lain.
+type DeferredFeed interface {
+	Feed
+	// Add menerima satu payload utuh. Galat berarti payload tidak terbaca
+	// (dihitung gagal parse); feed tetap bisa menerima payload berikutnya.
+	Add(p Payload) error
+	// Due mengembalikan event dan penolakan yang jatuh tempo sebelum t,
+	// urut waktu; t nol berarti semuanya.
+	Due(t time.Time) Batch
+}
+
+// Payload adalah satu objek arsip yang sudah dicek SHA-256-nya.
+type Payload struct {
+	Archive   string
+	Key       string
+	Body      []byte
+	SHA256    string
+	FetchedAt time.Time
+}
+
+// Emission adalah satu event dari DeferredFeed.
+type Emission struct {
+	Event ports.Event
+	// Meta adalah FetchMeta payload asal event; Connector diisi Replayer.
+	Meta ports.FetchMeta
+	// Seen: isi sama dengan yang terakhir terbit untuk record ini, jadi
+	// dihitung AlreadySeen dan tidak diterbitkan (sama dengan poll).
+	Seen bool
+}
+
+// Batch adalah hasil Due.
+type Batch struct {
+	Emissions  []Emission
+	Rejections []ports.Rejection
+}
+
 func partial(f Feed) bool {
 	p, ok := f.(PartialFeed)
 	return ok && p.Partial()
@@ -117,6 +161,14 @@ type FeedReport struct {
 func (r *FeedReport) sample(err error) {
 	if len(r.Samples) < MaxSamples {
 		r.Samples = append(r.Samples, err.Error())
+	}
+}
+
+// reject menghitung penolakan dan menyimpan contohnya.
+func (r *FeedReport) reject(rs []ports.Rejection) {
+	r.Rejected += len(rs)
+	for _, x := range rs {
+		r.sample(fmt.Errorf("ditolak %s: %w", x.Key, x.Reason))
 	}
 }
 
@@ -229,11 +281,21 @@ func (r *Replayer) Run(ctx context.Context, feeds []Feed, opts Options) (Report,
 		}
 	}
 
+	due := func(t time.Time) error {
+		for i, f := range feeds {
+			if d, ok := f.(DeferredFeed); ok {
+				if err := r.emit(ctx, f, d.Due(t), &rep.Feeds[i]); err != nil {
+					return err
+				}
+			}
+		}
+		return nil
+	}
 	var t0, w0 time.Time
 	for {
 		i := earliest(heads)
 		if i < 0 {
-			return rep, nil
+			return rep, due(time.Time{})
 		}
 		h := heads[i]
 		if opts.Speed > 0 {
@@ -246,6 +308,9 @@ func (r *Replayer) Run(ctx context.Context, feeds []Feed, opts Options) (Report,
 					return rep, err
 				}
 			}
+		}
+		if err := due(h.key.FetchedAt); err != nil {
+			return rep, err
 		}
 		if err := r.play(ctx, feeds[h.feed], h, seen[h.feed], &rep.Feeds[h.feed], opts.MaxPayload); err != nil {
 			return rep, err
@@ -344,6 +409,13 @@ func (r *Replayer) play(ctx context.Context, f Feed, h *head, seen map[string]st
 		rep.sample(err)
 		return nil
 	}
+	if d, ok := f.(DeferredFeed); ok {
+		if err := d.Add(Payload{Archive: h.archive, Key: h.obj.Key, Body: body, SHA256: sum, FetchedAt: k.FetchedAt}); err != nil {
+			rep.ParseErrors++
+			rep.sample(fmt.Errorf("%s: %w", h.obj.Key, err))
+		}
+		return nil
+	}
 	events, rejections, err := parse(f, h.archive, body, k.FetchedAt)
 	if err != nil {
 		rep.ParseErrors++
@@ -351,7 +423,7 @@ func (r *Replayer) play(ctx context.Context, f Feed, h *head, seen map[string]st
 		return nil
 	}
 	rep.Events += len(events)
-	rep.Rejected += len(rejections)
+	rep.reject(rejections)
 	meta := ports.FetchMeta{Connector: f.Name(), FetchedAt: k.FetchedAt, ArchiveKey: h.obj.Key, PayloadSHA256: sum}
 	current := make(map[string]string, len(events))
 	for _, ev := range events {
@@ -381,6 +453,36 @@ func (r *Replayer) play(ctx context.Context, f Feed, h *head, seen map[string]st
 	}
 	for k, v := range current {
 		seen[k] = v
+	}
+	return nil
+}
+
+// emit menerbitkan hasil Due satu DeferredFeed.
+func (r *Replayer) emit(ctx context.Context, f Feed, b Batch, rep *FeedReport) error {
+	rep.Events += len(b.Emissions)
+	rep.reject(b.Rejections)
+	for _, e := range b.Emissions {
+		if e.Seen {
+			rep.AlreadySeen++
+			continue
+		}
+		content, _, err := emit.Content(e.Event)
+		if err != nil {
+			rep.ParseErrors++
+			rep.sample(fmt.Errorf("%s: %w", e.Meta.ArchiveKey, err))
+			continue
+		}
+		meta := e.Meta
+		meta.Connector = f.Name()
+		ack, err := emit.Publish(ctx, r.pub, e.Event, content, meta)
+		if err != nil {
+			return err
+		}
+		if ack.Duplicate {
+			rep.Duplicates++
+		} else {
+			rep.Published++
+		}
 	}
 	return nil
 }

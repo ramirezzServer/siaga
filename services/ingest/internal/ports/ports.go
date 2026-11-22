@@ -195,3 +195,31 @@ type FeedItem struct {
 	// Digest berubah bila isi entri berubah; dokumen detail lalu diambil ulang.
 	Digest string
 }
+
+// StreamMessage adalah identitas satu pesan di stream: subjek, Nats-Msg-Id,
+// dan waktu ambil payload sumbernya (header Siaga-Fetched-At).
+type StreamMessage struct {
+	Subject   string
+	ID        string
+	FetchedAt time.Time
+}
+
+// StreamReader membaca identitas pesan yang sudah tersimpan di stream.
+type StreamReader interface {
+	// Messages mengembalikan pesan bersubjek salah satu subjects yang
+	// disimpan pada atau setelah since (nol = sejak awal stream), sampai
+	// pesan terakhir saat dipanggil.
+	Messages(ctx context.Context, subjects []string, since time.Time) iter.Seq2[StreamMessage, error]
+}
+
+// FeedPayload menjelaskan satu payload arsip feed peringatan, untuk replay:
+// RSS dan dokumen CAP semua bahasa tersimpan di awalan arsip yang sama.
+type FeedPayload struct {
+	// List: payload adalah daftar peringatan (RSS), bukan dokumen detail.
+	List bool
+	// Identifier dokumen detail; sama dengan FeedItem.Key entrinya.
+	Identifier string
+	// Language bahasa info pertama dokumen detail, huruf kecil; kosong bila
+	// dokumen tidak menyebutkannya.
+	Language string
+}

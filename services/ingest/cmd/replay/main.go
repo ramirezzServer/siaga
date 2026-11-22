@@ -4,6 +4,13 @@
 //	replay -from 2026-09-24 -to 2026-09-25                 # semua feed, secepatnya
 //	replay -connectors bmkg-autogempa,usgs-2.5-day -speed 60
 //	replay -publish=false -strict                          # cek arsip bisa diparse, tanpa NATS
+//	replay -connectors bmkg-cap -from 2026-11-20 -compare raw.weather.bmkg
+//
+// -compare tidak menerbitkan apa pun: ID pesan hasil replay dibandingkan
+// dengan pesan yang masih tersimpan di stream RAW (7 hari) untuk subjek itu
+// dalam rentang -from/-to; replay sendiri dimulai -compare-lookback lebih
+// awal supaya feed yang butuh konteks (RSS CAP, daftar stasiun) punya
+// konteksnya (ADR 0027).
 //
 // Arsip dibaca dari -archive, bawaan INGEST_ARCHIVE_URL (atau INGEST_ARCHIVE_DIR);
 // kredensial S3 dari ARCHIVE_S3_ACCESS_KEY_ID dan ARCHIVE_S3_SECRET_ACCESS_KEY.
@@ -36,13 +43,16 @@ import (
 	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/bmkg"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/firms"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/jspub"
+	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/jsread"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/nopub"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/openaq"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/openmeteo"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/sitelist"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/sysclock"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/usgs"
+	"github.com/ramirezzServer/siaga/services/ingest/internal/app/capfeed"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/app/replay"
+	"github.com/ramirezzServer/siaga/services/ingest/internal/app/replaycheck"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/app/stations"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/ports"
 )
@@ -59,6 +69,9 @@ var setupTimeout = 30 * time.Second
 
 // errStrict dikembalikan -strict bila ada payload rusak atau tidak terbaca.
 var errStrict = errors.New("ada payload rusak atau tidak terbaca")
+
+// errCompare dikembalikan -compare bila pesan replay berbeda dengan stream.
+var errCompare = errors.New("pesan replay berbeda dengan stream RAW")
 
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
@@ -82,6 +95,9 @@ type options struct {
 	list       bool
 	natsURL    string
 	provinces  []string
+	capLangs   []string
+	compare    []string
+	lookback   time.Duration
 }
 
 func parseFlags(args []string, lookup envx.Lookup, stderr io.Writer) (options, archiveurl.Credentials, slog.Level, error) {
@@ -90,7 +106,7 @@ func parseFlags(args []string, lookup envx.Lookup, stderr io.Writer) (options, a
 	fs.SetOutput(stderr)
 	defArchive := env.Default("INGEST_ARCHIVE_URL", env.Default("INGEST_ARCHIVE_DIR", ""))
 	var o options
-	var connectors, from, to, provinces string
+	var connectors, from, to, provinces, capLangs, compare string
 	fs.StringVar(&o.archive, "archive", defArchive, "URL arsip (folder, file:///..., atau s3://bucket/awalan?endpoint=...)")
 	fs.StringVar(&connectors, "connectors", "", "daftar feed dipisah koma; kosong = semua (lihat -list)")
 	fs.StringVar(&from, "from", "", "awal waktu ambil, RFC 3339 atau YYYY-MM-DD (00.00 WIB); kosong = dari awal arsip")
@@ -102,6 +118,9 @@ func parseFlags(args []string, lookup envx.Lookup, stderr io.Writer) (options, a
 	fs.BoolVar(&o.list, "list", false, "tampilkan feed yang bisa diputar ulang lalu keluar")
 	fs.StringVar(&o.natsURL, "nats", env.Default("NATS_URL", "nats://127.0.0.1:4222"), "URL NATS")
 	fs.StringVar(&provinces, "openmeteo-provinces", env.Default("INGEST_OPENMETEO_PROVINCES", "32"), "provinsi titik Open-Meteo, sama dengan saat direkam")
+	fs.StringVar(&capLangs, "cap-languages", env.Default("INGEST_CAP_LANGUAGES", "en"), "bahasa tambahan CAP yang diambil saat direkam")
+	fs.StringVar(&compare, "compare", "", "subjek dipisah koma: bandingkan ID pesan replay dengan stream RAW, tanpa menerbitkan (butuh -from)")
+	fs.DurationVar(&o.lookback, "compare-lookback", 24*time.Hour, "dengan -compare: replay dimulai selama ini sebelum -from untuk konteks feed")
 	if err := fs.Parse(args); err != nil {
 		return o, archiveurl.Credentials{}, 0, err
 	}
@@ -116,7 +135,13 @@ func parseFlags(args []string, lookup envx.Lookup, stderr io.Writer) (options, a
 	if o.to, err = parseTime(to); err != nil {
 		errs = append(errs, fmt.Errorf("-to: %w", err))
 	}
-	o.connectors, o.provinces = split(connectors), split(provinces)
+	o.connectors, o.provinces, o.capLangs, o.compare = split(connectors), split(provinces), split(capLangs), split(compare)
+	if len(o.compare) > 0 && o.from.IsZero() {
+		errs = append(errs, errors.New("-compare butuh -from: stream RAW hanya menyimpan 7 hari"))
+	}
+	if o.lookback < 0 {
+		errs = append(errs, errors.New("-compare-lookback negatif"))
+	}
 	level, err := logx.ParseLevel(env.Default("LOG_LEVEL", "info"))
 	errs = append(errs, err)
 	creds := archiveurl.Credentials{
@@ -152,12 +177,12 @@ func split(v string) []string {
 
 // feeds adalah semua konektor yang payload arsipnya bisa diputar ulang.
 // URL endpoint tidak dipakai (replay tidak mengambil apa pun dari sumber).
-// CAP BMKG belum: dokumen per bahasa perlu dipasangkan dengan entri RSS-nya.
-func feeds(provinces []string) ([]replay.Feed, error) {
+func feeds(provinces, capLangs []string) ([]replay.Feed, error) {
 	var out []replay.Feed
 	for _, c := range bmkg.NewQuakeConnectors(bmkg.DefaultTEWSBaseURL) {
 		out = append(out, c)
 	}
+	out = append(out, capfeed.NewReplay(bmkg.NewCAPFeed(bmkg.DefaultCAPBaseURL), capfeed.ReplayOptions{Languages: capLangs}))
 	out = append(out, usgs.NewSummaryConnector(usgs.DefaultSummaryURL),
 		bmkg.NewForecastSource(bmkg.DefaultForecastURL).Replay(),
 		openaq.NewReplayFeed(stations.DefaultOptions().MaxAge))
@@ -219,7 +244,7 @@ func run(ctx context.Context, args []string, lookup envx.Lookup, stdout, stderr 
 	if err != nil {
 		return err
 	}
-	all, err := feeds(o.provinces)
+	all, err := feeds(o.provinces, o.capLangs)
 	if err != nil {
 		return err
 	}
@@ -243,16 +268,24 @@ func run(ctx context.Context, args []string, lookup envx.Lookup, stdout, stderr 
 	}
 
 	var pub ports.Publisher = &nopub.Publisher{}
-	if o.publish {
+	recorder := &replaycheck.Recorder{}
+	var js jetstream.JetStream
+	if o.publish || len(o.compare) > 0 {
 		nc, err := natsx.Connect(o.natsURL, "ingest-replay", log)
 		if err != nil {
 			return err
 		}
 		defer func() { _ = nc.Drain() }()
-		js, err := jetstream.New(nc)
-		if err != nil {
+		if js, err = jetstream.New(nc); err != nil {
 			return fmt.Errorf("jetstream: %w", err)
 		}
+	}
+	runFrom := o.from
+	switch {
+	case len(o.compare) > 0:
+		pub, o.publish = recorder, false
+		runFrom = o.from.Add(-o.lookback)
+	case o.publish:
 		setupCtx, cancel := context.WithTimeout(ctx, setupTimeout)
 		_, err = natsx.EnsureStream(setupCtx, js, streams.Raw, owner)
 		cancel()
@@ -266,7 +299,7 @@ func run(ctx context.Context, args []string, lookup envx.Lookup, stdout, stderr 
 		slog.Bool("publish", o.publish), slog.Float64("speed", o.speed))
 	payloads := 0
 	rep, runErr := replay.New(store, pub, sysclock.Clock{}).Run(ctx, selected, replay.Options{
-		From: o.from, To: o.to, Speed: o.speed,
+		From: runFrom, To: o.to, Speed: o.speed,
 		Progress: func(replay.FeedReport) {
 			if payloads++; payloads%500 == 0 {
 				log.Info("replay berjalan", slog.Int("payload", payloads))
@@ -281,6 +314,45 @@ func run(ctx context.Context, args []string, lookup envx.Lookup, stdout, stderr 
 	}
 	if tot := rep.Totals(); o.strict && tot.Corrupt+tot.ParseErrors > 0 {
 		return fmt.Errorf("%w: %d rusak, %d tidak terbaca", errStrict, tot.Corrupt, tot.ParseErrors)
+	}
+	if len(o.compare) == 0 {
+		return nil
+	}
+	res, err := replaycheck.Run(ctx, jsread.New(js, streams.Raw.Name), recorder.Messages(), o.compare, o.from, o.to)
+	if err != nil {
+		return err
+	}
+	if err := writeCompare(stdout, res, o.asJSON); err != nil {
+		return err
+	}
+	if !res.Equal() {
+		return errCompare
+	}
+	return nil
+}
+
+func writeCompare(w io.Writer, res replaycheck.Result, asJSON bool) error {
+	if asJSON {
+		enc := json.NewEncoder(w)
+		enc.SetIndent("", "  ")
+		return enc.Encode(res)
+	}
+	fmt.Fprintln(w)
+	tw := tabwriter.NewWriter(w, 0, 0, 2, ' ', tabwriter.AlignRight)
+	fmt.Fprintln(tw, "subjek\treplay\tstream\tcocok\thanya replay\thanya stream\t")
+	for _, s := range res.Subjects {
+		fmt.Fprintf(tw, "%s\t%d\t%d\t%d\t%d\t%d\t\n", s.Subject, s.Replayed, s.Live, s.Matched, s.Replayed-s.Matched, s.Live-s.Matched)
+	}
+	if err := tw.Flush(); err != nil {
+		return err
+	}
+	for _, s := range res.Subjects {
+		for _, m := range s.ReplayOnly {
+			fmt.Fprintf(w, "  hanya replay: %s %s diambil %s\n", s.Subject, m.ID, m.FetchedAt.In(wib).Format("2006-01-02 15:04:05"))
+		}
+		for _, m := range s.LiveOnly {
+			fmt.Fprintf(w, "  hanya stream: %s %s diambil %s\n", s.Subject, m.ID, m.FetchedAt.In(wib).Format("2006-01-02 15:04:05.000"))
+		}
 	}
 	return nil
 }

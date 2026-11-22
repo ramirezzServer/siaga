@@ -127,6 +127,37 @@ func (c *CAPFeed) ParseFeed(body []byte) ([]ports.FeedItem, []ports.Rejection, e
 	return items, rejected, nil
 }
 
+// Inspect membaca jenis payload arsip bmkg-cap tanpa memvalidasinya: RSS
+// nowcast, atau dokumen CAP beserta identifier dan bahasa info pertamanya.
+// Dipakai replay untuk memasangkan dokumen dengan entri RSS dan dokumen
+// bahasa Indonesia dengan terjemahannya.
+func (c *CAPFeed) Inspect(body []byte) (ports.FeedPayload, error) {
+	var doc struct {
+		XMLName    xml.Name
+		Identifier string `xml:"identifier"`
+		Infos      []struct {
+			Language string `xml:"language"`
+		} `xml:"info"`
+	}
+	if err := decodeXML(body, &doc); err != nil {
+		return ports.FeedPayload{}, fmt.Errorf("%w: %w", ErrStructure, err)
+	}
+	switch {
+	case doc.XMLName.Space == "" && doc.XMLName.Local == "rss":
+		return ports.FeedPayload{List: true}, nil
+	case doc.XMLName.Local == "alert" && capNamespaces[doc.XMLName.Space]:
+		p := ports.FeedPayload{Identifier: strings.TrimSpace(doc.Identifier)}
+		if p.Identifier == "" {
+			return ports.FeedPayload{}, fmt.Errorf("%w: CAP tanpa identifier", ErrStructure)
+		}
+		if len(doc.Infos) > 0 {
+			p.Language = strings.ToLower(strings.TrimSpace(doc.Infos[0].Language))
+		}
+		return p, nil
+	}
+	return ports.FeedPayload{}, fmt.Errorf("%w: akar dokumen %s %s bukan RSS atau alert CAP", ErrStructure, doc.XMLName.Space, doc.XMLName.Local)
+}
+
 // capFile mengambil nama file CAP dari tautan RSS, misal
 // https://www.bmkg.go.id/alerts/nowcast/id/CJB20260924001_alert.xml.
 func capFile(link string) (string, error) {

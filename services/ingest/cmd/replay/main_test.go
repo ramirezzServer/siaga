@@ -193,13 +193,10 @@ func TestReplayFlags(t *testing.T) {
 	if err := run(t.Context(), []string{"-list"}, lookup(nil), &out, io.Discard); err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{"bmkg-autogempa", "usgs-2.5-day", "openmeteo-sungai", "openmeteo-hujan", "firms-modis-nrt", "bmkg-prakiraan", "openaq-stasiun"} {
+	for _, want := range []string{"bmkg-autogempa", "bmkg-cap", "usgs-2.5-day", "openmeteo-sungai", "openmeteo-hujan", "firms-modis-nrt", "bmkg-prakiraan", "openaq-stasiun"} {
 		if !strings.Contains(out.String(), want+"\n") {
 			t.Errorf("-list tanpa %s:\n%s", want, out.String())
 		}
-	}
-	if strings.Contains(out.String(), "bmkg-cap") {
-		t.Error("bmkg-cap belum bisa diputar ulang")
 	}
 	for name, tc := range map[string]struct {
 		args []string
@@ -209,7 +206,9 @@ func TestReplayFlags(t *testing.T) {
 		"from":     {[]string{"-from", "kemarin"}, nil, "-from"},
 		"to":       {[]string{"-to", "2026-13-01"}, nil, "-to"},
 		"argumen":  {[]string{"lebih"}, nil, "argumen"},
-		"feed":     {[]string{"-connectors", "bmkg-cap", "-archive", "/tmp"}, nil, "tidak dikenal"},
+		"feed":     {[]string{"-connectors", "bmkg-tidakada", "-archive", "/tmp"}, nil, "tidak dikenal"},
+		"compare":  {[]string{"-compare", "raw.weather.bmkg"}, nil, "-compare butuh -from"},
+		"lookback": {[]string{"-compare-lookback", "-1h"}, nil, "negatif"},
 		"arsip":    {nil, nil, "arsip kosong"},
 		"log":      {nil, map[string]string{"LOG_LEVEL": "x"}, "level"},
 		"provinsi": {[]string{"-openmeteo-provinces", "99"}, nil, "99"},
@@ -224,5 +223,73 @@ func TestReplayFlags(t *testing.T) {
 	}
 	if err := run(t.Context(), []string{"-h"}, lookup(nil), io.Discard, io.Discard); !errors.Is(err, flag.ErrHelp) {
 		t.Fatal(err)
+	}
+}
+
+// -compare: pesan replay arsip CAP asli dibandingkan dengan stream RAW.
+func TestReplayCompare(t *testing.T) {
+	url := natstest.RunServer(t)
+	env := lookup(map[string]string{
+		"INGEST_ARCHIVE_URL": filepath.Join("..", "..", "internal", "app", "capfeed", "testdata", "arsip"),
+		"NATS_URL":           url, "LOG_LEVEL": "warn",
+	})
+	// Polling langsung diwakili replay yang menerbitkan ke stream.
+	if err := run(t.Context(), []string{"-connectors", "bmkg-cap", "-strict"}, env, io.Discard, io.Discard); err != nil {
+		t.Fatal(err)
+	}
+	args := []string{"-connectors", "bmkg-cap", "-from", "2026-10-01T11:46:00Z", "-compare", "raw.weather.bmkg,raw.quake.bmkg"}
+	var out bytes.Buffer
+	if err := run(t.Context(), args, env, &out, io.Discard); err != nil {
+		t.Fatalf("%v\n%s", err, out.String())
+	}
+	if !strings.Contains(out.String(), "raw.weather.bmkg       2       2      2") {
+		t.Fatalf("tabel:\n%s", out.String())
+	}
+
+	// Pesan yang tidak dihasilkan replay (misal arsip gagal saat polling),
+	// dan rentang yang memotong pesan pertama.
+	nc, err := nats.Connect(url)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer nc.Close()
+	m := nats.NewMsg("raw.weather.bmkg")
+	m.Header.Set(jetstream.MsgIDHeader, "hanya-di-stream")
+	m.Header.Set("Siaga-Fetched-At", "2026-10-01T12:10:00.5Z")
+	js, err := jetstream.New(nc)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := js.PublishMsg(t.Context(), m); err != nil {
+		t.Fatal(err)
+	}
+	out.Reset()
+	if err := run(t.Context(), args, env, &out, io.Discard); !errors.Is(err, errCompare) {
+		t.Fatalf("galat %v\n%s", err, out.String())
+	}
+	if !strings.Contains(out.String(), "hanya stream: raw.weather.bmkg hanya-di-stream diambil 2026-10-01 19:10:00.500") {
+		t.Fatalf("contoh:\n%s", out.String())
+	}
+	out.Reset()
+	if err := run(t.Context(), []string{
+		"-connectors", "bmkg-cap", "-from", "2026-10-01T12:00:00Z", "-to", "2026-10-01T12:05:00Z",
+		"-compare", "raw.weather.bmkg", "-json",
+	}, env, &out, io.Discard); err != nil {
+		t.Fatalf("%v\n%s", err, out.String())
+	}
+	dec := json.NewDecoder(&out)
+	var rep replay.Report
+	var res struct {
+		Subjects []struct{ Replayed, Live, Matched int }
+	}
+	if err := dec.Decode(&rep); err != nil {
+		t.Fatal(err)
+	}
+	if err := dec.Decode(&res); err != nil || len(res.Subjects) != 1 || res.Subjects[0].Matched != 1 || res.Subjects[0].Live != 1 {
+		t.Fatalf("%+v %v", res, err)
+	}
+	// Lookback: replay mulai 24 jam sebelum -from, jadi kedua pesan diputar.
+	if rep.Feeds[0].Events != 2 {
+		t.Fatalf("%+v", rep.Feeds[0])
 	}
 }
