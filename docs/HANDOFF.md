@@ -2,9 +2,41 @@
 
 Dokumen ini adalah titik lanjut untuk sesi kerja berikutnya, termasuk chat baru dengan asisten AI. Perbarui setiap akhir sesi.
 
-## Status: Fase 1e-3c-2b terverifikasi di WSL (2026-11-22); berikutnya 1e-3c-3
+## Status: Fase 1e-3c-3 dititipkan (2026-11-22); berikutnya verifikasi di WSL
 
-Fase 0 sampai 1e-3c-2b ter-commit dan terverifikasi; `main` di `a6aef0f` (ADR 0026). Fase 1e dipecah: **1e-1** arsip Garage + replay, **1e-2a** OpenTelemetry + dashboard, **1e-2b** deploy (**1e-2b-1** image + CI + manifest, **1e-2b-2** Garage dan Collector di cluster, SOPS, default deny, **1e-2b-3** retensi dan backup arsip), **1e-3** backfill + kalibrasi. 1e-3 dipecah lagi: **1e-3a** pengisian ulang OpenAQ, replay prakiraan BMKG + OpenAQ, peta pemeriksaan titik sungai, **1e-3b** reanalisis GloFAS → ambang banjir → `hazard.flood.*` (**1e-3b-1** pemilihan sel dari reanalisis; **1e-3b-2a** alat ambang banjir dan ambang indeks hujan 7 sub-DAS; **1e-3b-2b** konektor hujan sub-DAS, ambang di geo-processor, `hazard.flood.*`), **1e-3c** dipecah (ADR 0023): **1e-3c-1a** arsip FIRMS dan laporan kalibrasi titik api, **1e-3c-1b** saringan dan aturan terpilih, `hazard.fire.*`, **1e-3c-2** set berlabel T4 dan radius dirasakan (ADR 0024: **1e-3c-2a** alat dan set berlabel T4 dari ISC Bulletin; **1e-3c-2c** keputusan ambang, ADR 0025; **1e-3c-2b** radius dirasakan, ADR 0026), **1e-3c-3** replay CAP.
+Fase 0 sampai 1e-3c-2b ter-commit dan terverifikasi; `main` di `7e35256` (catatan verifikasi 1e-3c-2b), CI hijau semua. Fase 1e-3c-3 (replay CAP, ADR 0027) dititipkan sebagai `terapkan-fase-1e-3c-3.sh`. Fase 1e dipecah: **1e-1** arsip Garage + replay, **1e-2a** OpenTelemetry + dashboard, **1e-2b** deploy (**1e-2b-1** image + CI + manifest, **1e-2b-2** Garage dan Collector di cluster, SOPS, default deny, **1e-2b-3** retensi dan backup arsip), **1e-3** backfill + kalibrasi. 1e-3 dipecah lagi: **1e-3a** pengisian ulang OpenAQ, replay prakiraan BMKG + OpenAQ, peta pemeriksaan titik sungai, **1e-3b** reanalisis GloFAS → ambang banjir → `hazard.flood.*` (**1e-3b-1** pemilihan sel dari reanalisis; **1e-3b-2a** alat ambang banjir dan ambang indeks hujan 7 sub-DAS; **1e-3b-2b** konektor hujan sub-DAS, ambang di geo-processor, `hazard.flood.*`), **1e-3c** dipecah (ADR 0023): **1e-3c-1a** arsip FIRMS dan laporan kalibrasi titik api, **1e-3c-1b** saringan dan aturan terpilih, `hazard.fire.*`, **1e-3c-2** set berlabel T4 dan radius dirasakan (ADR 0024: **1e-3c-2a** alat dan set berlabel T4 dari ISC Bulletin; **1e-3c-2c** keputusan ambang, ADR 0025; **1e-3c-2b** radius dirasakan, ADR 0026), **1e-3c-3** replay CAP.
+
+### Fase 1e-3c-3: replay CAP dan pembanding replay dengan stream RAW
+
+Keputusan lengkap di ADR 0027. Bahan: `sampel-arsip-2026-10-01.tar` (titipan; 53 objek `bmkg-cap`, dua peringatan Jawa Barat). Temuan sebelum kode ditulis: BMKG menimpa file CAP yang sama untuk pesan baru (`…11.32.005` dan `…12.32.005` sama-sama `CJB20261001005_alert.xml`), dan RSS, dokumen id, dan dokumen en bisa berbagi detik kunci arsip dengan dokumen id terurut sebelum RSS-nya.
+
+| Bagian      | Isi                                                                                                                                                                                                                                                                                                                | Terverifikasi di workspace asisten                                                                                                                                             |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Replay      | `replay.DeferredFeed` (`Add`/`Due`, `Emission` dengan FetchMeta payload asal, sisa terbit di akhir); contoh penolakan semua feed di laporan                                                                                                                                                                        | Coverage replay 99,0%; `TestRunDeferredFeed` (posisi di antara feed lain, Seen, galat publish)                                                                                 |
+| Feed CAP    | `capfeed.Replay`: payload satu detik diolah RSS → dokumen utama → terjemahan, pasangan lewat `identifier` = `guid`, jendela terjemahan 1 menit, revisi untuk terjemahan susulan, `ErrNoContext`; Poller dan replay berbagi `acceptPrimary`/`checkTranslation`/`build`; `bmkg.CAPFeed.Inspect`, `ports.FeedPayload` | Coverage capfeed 94,4%, bmkg 98,0%; arsip asli 1 Okt: 7 payload → 2 pesan id + en dengan FetchMeta dokumen id; `TestInspectRealPayloads` (identifier = guid di rekaman 24 Sep) |
+| Bolak-balik | Poller asli menulis arsip dan menerbitkan, replay arsip itu harus menerbitkan pesan sama persis: 6 skenario bernama + `FuzzReplayRoundTrip`                                                                                                                                                                        | ±30 ribu eksekusi fuzz 90 dtk tanpa beda; jendela 3 menit (salah) membuat 2 skenario gagal                                                                                     |
+| Pembanding  | `replay -compare <subjek>` (`app/replaycheck`, `adapters/jsread`: consumer berurutan sementara, hanya header), `-compare-lookback` 24 jam, `-cap-languages`                                                                                                                                                        | Coverage replaycheck 100%, jsread 86,1% (nats-server dalam proses); `TestReplayCompare` dengan arsip asli: cocok 2/2, pesan tambahan di stream → galat dan contoh              |
+| Repo        | ADR 0027, catatan ADR 0018 butir 8, `docs/events.md`, README, fuzz baru di Makefile dan CI, `testdata/arsip` (7 objek asli, 36 KB)                                                                                                                                                                                 | golangci-lint 2.15.0 bersih di ingest (juga tag integration), semua test ingest `-race`; test integrasi belum dijalankan (tidak ada yang berubah di jalur Garage/PostgreSQL)   |
+
+### Langkah di WSL (1e-3c-3)
+
+```bash
+make archive-maintain                                                      # seperti biasa saat mulai sesi
+bash "/mnt/c/KULIAH/PROJECT CODE/siaga-titipan/terapkan-fase-1e-3c-3.sh"  # cek hash, make check, commit
+git push
+make replay CONNECTORS=bmkg-cap ARGS="-publish=false -strict"             # seluruh arsip CAP dari Garage
+make replay FROM=2026-11-17 CONNECTORS=bmkg-cap ARGS="-compare raw.weather.bmkg"   # butuh make up (NATS); tanpa menerbitkan
+```
+
+`-compare` hanya bermakna bila ingest jalan di rentangnya: jalankan `make ingest` beberapa jam dulu (sore WIB paling sering ada peringatan Jawa Barat), lalu pakai `FROM` = waktu ingest start (RFC 3339, misal `2026-11-23T13:00:00+07:00`; paling awal 6 hari lalu karena stream RAW 7 hari). Kolom stream 0 bukan bukti apa pun.
+
+Yang dilaporkan: tabel kedua perintah (baris `bmkg-cap`: payload, event, ditolak, rusak, gagal parse; baris `raw.weather.bmkg`: replay, stream, cocok) dan baris contoh di bawahnya. "Hanya stream" wajar untuk pesan yang terbit saat arsip gagal ditulis; "hanya replay" berarti replay berbeda dengan polling dan perlu dilaporkan beserta contohnya.
+
+### Temuan yang perlu ditindaklanjuti (1e-3c-3)
+
+- Arsip penuh sejak 25 Sep belum pernah diputar dengan feed CAP; perintah pertama di atas memastikan semua payload `bmkg-cap` terbaca. Penolakan `ErrNoContext` di awal arsip (dokumen sebelum RSS pertama) wajar; di tengah arsip berarti `guid` ≠ `identifier` dan perlu dilaporkan.
+- `make replay FROM=…` yang menerbitkan (bukan `-compare`) bisa menolak dokumen pertama bila RSS terakhir diarsipkan sebelum `FROM`; mulai satu hari lebih awal, pesan yang sudah ada ditolak broker sebagai duplikat.
+- Urutan pesan antarperingatan dalam satu detik tidak bisa diketahui dari kunci arsip (ADR 0027). Tidak berpengaruh ke geo-processor (rantai pesan CAP per identifier).
 
 ### Fase 1e-3c-2b: radius dirasakan dari gempa dirasakan BMKG dan DYFI USGS
 
@@ -683,7 +715,7 @@ Target demo fase 1: dashboard Grafana berisi data live semua sumber.
 - [x] **1e-3c-2a** `make dedup-labels`: set berlabel T4 dari ISC Bulletin 2021–Okt 2024 (DJA vs NEIC per kejadian ISC) + 10 pasangan arsip real-time, presisi/recall dengan `Rule.Match` dan simulasi `Settle` (ADR 0024). Terverifikasi di WSL; CI hijau (`212f156`).
 - [x] **1e-3c-2c** Ambang lintas sumber 20 dtk (60 dtk untuk M ≥ 6), 150 km, 1,3 dari set berlabel ISC: recall 99,7%, presisi 99,9%; laporan dengan semua FP dan pembanding satu parameter (ADR 0025), PRD diselaraskan. Terverifikasi di WSL (`4a99e85`).
 - [x] **1e-3c-2b** Radius dirasakan R = 10^(0,35M + 0,46) dari arsip `gempadirasakan` BMKG (gazetir Kemendagri semua tingkat, jarak ke tepi wilayah) dan DYFI USGS sebagai pemeriksa, `make felt-radius` (ADR 0026). Terverifikasi di WSL (`a6aef0f`).
-- [ ] **1e-3c-3** Replay CAP (pasangkan dokumen id/en dengan entri RSS, ADR 0018 butir 8).
+- [ ] **1e-3c-3** Replay CAP: RSS, dokumen id, dan terjemahan dipasangkan lagi (`identifier` = `guid`, jendela terjemahan 1 menit) menjadi pesan yang sama dengan polling, diuji bolak-balik dengan Poller asli; `replay -compare` membandingkan ID pesan replay dengan stream RAW (ADR 0027). Dititipkan, menunggu verifikasi WSL.
 
 Catatan tertunda (dari sesi 28 Sep, di luar fase):
 
@@ -733,6 +765,8 @@ Workspace cloud asisten tidak bisa menjangkau `proxy.golang.org`, `go.dev`, atau
 - Sesi 1e-3c-2b: Go 1.27.3 dari `modcache-pecahan/` (tiga bagian di-stage dalam dua panggilan karena batas 500 MB per panggilan) dengan `GOPROXY=file://… GOSUMDB=off GOTOOLCHAIN=go1.27.3`; golangci-lint 2.15.0 dari rilis GitHub (cek checksum); `pnpm install` untuk prettier. `golangci-lint fmt` menggantikan gofumpt (tidak ada di modcache). DYFI diambil lewat browser bawaan (`javascript_tool` fetch dari tab earthquake.usgs.gov, berurutan karena 429; tab tersembunyi memperlambat timer, jadi antrean fetch dibuat tanpa `setTimeout`), dikemas sebagai tar berisi berkas cache ter-gzip lalu diunduh ke Downloads (unduhan kedua butuh klik tautan lewat `computer`), lalu di-stage. Nama wilayah dan batas kab/kec seluruh Indonesia dari `git` sparse cahyadsn (jangan `git ls-tree -l` di klon `--filter=blob:none`: memicu unduh semua blob).
 
 - Sesi 1e-2b-3: workspace baru; Go 1.27.1 dibangun dari tag (bootstrap Go 1.24.7, ±6 menit), modul dari `modcache-pecahan/` (tiga bagian di-stage, disambung, `GOPROXY=file://… GOSUMDB=off GOTOOLCHAIN=local`; `GOFLAGS` dikosongkan). Rilis GitHub yang dipakai: golangci-lint 2.13.2, kustomize 5.7.1, kubeconform 0.7.0 (skema dari raw.githubusercontent.com terjangkau), sops 3.13.3, age 1.3.2. Source Garage v2.3.0 dari mirror `deuxfleurs-org/garage` (sparse checkout `src/api`, `src/model`, `doc/book`) untuk memastikan dukungan lifecycle; source CLI `Backblaze/B2_Command_Line_Tool` untuk sintaks `key create`/`bucket create` dan keluaran `account authorize`. Dokumen backblaze.com terjangkau lewat WebFetch. Rasio kompresi diukur dengan sampel satu hari UTC penuh (`ukur-arsip.sh` menulis `sampel-arsip-<tgl>.tar` ke titipan).
+
+- Sesi 1e-3c-3: Go 1.27.3 dari `modcache-pecahan/` (tiga bagian di-stage dalam dua panggilan) dengan `GOPROXY=file://… GOSUMDB=off GOTOOLCHAIN=go1.27.3`; golangci-lint 2.15.0 dari rilis GitHub (cek checksum). Repo di-clone dari GitHub (`main` 7e35256). Sampel arsip CAP dari `sampel-arsip-2026-10-01.tar` di titipan; nats-server dalam proses (`natstest`) untuk `jsread` dan `-compare`.
 
 Karena itu `go.sum` dari asisten tidak dipakai: patch tidak menyertakan `go.sum`/`go.work.sum`, dan `make deps` di WSL yang membuatnya.
 

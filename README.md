@@ -37,6 +37,7 @@ make fire-threshold   # arsip FIRMS 2012–kemarin → saringan sumber panas tet
 make archive-ls       # isi arsip payload mentah per konektor; archive-verify memeriksa integritasnya
 make archive-maintain # cadangkan arsip ke Backblaze B2, verifikasi, lalu pangkas Garage sesuai retensi (sekali: make backup-setup)
 make replay FROM=2026-09-24 TO=2026-09-25   # putar ulang arsip ke NATS, urut waktu ambil asli
+make replay FROM=2026-11-20 CONNECTORS=bmkg-cap ARGS="-compare raw.weather.bmkg"   # bandingkan replay dengan stream RAW tanpa menerbitkan (ADR 0027)
 make backfill-openaq FROM=2026-09-26 TO=2026-09-27   # isi ulang jam OpenAQ yang terlewat (maks ±7 hari)
 make obs-up           # Grafana + Prometheus + Tempo + Loki lokal, dashboard di http://127.0.0.1:3300
 make images-smoke     # build image ingest + geo-processor dan uji asap (sama dengan CI)
@@ -45,7 +46,7 @@ make k8s-check        # render manifest Kubernetes lokal + prod, validasi skema,
 
 OpenAQ dan NASA FIRMS butuh key gratis: isi `OPENAQ_API_KEY` (daftar di explore.openaq.org) dan `FIRMS_MAP_KEY` (firms.modaps.eosdis.nasa.gov/api/map_key) di `.env`. Tanpa key, ingest tetap jalan tanpa kedua konektor itu.
 
-Payload mentah setiap sumber diarsipkan ke Garage (bucket `siaga-arsip`, awalan `raw/`) dan bisa diputar ulang untuk uji replay atau memulihkan stream NATS (ADR 0014; prakiraan BMKG dan OpenAQ sejak ADR 0018). Arsip lokal dari sebelum fase 1e dipindahkan dengan `make archive-upload`. Setiap hari UTC yang sudah ditutup dikemas menjadi satu bundel `tar.zst` per konektor di Backblaze B2 (10 GB gratis, tanpa kartu kredit; seminggu arsip 95 MiB menjadi beberapa MiB), dan objek Garage yang kedaluwarsa (prakiraan BMKG 14 hari, USGS dan Open-Meteo 30–90 hari, gempa/CAP/FIRMS/OpenAQ selamanya) baru dihapus setelah tercatat di cadangan (ADR 0022, [docs/setup/backblaze-b2.md](docs/setup/backblaze-b2.md)). Jam OpenAQ yang terlewat saat ingest mati diisi ulang dengan `make backfill-openaq` (ADR 0018).
+Payload mentah setiap sumber diarsipkan ke Garage (bucket `siaga-arsip`, awalan `raw/`) dan bisa diputar ulang untuk uji replay atau memulihkan stream NATS (ADR 0014; prakiraan BMKG dan OpenAQ sejak ADR 0018, CAP sejak ADR 0027). Arsip lokal dari sebelum fase 1e dipindahkan dengan `make archive-upload`. Setiap hari UTC yang sudah ditutup dikemas menjadi satu bundel `tar.zst` per konektor di Backblaze B2 (10 GB gratis, tanpa kartu kredit; seminggu arsip 95 MiB menjadi beberapa MiB), dan objek Garage yang kedaluwarsa (prakiraan BMKG 14 hari, USGS dan Open-Meteo 30–90 hari, gempa/CAP/FIRMS/OpenAQ selamanya) baru dihapus setelah tercatat di cadangan (ADR 0022, [docs/setup/backblaze-b2.md](docs/setup/backblaze-b2.md)). Jam OpenAQ yang terlewat saat ingest mati diisi ulang dengan `make backfill-openaq` (ADR 0018).
 
 ingest dan geo-processor diinstrumentasi OpenTelemetry: satu gempa bisa dilacak dalam satu trace dari polling sumber, arsip, NATS, query PostgreSQL, sampai `hazard.quake.created` terbit, dan dashboard "SIAGA — Pipa data" menampilkan keterlambatan dan galat tiap sumber, sisa kuota request, antrean NATS, latensi pipa, dan query lambat (ADR 0015). Isi `OTEL_EXPORTER_OTLP_ENDPOINT=http://127.0.0.1:4318` di `.env` setelah `make obs-up`, atau arahkan ke Grafana Cloud ([docs/setup/grafana-cloud.md](docs/setup/grafana-cloud.md)).
 
