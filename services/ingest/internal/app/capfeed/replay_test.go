@@ -1,6 +1,7 @@
 package capfeed_test
 
 import (
+	"fmt"
 	"slices"
 	"strings"
 	"testing"
@@ -87,7 +88,7 @@ func TestReplayMissingContext(t *testing.T) {
 	put(t, archive, base.Add(3*time.Minute), "bukan xml")
 	put(t, archive, base.Add(4*time.Minute), `<rss><channel><item><guid></guid></item></channel></rss>`)
 	put(t, archive, base.Add(5*time.Minute), `<rss/>`)
-	got, pub := runReplay(t, archive, &clock{}, replay.Options{})
+	got, pub := runReplay(t, archive, &clock{})
 	if got.Published != 1 || got.Rejected != 3 || got.ParseErrors != 2 {
 		t.Fatalf("laporan %+v", got)
 	}
@@ -99,6 +100,53 @@ func TestReplayMissingContext(t *testing.T) {
 	}
 	if noContext != 2 || len(pub.msgs) != 1 {
 		t.Fatalf("contoh %q, pesan %d", got.Samples, len(pub.msgs))
+	}
+}
+
+// BMKG menimpa file untuk pesan baru; dokumen yang masih berisi pesan lama
+// setelah entrinya keluar dari RSS ditolak sebagai dokumen basi, termasuk
+// terjemahan basi yang tidak boleh menjadi revisi pesan lama (ADR 0028).
+func TestReplayStaleDocuments(t *testing.T) {
+	a := &alert{id: "2.49.0.1.360.0.2026.10.01.11.32.001", file: "CJB1_alert.xml", listed: true, prov: "32", n: 1}
+	b := &alert{id: "2.49.0.1.360.0.2026.10.01.11.32.002", file: "CJB2_alert.xml", listed: true, prov: "32", n: 2}
+	w := &world{alerts: []*alert{a, b}}
+	archive := &memArchive{objs: map[string][]byte{}}
+	put(t, archive, base, w.rss())
+	put(t, archive, base.Add(time.Second), a.doc("id")) // terjemahan a gagal diambil
+	put(t, archive, base.Add(2*time.Second), b.doc("id"))
+	put(t, archive, base.Add(3*time.Second), b.doc("en"))
+	a.overwrite(0)
+	b.overwrite(0)
+	put(t, archive, base.Add(2*time.Minute), w.rss())
+	// a: dokumen baru sudah benar, terjemahannya masih pesan lama (yang dulu
+	// terbit tanpa terjemahan) dan tidak boleh menjadi revisinya.
+	put(t, archive, base.Add(2*time.Minute+time.Second), a.doc("id"))
+	put(t, archive, base.Add(2*time.Minute+2*time.Second), a.prev.doc("en"))
+	// b: dokumen utama masih pesan lama.
+	put(t, archive, base.Add(2*time.Minute+3*time.Second), b.prev.doc("id"))
+	put(t, archive, base.Add(4*time.Minute+time.Second), a.doc("en"))
+	put(t, archive, base.Add(4*time.Minute+2*time.Second), b.doc("id"))
+	put(t, archive, base.Add(4*time.Minute+3*time.Second), b.doc("en"))
+	got, pub := runReplay(t, archive, &clock{})
+	var stale []string
+	for _, s := range got.Samples {
+		if strings.Contains(s, capfeed.ErrStale.Error()) && strings.Contains(s, "sudah keluar dari RSS") {
+			stale = append(stale, s)
+		}
+	}
+	var msgs []string
+	for _, m := range pub.msgs {
+		var ww rawv1.WeatherWarning
+		if err := proto.Unmarshal(m.Data, &ww); err != nil {
+			t.Fatal(err)
+		}
+		msgs = append(msgs, fmt.Sprintf("%s %d", ww.GetIdentifier(), len(ww.GetTexts())))
+	}
+	slices.Sort(msgs)
+	want := []string{a.prev.id + " 1", b.prev.id + " 2", a.id + " 1", a.id + " 2", b.id + " 2"}
+	slices.Sort(want)
+	if got.Rejected != 2 || len(stale) != 2 || !slices.Equal(msgs, want) {
+		t.Fatalf("laporan %+v\npesan %q, harus %q", got, msgs, want)
 	}
 }
 

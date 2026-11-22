@@ -25,7 +25,8 @@ import (
 // arsip dan menerbitkan pesan; Replay atas arsip itu harus menerbitkan pesan
 // yang sama persis (subjek, Nats-Msg-Id, isi termasuk FetchMeta, waktu ambil),
 // termasuk terjemahan yang gagal lalu menyusul, entri yang berubah, dokumen
-// rusak, dan ingest yang dijalankan ulang.
+// rusak, ingest yang dijalankan ulang, dan file yang ditimpa pesan baru
+// tetapi masih berisi pesan lama (ADR 0028).
 
 var base = time.Date(2026, 10, 1, 12, 0, 0, 0, time.UTC)
 
@@ -111,6 +112,27 @@ type alert struct {
 	// tidak terbaca (sent rusak). idBad: 1 dokumen utama tidak terbaca,
 	// 2 latihan (Exercise), 3 kedaluwarsa sebelum berlaku.
 	enBad, idBad int
+	// prev adalah pesan lama di file yang sama: BMKG menimpa file untuk
+	// pesan baru (ADR 0027), dan sampai lag[bahasa] request berikutnya file
+	// itu masih berisi pesan lama (ADR 0028).
+	prev   *alert
+	lag    map[string]int
+	prov   string
+	n, gen int
+}
+
+// overwrite: BMKG menerbitkan pesan baru (identifier baru) di file yang sama;
+// entri lama diganti entri baru di RSS, dan file masih berisi pesan lama
+// selama lag request per bahasa.
+func (a *alert) overwrite(lag int) {
+	old := *a
+	old.prev, old.lag = nil, nil
+	a.prev = &old
+	a.lag = map[string]int{"id": lag, "en": lag}
+	a.gen++
+	a.id = fmt.Sprintf("2.49.0.1.360.0.2026.10.01.%02d.%s.%03d", 11+a.gen, a.prov, a.n)
+	a.listed = true
+	a.rev++
 }
 
 func (a *alert) doc(lang string) string {
@@ -198,6 +220,10 @@ func (w *world) Fetch(_ context.Context, r ports.Request) (ports.Response, error
 	lang, file, _ := strings.Cut(strings.TrimPrefix(r.URL, nowcast), "/")
 	for _, a := range w.alerts {
 		if a.file == file {
+			if a.lag[lang] > 0 {
+				a.lag[lang]--
+				return ports.Response{Body: []byte(a.prev.doc(lang))}, nil
+			}
 			return ports.Response{Body: []byte(a.doc(lang))}, nil
 		}
 	}
@@ -213,6 +239,7 @@ func scenario(t *testing.T, ops []byte) (*memArchive, *recPub, *clock) {
 		w.alerts = append(w.alerts, &alert{
 			id:   fmt.Sprintf("2.49.0.1.360.0.2026.10.01.11.%s.%03d", prov, i+1),
 			file: fmt.Sprintf("C%d20261001%03d_alert.xml", i, i+1),
+			prov: prov, n: i + 1,
 		})
 	}
 	// Byte pertama per peringatan: varian dokumen.
@@ -229,7 +256,7 @@ func scenario(t *testing.T, ops []byte) (*memArchive, *recPub, *clock) {
 	src := bmkg.NewCAPFeed(nowcast)
 	newPoller := func() *capfeed.Poller {
 		return capfeed.New(src, w, archive, pub, ck, noThrottle{},
-			capfeed.Options{Provinces: []string{"32"}, Languages: []string{"en"}, MaxAttempts: 3})
+			capfeed.Options{Provinces: []string{"32"}, Languages: []string{"en"}, MaxAttempts: 3, MaxStaleAttempts: 3})
 	}
 	p := newPoller()
 	// Sisanya: pasangan (operasi, byte request).
@@ -244,8 +271,11 @@ func scenario(t *testing.T, ops []byte) (*memArchive, *recPub, *clock) {
 		case 2:
 			a.listed = !a.listed
 		case 3:
-			if op&0x80 != 0 {
+			switch {
+			case op&0x80 != 0:
 				p = newPoller() // ingest dijalankan ulang
+			case op&0x40 != 0:
+				a.overwrite(int(op >> 4 & 3))
 			}
 		}
 		w.bytes = []byte{fetchBytes, fetchBytes >> 1, fetchBytes >> 2, fetchBytes >> 3, fetchBytes >> 4}
@@ -303,11 +333,11 @@ func short(ss []string) []string {
 	return out
 }
 
-func runReplay(t *testing.T, archive *memArchive, ck *clock, opts replay.Options) (replay.FeedReport, *recPub) {
+func runReplay(t *testing.T, archive *memArchive, ck *clock) (replay.FeedReport, *recPub) {
 	t.Helper()
 	pub := &recPub{}
 	feed := capfeed.NewReplay(bmkg.NewCAPFeed(nowcast), capfeed.ReplayOptions{Languages: []string{"en"}})
-	rep, err := replay.New(archive, pub, ck).Run(t.Context(), []replay.Feed{feed}, opts)
+	rep, err := replay.New(archive, pub, ck).Run(t.Context(), []replay.Feed{feed}, replay.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -331,6 +361,12 @@ func TestReplayRoundTripScenarios(t *testing.T) {
 		"ingest ulang": {[]byte{1, 1, 1, 1, 0x03, 0x09, 0x83, 0x09, 0x83, 0x11}, 6},
 		// Request tanpa jeda: RSS, dokumen, dan terjemahan berbagi detik.
 		"satu detik": {[]byte{1, 1, 1, 0, 0x03, 0, 0x01, 0, 0x05, 0, 0x09, 0x18}, 2},
+		// File ditimpa pesan baru, tetapi dua request pertama per bahasa masih
+		// berisi pesan lama: pesan lama tidak terbit ulang, pesan baru terbit
+		// setelah dokumennya benar, terjemahan menyusul sebagai revisi.
+		"file ditimpa": {[]byte{1, 0, 0, 0, 0x03, 0x09, 0x63, 0x09, 0x03, 0x09, 0x03, 0x09, 0x03, 0x09, 0x03, 0x09}, 3},
+		// Dokumen basi melewati batas percobaan: pesan baru tidak terbit.
+		"file ditimpa menyerah": {[]byte{1, 0, 0, 0, 0x03, 0x09, 0x73, 0x09, 0x03, 0x09, 0x03, 0x09, 0x03, 0x09}, 1},
 	}
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -338,7 +374,7 @@ func TestReplayRoundTripScenarios(t *testing.T) {
 			if len(live.msgs) != c.msgs {
 				t.Fatalf("polling langsung menerbitkan %d pesan, skenario mengharapkan %d", len(live.msgs), c.msgs)
 			}
-			got, replayed := runReplay(t, archive, ck, replay.Options{})
+			got, replayed := runReplay(t, archive, ck)
 			assertSame(t, live.msgs, replayed.msgs)
 			if got.Corrupt+got.ParseErrors != 0 {
 				t.Errorf("laporan %+v", got)
@@ -348,15 +384,16 @@ func TestReplayRoundTripScenarios(t *testing.T) {
 }
 
 // Properti: untuk sembarang urutan polling, kegagalan request, perubahan
-// entri, dan jalan ulang ingest, replay arsip menerbitkan pesan yang sama
+// entri, file yang ditimpa, dan jalan ulang ingest, replay arsip menerbitkan pesan yang sama
 // dengan polling langsung.
 func FuzzReplayRoundTrip(f *testing.F) {
 	f.Add([]byte{1, 0, 0, 0, 0x03, 0b0_1001_0001, 0x03, 0x0f, 0x03, 0x09})
 	f.Add([]byte{0b11, 0b101, 0b10001, 0b11001, 0x03, 0x09, 0x01, 0x09, 0x83, 0, 0x05, 0x18})
 	f.Add([]byte{1, 1, 1, 1, 0x03, 0, 0x01, 0, 0x05, 0, 0x09, 0x18, 0x0a, 0x09})
+	f.Add([]byte{1, 1, 0, 0, 0x03, 0x09, 0x63, 0x09, 0x77, 0, 0x03, 0x09, 0x83, 0x09, 0x03, 0x02, 0x03, 0x09})
 	f.Fuzz(func(t *testing.T, ops []byte) {
 		archive, live, ck := scenario(t, ops)
-		got, replayed := runReplay(t, archive, ck, replay.Options{})
+		got, replayed := runReplay(t, archive, ck)
 		assertSame(t, live.msgs, replayed.msgs)
 		if got.Corrupt+got.ParseErrors != 0 {
 			t.Fatalf("laporan %+v", got)

@@ -4,6 +4,7 @@ import (
 	"cmp"
 	"errors"
 	"fmt"
+	"maps"
 	"slices"
 	"strings"
 	"time"
@@ -59,6 +60,7 @@ type Replay struct {
 	window time.Duration
 
 	items  map[string]ports.FeedItem // entri RSS terakhir per guid
+	known  map[string]bool           // semua guid yang pernah ada di RSS
 	states map[string]*replayState   // per identifier
 	group  []pending                 // payload detik yang belum diolah
 	out    replay.Batch
@@ -92,7 +94,7 @@ type replayState struct {
 
 // NewReplay membuat Replay.
 func NewReplay(src ReplaySource, opts ReplayOptions) *Replay {
-	r := &Replay{src: src, window: opts.Window, items: map[string]ports.FeedItem{}, states: map[string]*replayState{}}
+	r := &Replay{src: src, window: opts.Window, items: map[string]ports.FeedItem{}, known: map[string]bool{}, states: map[string]*replayState{}}
 	if r.window <= 0 {
 		r.window = TranslationWindow
 	}
@@ -198,11 +200,7 @@ func (r *Replay) flushGroup() {
 	for _, pd := range g {
 		switch r.kind(pd) {
 		case 0:
-			r.reject(pd.rejections...)
-			clear(r.items)
-			for _, it := range pd.items {
-				r.items[it.Key] = it
-			}
+			r.list(pd)
 		case 1:
 			r.primary(pd)
 		default:
@@ -211,12 +209,44 @@ func (r *Replay) flushGroup() {
 	}
 }
 
+// list mengganti entri RSS. Peringatan yang keluar dari RSS dilupakan, sama
+// dengan Poller: dokumen yang masih memuat identifier-nya setelah itu adalah
+// dokumen basi untuk entri lain (ADR 0028), bukan terjemahan susulan.
+func (r *Replay) list(pd pending) {
+	r.reject(pd.rejections...)
+	clear(r.items)
+	for _, it := range pd.items {
+		r.items[it.Key] = it
+		r.known[it.Key] = true
+	}
+	for _, id := range slices.Sorted(maps.Keys(r.states)) {
+		if _, ok := r.items[id]; ok {
+			continue
+		}
+		// Poller sudah menerbitkannya di polling dokumen utamanya.
+		if st := r.states[id]; st.waiting {
+			r.publish(st)
+		}
+		delete(r.states, id)
+	}
+}
+
+// missing adalah alasan penolakan dokumen yang identifier-nya tidak ada di
+// RSS terakhir: basi bila guid itu pernah ada di RSS (file sudah ditautkan
+// ke pesan lain), tanpa konteks bila belum pernah.
+func (r *Replay) missing(id, key string) error {
+	if r.known[id] {
+		return fmt.Errorf("%w: guid %s sudah keluar dari RSS (%s)", ErrStale, id, key)
+	}
+	return fmt.Errorf("%w: guid %s tidak ada di RSS terakhir (%s)", ErrNoContext, id, key)
+}
+
 func (r *Replay) primary(pd pending) {
 	id := pd.info.Identifier
 	it, ok := r.items[id]
 	if !ok {
 		delete(r.states, id)
-		r.reject(ports.Rejection{Key: id, Reason: fmt.Errorf("%w: guid %s tidak ada di RSS terakhir (%s)", ErrNoContext, id, pd.p.Key)})
+		r.reject(ports.Rejection{Key: id, Reason: r.missing(id, pd.p.Key)})
 		return
 	}
 	// Dokumen utama baru menggantikan state lama yang masih menunggu
@@ -255,7 +285,11 @@ func (r *Replay) translation(pd pending, lang string) {
 	key := id + " [" + lang + "]"
 	switch {
 	case st == nil:
-		r.reject(ports.Rejection{Key: key, Reason: fmt.Errorf("%w: dokumen bahasa utama %s belum ada (%s)", ErrNoContext, id, pd.p.Key)})
+		if _, listed := r.items[id]; listed {
+			r.reject(ports.Rejection{Key: key, Reason: fmt.Errorf("%w: dokumen bahasa utama %s belum ada (%s)", ErrNoContext, id, pd.p.Key)})
+		} else {
+			r.reject(ports.Rejection{Key: key, Reason: r.missing(id, pd.p.Key)})
+		}
 		return
 	case st.ignored:
 		return

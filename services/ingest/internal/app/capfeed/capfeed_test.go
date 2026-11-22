@@ -442,7 +442,83 @@ func TestNoProvinceFilterAndDefaults(t *testing.T) {
 	r := newRig(line(idGtlo, "d1"))
 	r.p = New(r.src, r.f, nil, r.pub, &fakeClock{now: t0}, r.th, Options{})
 	res := mustPoll(t, r)
-	if res.Published != 1 || r.p.opts.MaxAttempts != 5 || r.p.Name() != "bmkg-cap" {
+	if res.Published != 1 || r.p.opts.MaxAttempts != 5 || r.p.opts.MaxStaleAttempts != DefaultMaxStaleAttempts || r.p.Name() != "bmkg-cap" {
 		t.Fatalf("%+v %+v", res, r.p.opts)
+	}
+}
+
+// idLama adalah pesan sebelumnya di file yang sama: BMKG menimpa file untuk
+// pesan baru, dan file bisa masih berisi pesan lama (ADR 0028).
+const idLama = "2.49.0.1.360.0.2026.09.24.06.32.001"
+
+func TestStalePrimaryIsRetriedThenPublished(t *testing.T) {
+	r := newRig(line(idJabar, "d1"))
+	fresh := r.src.docs["id/"+file(idJabar)]
+	r.src.docs["id/"+file(idJabar)] = warn(idLama, "id")
+	res := mustPoll(t, r)
+	// Pesan lama tidak terbit ulang dan terjemahan belum diambil.
+	if res.Published+res.Duplicates != 0 || res.Failed != 1 || res.Rejected != 0 || r.p.Pending() != 1 || r.f.count("en/"+file(idJabar)) != 0 {
+		t.Fatalf("%+v %v", res, r.f.requests)
+	}
+	if f := res.Failures[0]; f.Key != idJabar || !errors.Is(f.Reason, ErrStale) || !strings.Contains(f.Reason.Error(), "id/"+file(idJabar)+" berisi pesan "+idLama) {
+		t.Fatalf("galat %+v", f)
+	}
+	// Dokumen lama di arsip tetap tersimpan (RSS + dokumen basi).
+	if len(r.a.keys) != 2 {
+		t.Fatalf("arsip %v", r.a.keys)
+	}
+	r.src.docs["id/"+file(idJabar)] = fresh
+	res = mustPoll(t, r)
+	if !res.NotModified || res.Published != 1 || r.f.count("id/"+file(idJabar)) != 2 || r.p.Pending() != 0 {
+		t.Fatalf("%+v %v", res, r.f.requests)
+	}
+	if got := string(r.pub.msgs[0].Data); !strings.HasPrefix(got, idJabar+"|en:") {
+		t.Fatalf("pesan %q", got)
+	}
+}
+
+func TestStaleTranslationIsRetried(t *testing.T) {
+	r := newRig(line(idJabar, "d1"))
+	fresh := r.src.docs["en/"+file(idJabar)]
+	r.src.docs["en/"+file(idJabar)] = warn(idLama, "en")
+	res := mustPoll(t, r)
+	// Peringatan terbit tanpa terjemahan basi, lalu revisi setelah terjemahannya benar.
+	if res.Published != 1 || res.Failed != 1 || !errors.Is(res.Failures[0].Reason, ErrStale) || res.Failures[0].Key != idJabar+" [en]" || r.p.Pending() != 1 {
+		t.Fatalf("%+v", res)
+	}
+	if strings.Contains(string(r.pub.msgs[0].Data), "en:") {
+		t.Fatalf("pesan %q", r.pub.msgs[0].Data)
+	}
+	r.src.docs["en/"+file(idJabar)] = fresh
+	res = mustPoll(t, r)
+	if res.Published != 1 || r.f.count("id/"+file(idJabar)) != 1 || !strings.Contains(string(r.pub.msgs[1].Data), "en:Hujan lebat en") || r.p.Pending() != 0 {
+		t.Fatalf("%+v %q", res, r.pub.msgs)
+	}
+}
+
+func TestStaleGivesUp(t *testing.T) {
+	r := newRig(line(idJabar, "d1") + line(idAneh, "d1"))
+	r.p.opts.MaxStaleAttempts = 2
+	r.src.docs["id/"+file(idJabar)] = warn(idLama, "id")
+	r.src.docs["en/"+file(idAneh)] = warn(idLama, "en")
+	mustPoll(t, r)
+	res := mustPoll(t, r)
+	if r.p.Pending() != 0 || res.Failed != 2 || len(r.pub.msgs) != 1 {
+		t.Fatalf("%+v pending=%d msgs=%d", res, r.p.Pending(), len(r.pub.msgs))
+	}
+	for _, f := range res.Failures {
+		if !errors.Is(f.Reason, ErrStale) || !strings.Contains(f.Reason.Error(), "menyerah setelah 2 dokumen basi") {
+			t.Fatalf("galat %+v", f)
+		}
+	}
+	// Tidak ada request lagi sampai entrinya berubah.
+	mustPoll(t, r)
+	if r.f.count("id/"+file(idJabar)) != 2 || r.f.count("en/"+file(idAneh)) != 2 {
+		t.Fatalf("requests %v", r.f.requests)
+	}
+	r.f.rss = []ports.Response{{Body: []byte(line(idJabar, "d2") + line(idAneh, "d1")), ETag: `"v9"`}}
+	r.src.docs["id/"+file(idJabar)] = warn(idJabar, "id")
+	if res = mustPoll(t, r); res.Published != 1 {
+		t.Fatalf("%+v", res)
 	}
 }

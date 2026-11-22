@@ -6,6 +6,11 @@
 // Peringatan lebih penting daripada terjemahan: bila dokumen bahasa tambahan
 // gagal diambil, pesan tetap terbit dengan teks bahasa Indonesia, lalu terbit
 // ulang sebagai revisi setelah terjemahannya berhasil diambil.
+//
+// BMKG menimpa file CAP yang sama untuk pesan baru, dan file itu bisa masih
+// berisi pesan lama saat entri barunya sudah ada di RSS. Dokumen yang
+// identifier-nya bukan guid entrinya adalah dokumen basi: tidak diterbitkan,
+// dan diambil lagi di polling berikutnya (ADR 0028).
 package capfeed
 
 import (
@@ -47,7 +52,22 @@ type Options struct {
 	// MaxAttempts adalah batas gagal ambil per dokumen sebelum dokumen itu
 	// dilewati sampai entrinya di daftar berubah.
 	MaxAttempts int
+	// MaxStaleAttempts adalah batas dokumen basi per bahasa (file masih
+	// berisi pesan lain) sebelum peringatan atau terjemahannya dilewati.
+	// Bawaan DefaultMaxStaleAttempts.
+	MaxStaleAttempts int
 }
+
+// DefaultMaxStaleAttempts adalah bawaan MaxStaleAttempts: ±1 jam pada
+// interval RSS 2 menit. Satu request per peringatan per polling, jadi
+// menunggu lama tidak mahal, sedangkan melewatkan pesan baru berarti
+// peringatan tidak pernah terbit.
+const DefaultMaxStaleAttempts = 30
+
+// ErrStale menandai dokumen CAP basi: file yang ditautkan entri RSS masih
+// berisi pesan lain (identifier ≠ guid), biasanya pesan lama yang belum
+// ditimpa BMKG. Poller mengambilnya lagi; replay menolaknya (ADR 0028).
+var ErrStale = errors.New("dokumen CAP basi")
 
 // Poller menyimpan status feed antar-polling. Tidak aman dipakai bersamaan;
 // runner menjalankan satu goroutine per konektor.
@@ -84,6 +104,7 @@ type itemState struct {
 	extra    map[string]*doc // terjemahan yang berhasil
 	settled  map[string]bool // bahasa tambahan yang tidak perlu dicoba lagi
 	attempts map[string]int
+	stale    map[string]int
 	// published adalah hash isi event terakhir yang terbit.
 	published string
 }
@@ -92,6 +113,9 @@ type itemState struct {
 func New(src Source, fetch ports.Fetcher, archive ports.Archive, pub ports.Publisher, clock ports.Clock, throttle ports.Throttle, opts Options) *Poller {
 	if opts.MaxAttempts < 1 {
 		opts.MaxAttempts = 5
+	}
+	if opts.MaxStaleAttempts < 1 {
+		opts.MaxStaleAttempts = DefaultMaxStaleAttempts
 	}
 	opts.Languages = slices.DeleteFunc(slices.Clone(opts.Languages), func(l string) bool { return l == warning.LanguagePrimary })
 	return &Poller{
@@ -159,7 +183,7 @@ func (p *Poller) Poll(ctx context.Context) (poll.Result, error) {
 	for _, it := range items {
 		st := p.items[it.Key]
 		if st == nil || st.item.Digest != it.Digest {
-			st = &itemState{item: it, extra: map[string]*doc{}, settled: map[string]bool{}, attempts: map[string]int{}}
+			st = &itemState{item: it, extra: map[string]*doc{}, settled: map[string]bool{}, attempts: map[string]int{}, stale: map[string]int{}}
 			if !p.wanted(it) {
 				st.final = true
 			}
@@ -226,6 +250,10 @@ func (p *Poller) processItem(ctx context.Context, st *itemState, res *poll.Resul
 			p.reject(res, it.Key, err)
 			return nil
 		}
+		if d.w.Identifier != it.Key {
+			p.staleDoc(res, st, warning.LanguagePrimary, d.w.Identifier)
+			return nil
+		}
 		relevant, err := acceptPrimary(d)
 		switch {
 		case err != nil:
@@ -253,6 +281,10 @@ func (p *Poller) processItem(ctx context.Context, st *itemState, res *poll.Resul
 			// Terjemahan rusak tidak menahan peringatan.
 			st.settled[lang] = true
 			p.failure(res, it.Key+" ["+lang+"]", err)
+			continue
+		}
+		if d.w.Identifier != st.primary.w.Identifier {
+			p.staleDoc(res, st, lang, d.w.Identifier)
 			continue
 		}
 		if err := checkTranslation(st.primary, d); err != nil {
@@ -373,6 +405,27 @@ func (p *Poller) fail(res *poll.Result, st *itemState, lang string, err error) {
 			st.settled[lang] = true
 		}
 		err = fmt.Errorf("menyerah setelah %d percobaan: %w", st.attempts[lang], err)
+	}
+	key := st.item.Key
+	if lang != warning.LanguagePrimary {
+		key += " [" + lang + "]"
+	}
+	p.failure(res, key, err)
+}
+
+// staleDoc mencatat dokumen basi: dicoba lagi di polling berikutnya sampai
+// MaxStaleAttempts, lalu peringatan (bahasa utama) atau terjemahannya
+// dilewati sampai entrinya berubah.
+func (p *Poller) staleDoc(res *poll.Result, st *itemState, lang, got string) {
+	st.stale[lang]++
+	err := fmt.Errorf("%w: %s/%s berisi pesan %s", ErrStale, lang, st.item.File, got)
+	if st.stale[lang] >= p.opts.MaxStaleAttempts {
+		if lang == warning.LanguagePrimary {
+			st.final = true
+		} else {
+			st.settled[lang] = true
+		}
+		err = fmt.Errorf("menyerah setelah %d dokumen basi: %w", st.stale[lang], err)
 	}
 	key := st.item.Key
 	if lang != warning.LanguagePrimary {
