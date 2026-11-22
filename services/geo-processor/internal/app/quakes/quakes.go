@@ -86,7 +86,7 @@ func (s *Service) Process(ctx context.Context, r quake.Report) (Result, error) {
 
 // window adalah jarak waktu terjauh dua solusi yang masih bisa cocok.
 func (s *Service) window() time.Duration {
-	return max(s.rules.CrossSource.MaxTimeDelta, s.rules.Revision.MaxTimeDelta)
+	return max(s.rules.CrossSource.Window(), s.rules.Revision.Window())
 }
 
 func (s *Service) recluster(ctx context.Context, tx ports.QuakeTx, key quake.IdentityKey, home quake.EventID, res *Result) error {

@@ -130,7 +130,7 @@ func (ix index) within(t time.Time, d time.Duration) []Event {
 }
 
 func (ix index) any(o quake.Origin, r quake.Rule) bool {
-	for _, e := range ix.within(o.OccurredAt, r.MaxTimeDelta) {
+	for _, e := range ix.within(o.OccurredAt, r.Window()) {
 		if ok, _ := r.Match(o, e.Origin); ok {
 			return true
 		}
@@ -142,7 +142,7 @@ func (ix index) any(o quake.Origin, r quake.Rule) bool {
 func (ix index) best(o quake.Origin, r quake.Rule) (Event, bool) {
 	var best Event
 	bestScore := math.Inf(1)
-	for _, e := range ix.within(o.OccurredAt, r.MaxTimeDelta) {
+	for _, e := range ix.within(o.OccurredAt, r.Window()) {
 		if ok, s := r.Match(o, e.Origin); ok && s < bestScore {
 			best, bestScore = e, s
 		}
@@ -223,7 +223,7 @@ func sameSourcePairs(events []Event, r quake.Rule) int {
 	n := 0
 	for i, a := range events {
 		for _, b := range events[i+1:] {
-			if b.OccurredAt.Sub(a.OccurredAt) > r.MaxTimeDelta {
+			if b.OccurredAt.Sub(a.OccurredAt) > r.Window() {
 				break
 			}
 			if ok, _ := r.Match(a.Origin, b.Origin); ok {
@@ -286,14 +286,14 @@ func Markdown(rep Report, m Meta) string {
 	f("| Ambang (waktu, jarak, magnitudo) | Recall | Gabungan salah /1.000 (jam) | Gabungan salah /1.000 (menit) | Pasangan BMKG–BMKG | Pasangan USGS–USGS |\n")
 	f("| --- | --- | --- | --- | --- | --- |\n")
 	for _, r := range rep.Rules {
-		f("| %s, %s km, %s | %s%% (%d/%d) | %s | %s | %d | %d |\n",
-			r.Rule.MaxTimeDelta, num(r.Rule.MaxDistanceKm, 0), num(r.Rule.MaxMagnitudeDelta, 1),
+		f("| %s | %s%% (%d/%d) | %s | %s | %d | %d |\n",
+			ruleText(r.Rule),
 			num(r.Recall*100, 1), r.Matched, rep.WithCandidate,
 			num(r.FalsePerThousandHours, 2), num(r.FalsePerThousandMinutes, 2), r.SameSourceBMKG, r.SameSourceUSGS)
 	}
 	if len(rep.Misses) > 0 && len(rep.Rules) > 0 {
 		r0 := rep.Rules[0].Rule
-		f("\n## Contoh gempa yang terlewat ambang %s, %s km, %s\n\n", r0.MaxTimeDelta, num(r0.MaxDistanceKm, 0), num(r0.MaxMagnitudeDelta, 1))
+		f("\n## Contoh gempa yang terlewat ambang %s\n\n", ruleText(r0))
 		f("| USGS | Waktu (UTC) | M | Selisih waktu (dtk) | Jarak (km) | Selisih M |\n| --- | --- | --- | --- | --- | --- |\n")
 		for _, mi := range rep.Misses {
 			f("| %s | %s | %s | %s | %s | %s |\n", mi.USGS.ID, mi.USGS.OccurredAt.Format("2006-01-02 15:04:05"),

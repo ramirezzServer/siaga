@@ -124,19 +124,29 @@ func config(lookup envx.Lookup) (settings, error) {
 }
 
 // parseRule membaca ambang "<selisih waktu>,<jarak km>,<selisih magnitudo>",
-// misal "30s,100,1.0".
+// misal "30s,100,1.0", dengan dua bagian opsional jendela gempa besar
+// "<magnitudo>,<selisih waktu>", misal "20s,150,1.3,6,60s" (ADR 0025).
 func parseRule(v string) (quake.Rule, error) {
 	parts := strings.Split(v, ",")
-	if len(parts) != 3 {
-		return quake.Rule{}, fmt.Errorf("ambang %q harus berformat <durasi>,<km>,<magnitudo>", v)
+	if len(parts) != 3 && len(parts) != 5 {
+		return quake.Rule{}, fmt.Errorf("ambang %q harus berformat <durasi>,<km>,<magnitudo>[,<magnitudo besar>,<durasi besar>]", v)
 	}
 	dt, err1 := time.ParseDuration(strings.TrimSpace(parts[0]))
 	km, err2 := strconv.ParseFloat(strings.TrimSpace(parts[1]), 64)
 	dm, err3 := strconv.ParseFloat(strings.TrimSpace(parts[2]), 64)
-	if err := errors.Join(err1, err2, err3); err != nil {
+	var (
+		lm         float64
+		lt         time.Duration
+		err4, err5 error
+	)
+	if len(parts) == 5 {
+		lm, err4 = strconv.ParseFloat(strings.TrimSpace(parts[3]), 64)
+		lt, err5 = time.ParseDuration(strings.TrimSpace(parts[4]))
+	}
+	if err := errors.Join(err1, err2, err3, err4, err5); err != nil {
 		return quake.Rule{}, fmt.Errorf("ambang %q: %w", v, err)
 	}
-	r := quake.Rule{MaxTimeDelta: dt, MaxDistanceKm: km, MaxMagnitudeDelta: dm}
+	r := quake.Rule{MaxTimeDelta: dt, MaxDistanceKm: km, MaxMagnitudeDelta: dm, LargeMagnitude: lm, LargeTimeDelta: lt}
 	return r, r.Validate()
 }
 

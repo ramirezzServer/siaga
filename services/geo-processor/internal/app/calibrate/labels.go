@@ -114,20 +114,28 @@ type LabelMiss struct {
 	Truth *Labeled
 	// Got adalah pasangan yang dipilih ambang (kosong bila tidak ada).
 	Got *Labeled
+	// GotUSGS adalah origin USGS berlabel sama dengan Got, bila ada: tanda
+	// bahwa Got adalah gempa lain yang juga dilaporkan USGS (gempa kembar),
+	// bukan origin yang dipecah ISC.
+	GotUSGS *Labeled
 }
 
 // BasisReport adalah hasil satu basis label (isc atau arsip).
 type BasisReport struct {
-	Basis       string
-	BMKG, USGS  int
-	Positive    int
-	Labels      int
-	From, To    time.Time
-	Offsets     Offsets
-	Results     []LabelResult
-	ByType      []TypeScore
+	Basis      string
+	BMKG, USGS int
+	Positive   int
+	Labels     int
+	From, To   time.Time
+	Offsets    Offsets
+	Results    []LabelResult
+	ByType     []TypeScore
+	// Misses berisi semua FP lalu FN sampai batas, urut waktu.
 	Misses      []LabelMiss
 	MissesTotal int
+	// FalsePositives adalah jumlah FP (cara pasangan, ambang pertama) dan
+	// FalseOther yang pasangan terpilihnya punya origin USGS sendiri.
+	FalsePositives, FalseOther int
 }
 
 // LabelReport adalah hasil seluruh set berlabel.
@@ -153,22 +161,41 @@ func DefaultSubsets() []Subset {
 }
 
 // DefaultLabelRules adalah ambang yang dibandingkan; yang pertama adalah
-// ambang bawaan layanan dan menjadi acuan contoh yang terlewat.
+// ambang bawaan layanan dan menjadi acuan contoh yang terlewat. Sisanya
+// pembanding: bawaan lama, PRD, kandidat 1e-3c-2a, dan satu parameter
+// bawaan digeser per baris (ADR 0025).
 func DefaultLabelRules() []LabelRule {
 	rev := quake.DefaultRevisionRule
 	mk := func(name string, cross quake.Rule) LabelRule {
 		return LabelRule{Name: name, Rules: quake.Rules{CrossSource: cross, Revision: rev}}
 	}
+	d := quake.DefaultCrossSourceRule
+	with := func(dt time.Duration, km, dm float64) quake.Rule {
+		r := d
+		if dt > 0 {
+			r.MaxTimeDelta = dt
+		}
+		if km > 0 {
+			r.MaxDistanceKm = km
+		}
+		if dm > 0 {
+			r.MaxMagnitudeDelta = dm
+		}
+		return r
+	}
 	return []LabelRule{
-		mk("bawaan (ADR 0008)", quake.DefaultCrossSourceRule),
+		mk("bawaan (ADR 0025)", d),
+		mk("bawaan lama (ADR 0008)", quake.ADR0008CrossSourceRule),
 		mk("PRD awal", quake.PRDInitialRule),
-		mk("jarak 120 km", quake.Rule{MaxTimeDelta: 30 * time.Second, MaxDistanceKm: 120, MaxMagnitudeDelta: 1.0}),
-		mk("jarak 150 km", quake.Rule{MaxTimeDelta: 30 * time.Second, MaxDistanceKm: 150, MaxMagnitudeDelta: 1.0}),
-		mk("waktu 20 dtk", quake.Rule{MaxTimeDelta: 20 * time.Second, MaxDistanceKm: 100, MaxMagnitudeDelta: 1.0}),
-		mk("waktu 60 dtk", quake.Rule{MaxTimeDelta: 60 * time.Second, MaxDistanceKm: 100, MaxMagnitudeDelta: 1.0}),
-		mk("magnitudo 0,7", quake.Rule{MaxTimeDelta: 30 * time.Second, MaxDistanceKm: 100, MaxMagnitudeDelta: 0.7}),
-		mk("magnitudo 1,3", quake.Rule{MaxTimeDelta: 30 * time.Second, MaxDistanceKm: 100, MaxMagnitudeDelta: 1.3}),
-		mk("120 km + magnitudo 1,3", quake.Rule{MaxTimeDelta: 30 * time.Second, MaxDistanceKm: 120, MaxMagnitudeDelta: 1.3}),
+		mk("kandidat 1e-3c-2a", quake.Rule{MaxTimeDelta: 30 * time.Second, MaxDistanceKm: 120, MaxMagnitudeDelta: 1.3}),
+		mk("tanpa jendela M ≥ 6", quake.Rule{MaxTimeDelta: d.MaxTimeDelta, MaxDistanceKm: d.MaxDistanceKm, MaxMagnitudeDelta: d.MaxMagnitudeDelta}),
+		mk("waktu 15 dtk", with(15*time.Second, 0, 0)),
+		mk("waktu 25 dtk", with(25*time.Second, 0, 0)),
+		mk("waktu 30 dtk", with(30*time.Second, 0, 0)),
+		mk("jarak 120 km", with(0, 120, 0)),
+		mk("jarak 200 km", with(0, 200, 0)),
+		mk("magnitudo 1,0", with(0, 0, 1.0)),
+		mk("magnitudo 1,5", with(0, 0, 1.5)),
 	}
 }
 
@@ -265,6 +292,13 @@ func evaluateBasis(g *group, rules []LabelRule, subsets []Subset, maxMisses int)
 	for j := range g.bmkg {
 		byLabel[g.bmkg[j].Label] = append(byLabel[g.bmkg[j].Label], &g.bmkg[j])
 	}
+	usgsByLabel := map[string]*Labeled{}
+	for j := range g.usgs {
+		if _, ok := usgsByLabel[g.usgs[j].Label]; !ok {
+			usgsByLabel[g.usgs[j].Label] = &g.usgs[j]
+		}
+	}
+	var falseNeg []LabelMiss
 	for i, u := range g.usgs {
 		best := math.Inf(1)
 		for _, b := range byLabel[u.Label] {
@@ -324,10 +358,19 @@ func evaluateBasis(g *group, rules []LabelRule, subsets []Subset, maxMisses int)
 						ts.TP++
 					}
 				}
-				if (positive && (p == nil || p.Label != u.Label)) || (!positive && p != nil) {
+				switch {
+				case p != nil && p.Label != u.Label:
 					br.MissesTotal++
-					if len(br.Misses) < maxMisses {
-						br.Misses = append(br.Misses, LabelMiss{USGS: u, Truth: truth[i], Got: p})
+					br.FalsePositives++
+					mi := LabelMiss{USGS: u, Truth: truth[i], Got: p, GotUSGS: usgsByLabel[p.Label]}
+					if mi.GotUSGS != nil {
+						br.FalseOther++
+					}
+					br.Misses = append(br.Misses, mi)
+				case positive && p == nil:
+					br.MissesTotal++
+					if len(falseNeg) < maxMisses {
+						falseNeg = append(falseNeg, LabelMiss{USGS: u, Truth: truth[i]})
 					}
 				}
 			}
@@ -335,6 +378,8 @@ func evaluateBasis(g *group, rules []LabelRule, subsets []Subset, maxMisses int)
 		res.FalsePerThousandMinutes = labeledFalseRate(ix, g.usgs, r.Rules.CrossSource, MinuteShifts)
 		br.Results = append(br.Results, res)
 	}
+	br.Misses = append(br.Misses, falseNeg...)
+	slices.SortStableFunc(br.Misses, func(a, b LabelMiss) int { return byTime(a.USGS, b.USGS) })
 	for i, u := range g.usgs {
 		if t := truth[i]; t != nil {
 			_, _, dm := deltas(u.Origin, t.Origin)
@@ -373,7 +418,7 @@ func (ix labeledIx) within(t time.Time, d time.Duration) (int, int) {
 }
 
 func (ix labeledIx) best(o quake.Origin, r quake.Rule) (*Labeled, bool) {
-	lo, hi := ix.within(o.OccurredAt, r.MaxTimeDelta)
+	lo, hi := ix.within(o.OccurredAt, r.Window())
 	var best *Labeled
 	bestScore := math.Inf(1)
 	for i := lo; i < hi; i++ {
@@ -462,7 +507,7 @@ func simulate(g *group, rules quake.Rules) (simResult, error) {
 	slices.SortFunc(sols, func(a, b quake.Solution) int {
 		return cmp.Or(a.FirstSeenAt.Compare(b.FirstSeenAt), a.Key.Compare(b.Key))
 	})
-	w := max(rules.CrossSource.MaxTimeDelta, rules.Revision.MaxTimeDelta)
+	w := max(rules.CrossSource.Window(), rules.Revision.Window())
 	bucket := func(t time.Time) int64 { return t.UnixNano() / int64(w) }
 	buckets := map[int64][]quake.IdentityKey{}
 	byKey := map[quake.IdentityKey]quake.Solution{}
@@ -524,7 +569,7 @@ func LabelMarkdown(rep LabelReport, m LabelMeta) string {
 	var b strings.Builder
 	f := func(format string, a ...any) { fmt.Fprintf(&b, format, a...) }
 	f("# Deduplikasi gempa BMKG–USGS terhadap set berlabel (PRD T4)\n\n")
-	f("Dihasilkan otomatis oleh `%s`. Jangan diedit manual; jalankan ulang perintahnya. Keputusan di ADR 0024.\n\n", m.Command)
+	f("Dihasilkan otomatis oleh `%s`. Jangan diedit manual; jalankan ulang perintahnya. Metode di ADR 0024, keputusan ambang di ADR 0025.\n\n", m.Command)
 	f("Set berlabel: %s. Label ISC berasal dari pengelompokan kejadian ISC Bulletin (International Seismological Centre, On-line Bulletin, https://doi.org/10.31905/D808B830): origin DJA (BMKG) dan NEIC (USGS) di kejadian ISC yang sama adalah pasangan. Label arsip disusun manual dari arsip payload real-time ingest.\n\n", strings.Join(m.Sources, ", "))
 	f("Untuk setiap origin USGS: **positif** bila set berisi origin BMKG berlabel sama. **Pasangan**: origin BMKG dengan skor `quake.Rule.Match` terbaik yang lolos ambang lintas sumber. **Simulasi**: semua origin diputar lewat `quake.Settle` (sama dengan geo-processor) menurut urutan kedatangan (BMKG %s menit, USGS %s menit setelah kejadian), dengan ambang revisi %s, %s km, %s; pasangannya adalah origin BMKG yang berlaku di kejadian akhir. TP = pasangan berlabel sama, FP = pasangan berlabel lain (gabungan salah), FN = positif yang bukan TP. Presisi = TP/(TP+FP), recall = TP/positif.\n\n",
 		num(Arrival[quake.SourceBMKG].Minutes(), 0), num(Arrival[quake.SourceUSGS].Minutes(), 0),
@@ -588,9 +633,16 @@ func LabelMarkdown(rep LabelReport, m LabelMeta) string {
 		}
 		if br.MissesTotal > 0 && len(br.Results) > 0 {
 			f("### Salah menurut ambang %s (cara pasangan, %d dari %d ditampilkan)\n\n", br.Results[0].Rule.Name, len(br.Misses), br.MissesTotal)
-			f("| USGS | Waktu (UTC) | M | Jenis | Ke BMKG berlabel sama (dtk, km, ΔM) | Pasangan terpilih |\n| --- | --- | --- | --- | --- | --- |\n")
+			if br.FalsePositives > 0 {
+				f("Semua %d FP ditampilkan; %d di antaranya memilih origin BMKG yang label ISC-nya punya origin USGS sendiri (kolom terakhir), jadi gempa lain yang berdekatan, bukan satu gempa yang dipecah ISC.\n\n", br.FalsePositives, br.FalseOther)
+			}
+			f("| USGS | Waktu (UTC) | M | Jenis | Ke BMKG berlabel sama (dtk, km, ΔM) | Pasangan terpilih | USGS label pasangan (dtk) |\n| --- | --- | --- | --- | --- | --- | --- |\n")
 			for _, mi := range br.Misses {
-				kind, truth, got := "FN", "–", "–"
+				kind, truth, got, other := "FN", "–", "–", "–"
+				if mi.GotUSGS != nil {
+					dt, _, _ := deltas(mi.USGS.Origin, mi.GotUSGS.Origin)
+					other = fmt.Sprintf("%s (%s)", mi.GotUSGS.Key.EventID, num(dt, 1))
+				}
 				if mi.Got != nil {
 					kind = "FP"
 					if mi.Truth != nil {
@@ -603,8 +655,8 @@ func LabelMarkdown(rep LabelReport, m LabelMeta) string {
 					dt, km, dm := deltas(mi.USGS.Origin, mi.Truth.Origin)
 					truth = fmt.Sprintf("%s, %s, %s (%s)", num(dt, 1), num(km, 1), num(dm, 2), mi.Truth.MagnitudeType)
 				}
-				f("| %s | %s | %s | %s | %s | %s |\n", mi.USGS.Key.EventID, mi.USGS.OccurredAt.Format("2006-01-02 15:04:05"),
-					num(mi.USGS.Magnitude, 1), kind, truth, got)
+				f("| %s | %s | %s | %s | %s | %s | %s |\n", mi.USGS.Key.EventID, mi.USGS.OccurredAt.Format("2006-01-02 15:04:05"),
+					num(mi.USGS.Magnitude, 1), kind, truth, got, other)
 			}
 			f("\n")
 		}
@@ -612,6 +664,12 @@ func LabelMarkdown(rep LabelReport, m LabelMeta) string {
 	return b.String()
 }
 
+// ruleText menulis ambang "20s, 150 km, 1,3", ditambah "; M ≥ 6: 1m0s" bila
+// ada jendela gempa besar.
 func ruleText(r quake.Rule) string {
-	return fmt.Sprintf("%s, %s km, %s", r.MaxTimeDelta, num(r.MaxDistanceKm, 0), num(r.MaxMagnitudeDelta, 1))
+	s := fmt.Sprintf("%s, %s km, %s", r.MaxTimeDelta, num(r.MaxDistanceKm, 0), num(r.MaxMagnitudeDelta, 1))
+	if r.LargeTimeDelta > 0 {
+		s += fmt.Sprintf("; M ≥ %s: %s", num(r.LargeMagnitude, -1), r.LargeTimeDelta)
+	}
+	return s
 }

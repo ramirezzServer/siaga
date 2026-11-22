@@ -61,8 +61,45 @@ func TestRuleMatchBoundaries(t *testing.T) {
 	}
 }
 
+// Jendela gempa besar (ADR 0025): berlaku bila salah satu origin M ≥ 6.
+func TestRuleLargeMagnitudeWindow(t *testing.T) {
+	r := DefaultCrossSourceRule
+	a := Origin{OccurredAt: t0, Latitude: 6.18, Longitude: 127.0, Magnitude: 7.1}
+	b := a
+	b.OccurredAt = t0.Add(22 * time.Second) // M 7,1 Mindanao 2021-08-11: BMKG 22,4 dtk dari NEIC
+	b.Magnitude = 7.15
+	if ok, _ := r.Match(a, b); !ok {
+		t.Error("M 7,1 berselisih 22 dtk harus cocok")
+	}
+	if got := r.TimeDelta(a, b); got != time.Minute {
+		t.Errorf("jendela %v", got)
+	}
+	_, score := r.Match(a, b)
+	if want := 22.0 / 60; math.Abs(score-0.05/1.3-want) > 1e-9 {
+		t.Errorf("skor %v harus memakai jendela 60 dtk", score)
+	}
+	a.Magnitude, b.Magnitude = 5.95, 5.0
+	if ok, _ := r.Match(a, b); ok {
+		t.Error("M < 6 berselisih 22 dtk tidak boleh cocok")
+	}
+	b.Magnitude = 6.0
+	if ok, _ := r.Match(a, b); !ok {
+		t.Error("salah satu origin tepat M 6 harus memakai jendela gempa besar")
+	}
+	b.OccurredAt = t0.Add(61 * time.Second)
+	if ok, _ := r.Match(a, b); ok {
+		t.Error("lewat 60 dtk tidak boleh cocok")
+	}
+	if r.Window() != time.Minute || ADR0008CrossSourceRule.Window() != 30*time.Second {
+		t.Error("Window harus jendela terlebar")
+	}
+	if ADR0008CrossSourceRule.TimeDelta(a, b) != 30*time.Second {
+		t.Error("tanpa jendela gempa besar, TimeDelta = MaxTimeDelta")
+	}
+}
+
 func TestRuleValidate(t *testing.T) {
-	for _, r := range []Rule{PRDInitialRule, DefaultCrossSourceRule, DefaultRevisionRule} {
+	for _, r := range []Rule{PRDInitialRule, ADR0008CrossSourceRule, DefaultCrossSourceRule, DefaultRevisionRule} {
 		if err := r.Validate(); err != nil {
 			t.Errorf("%+v: %v", r, err)
 		}
@@ -75,6 +112,10 @@ func TestRuleValidate(t *testing.T) {
 		{MaxTimeDelta: time.Hour, MaxDistanceKm: 10, MaxMagnitudeDelta: 1},
 		{MaxTimeDelta: time.Second, MaxDistanceKm: math.NaN(), MaxMagnitudeDelta: 1},
 		{MaxTimeDelta: time.Second, MaxDistanceKm: 10, MaxMagnitudeDelta: -1},
+		{MaxTimeDelta: time.Minute, MaxDistanceKm: 10, MaxMagnitudeDelta: 1, LargeMagnitude: 6, LargeTimeDelta: time.Minute},
+		{MaxTimeDelta: time.Second, MaxDistanceKm: 10, MaxMagnitudeDelta: 1, LargeTimeDelta: time.Minute},
+		{MaxTimeDelta: time.Second, MaxDistanceKm: 10, MaxMagnitudeDelta: 1, LargeMagnitude: 6},
+		{MaxTimeDelta: time.Second, MaxDistanceKm: 10, MaxMagnitudeDelta: 1, LargeMagnitude: 6, LargeTimeDelta: time.Hour},
 	} {
 		if err := r.Validate(); err == nil {
 			t.Errorf("%+v seharusnya ditolak", r)
@@ -82,7 +123,9 @@ func TestRuleValidate(t *testing.T) {
 	}
 }
 
-// Properti: Match simetris dan skornya dalam [0, 3] bila cocok.
+// Properti: Match simetris, skornya dalam [0, 3] bila cocok, dan jendela
+// gempa besar tidak pernah membuat pasangan yang cocok tanpa jendela itu
+// menjadi tidak cocok.
 func FuzzRuleMatchSymmetric(f *testing.F) {
 	f.Add(int64(0), -6.9, 107.6, 5.0, int64(3), -6.8, 107.7, 5.3)
 	f.Add(int64(0), 0.0, 179.9, 4.0, int64(-20), 0.1, -179.9, 4.1)
@@ -93,6 +136,13 @@ func FuzzRuleMatchSymmetric(f *testing.F) {
 		}
 		a := Origin{OccurredAt: t0.Add(time.Duration(s1%3600) * time.Second), Latitude: lat1, Longitude: lon1, Magnitude: m1}
 		b := Origin{OccurredAt: t0.Add(time.Duration(s2%3600) * time.Second), Latitude: lat2, Longitude: lon2, Magnitude: m2}
+		base := DefaultCrossSourceRule
+		base.LargeMagnitude, base.LargeTimeDelta = 0, 0
+		if ok, _ := base.Match(a, b); ok {
+			if ok2, _ := DefaultCrossSourceRule.Match(a, b); !ok2 {
+				t.Fatal("jendela gempa besar mempersempit kecocokan")
+			}
+		}
 		for _, r := range []Rule{PRDInitialRule, DefaultCrossSourceRule, DefaultRevisionRule} {
 			ok1, sc1 := r.Match(a, b)
 			ok2, sc2 := r.Match(b, a)

@@ -35,15 +35,20 @@ func main() {
 }
 
 // Ambang yang dibandingkan. Baris pertama adalah angka awal PRD; baris kedua
-// ambang bawaan layanan.
+// ambang bawaan layanan (ADR 0025), baris ketiga bawaan lama (ADR 0008).
 var candidates = []quake.Rule{
 	quake.PRDInitialRule,
 	quake.DefaultCrossSourceRule,
+	quake.ADR0008CrossSourceRule,
 	{MaxTimeDelta: 30 * time.Second, MaxDistanceKm: 75, MaxMagnitudeDelta: 0.7},
 	{MaxTimeDelta: 30 * time.Second, MaxDistanceKm: 100, MaxMagnitudeDelta: 0.7},
 	{MaxTimeDelta: 20 * time.Second, MaxDistanceKm: 100, MaxMagnitudeDelta: 1.0},
 	{MaxTimeDelta: 60 * time.Second, MaxDistanceKm: 100, MaxMagnitudeDelta: 1.0},
 	{MaxTimeDelta: 30 * time.Second, MaxDistanceKm: 120, MaxMagnitudeDelta: 1.0},
+	{MaxTimeDelta: 20 * time.Second, MaxDistanceKm: 150, MaxMagnitudeDelta: 1.3},
+	{MaxTimeDelta: 30 * time.Second, MaxDistanceKm: 120, MaxMagnitudeDelta: 1.3},
+	{MaxTimeDelta: 25 * time.Second, MaxDistanceKm: 150, MaxMagnitudeDelta: 1.3},
+	{MaxTimeDelta: 20 * time.Second, MaxDistanceKm: 200, MaxMagnitudeDelta: 1.3},
 	quake.DefaultRevisionRule,
 }
 

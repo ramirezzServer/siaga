@@ -29,6 +29,13 @@ func TestConfigDefaultsAndOverrides(t *testing.T) {
 	if cfg.rules.CrossSource != quake.PRDInitialRule || cfg.rules.Revision.MaxTimeDelta != 5*time.Second {
 		t.Fatalf("override %+v", cfg.rules)
 	}
+	cfg, err = config(lookup(map[string]string{"DATABASE_URL": "postgres://x", "QUAKE_DEDUP_CROSS_SOURCE": "20s,150,1.3, 6, 60s"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.rules.CrossSource != quake.DefaultCrossSourceRule {
+		t.Fatalf("jendela gempa besar %+v", cfg.rules.CrossSource)
+	}
 }
 
 func TestConfigReportsAllErrors(t *testing.T) {
@@ -41,7 +48,9 @@ func TestConfigReportsAllErrors(t *testing.T) {
 			t.Errorf("galat %q tidak menyebut %s", err, want)
 		}
 	}
-	if _, err := parseRule("1s,a,1"); err == nil {
-		t.Error("angka rusak harus ditolak")
+	for _, bad := range []string{"1s,a,1", "20s,150,1.3,6", "20s,150,1.3,x,60s", "20s,150,1.3,6,10s"} {
+		if _, err := parseRule(bad); err == nil {
+			t.Errorf("%q harus ditolak", bad)
+		}
 	}
 }
