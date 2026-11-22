@@ -1,0 +1,11 @@
+# Alias nama wilayah di kolom "Dirasakan" BMKG yang tidak cocok dengan nama Kemendagri (make felt-radius, ADR 0026).
+# Setiap baris: nama seperti ditulis BMKG, kode Kemendagri yang dipakai, dan alasannya. Nama kota yang bukan wilayah
+# administrasi dipetakan ke kecamatan pusatnya.
+nama,kode,alasan
+Anyer,36.04.30,"Kecamatan Anyar (Kab. Serang); ""Anyer"" ejaan lama"
+Bungku,72.06.05,Kecamatan Bungku Tengah; Bungku ibu kota Kab. Morowali di kecamatan ini
+Calang,11.14.02,Kecamatan Krueng Sabee; Calang ibu kota Kab. Aceh Jaya di kecamatan ini
+Darajat,32.05.08,Kecamatan Pasirwangi (Kab. Garut); Darajat nama lapangan panas bumi di kecamatan ini
+Jampea,73.01.06,Kecamatan Pasimasunggu (Kab. Kepulauan Selayar) di Pulau Jampea
+Maumere,53.07.05,Kecamatan Alok; pusat kota Maumere (Kab. Sikka)
+Muara Binuangeun,36.02.21.2005,"Desa Muara (Kec. Wanasalam, Kab. Lebak); Binuangeun nama pantai dan pelabuhan di desa ini"

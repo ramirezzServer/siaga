@@ -111,7 +111,7 @@ grid-list: regions-fetch ## Bangun ulang simpul grid 0,25° Open-Meteo ingest (P
 	  -grid-out ../ingest/internal/adapters/sitelist/data/grid025_$(PROVINCE).txt
 
 ##@ Pipa data
-.PHONY: ingest ingest-record geo calibrate-dedup dedup-labels river-snap flood-threshold rain-threshold fire-threshold calibration-copy archive-ls archive-verify archive-upload archive-backup archive-backup-verify archive-restore archive-prune archive-maintain backup-setup replay backfill-openaq
+.PHONY: ingest ingest-record geo calibrate-dedup dedup-labels felt-radius river-snap flood-threshold rain-threshold fire-threshold calibration-copy archive-ls archive-verify archive-upload archive-backup archive-backup-verify archive-restore archive-prune archive-maintain backup-setup replay backfill-openaq
 ingest: ## Jalankan ingest (butuh `make up`); arsip ke Garage, status di http://127.0.0.1:8081/status
 	cd services/ingest && INGEST_ARCHIVE_URL="$(INGEST_ARCHIVE_URL)" go run ./cmd/ingest
 
@@ -213,6 +213,15 @@ dedup-labels: ## Set berlabel T4 dari ISC Bulletin 2021–Okt 2024 lalu ukur amb
 	    -out ../../docs/calibration/dedup-berlabel.md) && \
 	  pnpm exec prettier --write --log-level warn docs/calibration/dedup-berlabel.md ;; esac
 
+# Contoh: make felt-radius ARGS=-plan (rencana saja), ARGS=-offline (cache DYFI saja), ARGS="-bmkg-until 2026-11-21"
+felt-radius: ## Kalibrasi radius dirasakan gempa dari arsip gempadirasakan BMKG + DYFI USGS (jalan pertama ±4.300 request USGS, ±1 jam; ulang gratis dari .cache/dyfi)
+	scripts/fetch-region-data.sh
+	scripts/fetch-gazetteer-data.sh
+	go run ./services/ingest/cmd/felt-data -archive "$(INGEST_ARCHIVE_URL)" $(ARGS)
+	@case " $(ARGS) " in *" -plan "*) echo "-plan: kalibrasi dilewati" ;; *) \
+	  (cd services/geo-processor && go run ./cmd/calibrate-felt) && \
+	  pnpm exec prettier --write --log-level warn docs/calibration/radius-dirasakan.md ;; esac
+
 ##@ Kualitas
 .PHONY: gen lint lint-go test test-go test-integration fuzz check
 gen: ## Generate ulang kode dari kontrak (proto + OpenAPI)
@@ -240,9 +249,9 @@ test-integration: ## Test integrasi (butuh `make up migrate`; paket dijalankan b
 	@cd services/ingest && SIAGA_TEST_S3_ENDPOINT="http://127.0.0.1:$(or $(GARAGE_S3_PORT),3900)" go test -race -count=1 -tags integration ./internal/adapters/s3archive/
 
 fuzz: ## Fuzzing singkat semua target fuzz (30 detik per target)
-	@cd services/geo-processor && for t in ./internal/domain/region:FuzzParseCode ./internal/domain/region:FuzzParseLatLngPath ./internal/adapters/cahyadsn:FuzzParseDump ./internal/domain/quake:FuzzClusteringOrderIndependent ./internal/domain/quake:FuzzClusteringInvariantsUnderCrowding ./internal/domain/quake:FuzzApplyOrderIndependent ./internal/domain/quake:FuzzLevelMonotone ./internal/domain/quake:FuzzRuleMatchSymmetric ./internal/app/quakes:FuzzServiceOrderIndependent ./internal/domain/weather:FuzzDeriveOrderIndependent ./internal/app/warnings:FuzzServiceOrderIndependent ./internal/domain/series:FuzzWeatherValidate ./internal/domain/flood:FuzzDayMaxSumMatchesCalibration ./internal/domain/flood:FuzzLevelMonotone ./internal/domain/fire:FuzzLevelMonotone ./internal/app/fires:FuzzServiceOrderIndependent; do \
+	@cd services/geo-processor && for t in ./internal/domain/region:FuzzParseCode ./internal/domain/region:FuzzParseLatLngPath ./internal/adapters/cahyadsn:FuzzParseDump ./internal/domain/quake:FuzzClusteringOrderIndependent ./internal/domain/quake:FuzzClusteringInvariantsUnderCrowding ./internal/domain/quake:FuzzApplyOrderIndependent ./internal/domain/quake:FuzzLevelMonotone ./internal/domain/quake:FuzzLevelMonotoneAnySlope ./internal/domain/quake:FuzzParseFelt ./internal/domain/region:FuzzDistanceKm ./internal/domain/gazetteer:FuzzNormalize ./internal/domain/quake:FuzzRuleMatchSymmetric ./internal/app/quakes:FuzzServiceOrderIndependent ./internal/domain/weather:FuzzDeriveOrderIndependent ./internal/app/warnings:FuzzServiceOrderIndependent ./internal/domain/series:FuzzWeatherValidate ./internal/domain/flood:FuzzDayMaxSumMatchesCalibration ./internal/domain/flood:FuzzLevelMonotone ./internal/domain/fire:FuzzLevelMonotone ./internal/app/fires:FuzzServiceOrderIndependent; do \
 	  go test $${t%%:*} -run='^$$' -fuzz="^$${t##*:}\$$" -fuzztime=30s || exit 1; done
-	@cd services/ingest && for t in ./internal/domain/ratelimit:FuzzWindowBound ./internal/domain/ratelimit:FuzzPriorityHeadroom ./internal/domain/ratelimit:FuzzAvailable ./internal/domain/schedule:FuzzNextBounds ./internal/domain/forecast:FuzzOrder ./internal/domain/warning:FuzzParseReferences ./internal/adapters/bmkg:FuzzParse ./internal/adapters/bmkg:FuzzParseCAPDocuments ./internal/adapters/bmkg:FuzzParseForecastDocument ./internal/adapters/usgs:FuzzParse ./internal/adapters/openmeteo:FuzzParse ./internal/domain/airquality:FuzzClean ./internal/adapters/firms:FuzzParseFIRMS ./internal/adapters/openaq:FuzzParseOpenAQ ./internal/domain/archivekey:FuzzParse ./internal/domain/archivebundle:FuzzParse ./internal/domain/retention:FuzzExpiredMonotone ./internal/app/replay:FuzzRunOrdered ./internal/domain/threshold:FuzzDailyMaxSum ./internal/domain/threshold:FuzzLevel ./internal/domain/firecluster:FuzzClusterLinked ./internal/domain/firecluster:FuzzEvaluateMonotone ./internal/adapters/quakeml:FuzzParse ./internal/domain/quakelabel:FuzzBuildOrderIndependent; do \
+	@cd services/ingest && for t in ./internal/domain/ratelimit:FuzzWindowBound ./internal/domain/ratelimit:FuzzPriorityHeadroom ./internal/domain/ratelimit:FuzzAvailable ./internal/domain/schedule:FuzzNextBounds ./internal/domain/forecast:FuzzOrder ./internal/domain/warning:FuzzParseReferences ./internal/adapters/bmkg:FuzzParse ./internal/adapters/bmkg:FuzzParseCAPDocuments ./internal/adapters/bmkg:FuzzParseForecastDocument ./internal/adapters/usgs:FuzzParse ./internal/adapters/openmeteo:FuzzParse ./internal/domain/airquality:FuzzClean ./internal/adapters/firms:FuzzParseFIRMS ./internal/adapters/openaq:FuzzParseOpenAQ ./internal/domain/archivekey:FuzzParse ./internal/domain/archivebundle:FuzzParse ./internal/domain/retention:FuzzExpiredMonotone ./internal/app/replay:FuzzRunOrdered ./internal/domain/threshold:FuzzDailyMaxSum ./internal/domain/threshold:FuzzLevel ./internal/domain/firecluster:FuzzClusterLinked ./internal/domain/firecluster:FuzzEvaluateMonotone ./internal/adapters/quakeml:FuzzParse ./internal/domain/quakelabel:FuzzBuildOrderIndependent ./internal/adapters/dyfi:FuzzParseCells; do \
 	  go test $${t%%:*} -run='^$$' -fuzz="^$${t##*:}\$$" -fuzztime=30s || exit 1; done
 	@cd libs/go/platform && for t in ./otelx:FuzzValidTraceParent; do \
 	  go test $${t%%:*} -run='^$$' -fuzz="^$${t##*:}\$$" -fuzztime=30s || exit 1; done

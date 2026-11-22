@@ -62,7 +62,7 @@ func TestDeriveUsesBMKGAsPrimary(t *testing.T) {
 	if v.Title != "Gempa M5,6 — darat 10 km barat daya Kab. Cianjur" {
 		t.Errorf("judul %q", v.Title)
 	}
-	for _, want := range []string{"Kedalaman 11 km.", "Dirasakan (skala MMI): V Cianjur.", "Estimasi radius dirasakan 62 km.", "Tidak berpotensi tsunami.", "Sumber: BMKG."} {
+	for _, want := range []string{"Kedalaman 11 km.", "Dirasakan (skala MMI): V Cianjur.", "Estimasi radius dirasakan 263 km.", "Tidak berpotensi tsunami.", "Sumber: BMKG."} {
 		if !strings.Contains(v.Summary, want) {
 			t.Errorf("ringkasan %q tanpa %q", v.Summary, want)
 		}

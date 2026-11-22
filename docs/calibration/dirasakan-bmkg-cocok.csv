@@ -1,0 +1,143 @@
+# Hasil pencocokan wilayah dirasakan BMKG ke kode Kemendagri (make felt-radius, ADR 0026). Jangan diedit manual.
+bmkg_id,magnitudo,kedalaman_km,mmi_min,mmi_maks,nama,cara,kode,nama_kemendagri,kandidat,kode_batas,jarak_tepi_km,jarak_hiposenter_km
+20260920175133,4.5,22,2,2,Mataram,nama,52.71,Kota Mataram,4,52.71,95.6,98.1
+20260920175133,4.5,22,2,2,Kab. Lombok Barat,nama,52.01,Kabupaten Lombok Barat,1,52.01,61.7,65.5
+20260920175133,4.5,22,2,2,Kab. Lombok Tengah,nama,52.02,Kabupaten Lombok Tengah,1,52.02,71.3,74.6
+20260920213346,2.7,4,3,3,Pangalengan,nama,32.04.15,Pangalengan,2,32.04.15,0.0,4.0
+20260920213346,2.7,4,3,3,Kertasari,nama,32.04.31,Kertasari,15,32.04.31,1.1,4.2
+20260921014137,5.3,10,3,4,Manggarai,nama,53.10,Kabupaten Manggarai,3,53.10,10.9,14.8
+20260921014137,5.3,10,3,4,Bajawa,nama,53.09.06,Bajawa,2,53.09.06,59.0,59.9
+20260921014137,5.3,10,3,4,Labuan Bajo,nama,53.15.05.1025,Labuan Bajo,3,53.15.05,72.2,72.9
+20260921014137,5.3,10,2,3,Nagekeo,nama,53.16,Kabupaten Nagekeo,1,53.16,65.0,65.8
+20260921014137,5.3,10,2,3,Waingapu,nama,53.11.01,Kota Waingapu,1,53.11.01,149.9,150.2
+20260921014137,5.3,10,2,2,Maumere,alias,53.07.05,Alok,1,53.07.05,168.3,168.6
+20260921055925,3.5,7,2,3,Manggarai,nama,53.10,Kabupaten Manggarai,3,53.10,8.5,11.0
+20260921073107,5.3,10,4,5,Luwuk,nama,72.01.04,Luwuk,4,72.01.04,36.9,38.3
+20260921073107,5.3,10,2,3,Kab. Pohuwato,nama,75.04,Kabupaten Pohuwato,1,75.04,135.7,136.0
+20260921123522,4.5,10,3,4,Agam,nama,13.06,Kabupaten Agam,1,13.06,55.6,56.5
+20260921123522,4.5,10,2,3,Kab. Padang Pariaman,nama,13.05,Kabupaten Padang Pariaman,1,13.05,66.5,67.3
+20260921123522,4.5,10,2,3,Kota Pariaman,nama,13.77,Kota Pariaman,1,13.77,78.8,79.4
+20260921123522,4.5,10,2,3,Kota Padang,nama,13.71,Kota Padang,1,13.71,97.8,98.3
+20260922033627,4.8,14,4,4,Kab. Nagekeo,nama,53.16,Kabupaten Nagekeo,1,53.16,14.2,19.9
+20260922033627,4.8,14,3,3,Kab. Ngada,nama,53.09,Kabupaten Ngada,1,53.09,28.5,31.8
+20260922033627,4.8,14,3,3,Kab. Sikka,nama,53.07,Kabupaten Sikka,1,53.07,27.9,31.2
+20260922033627,4.8,14,3,3,Kab. Ende,nama,53.08,Kabupaten Ende,1,53.08,18.2,23.0
+20260922033627,4.8,14,2,2,Kab. Manggarai,nama,53.10,Kabupaten Manggarai,1,53.10,98.5,99.5
+20260922172014,4.2,7,2,3,Kab. Manggarai,nama,53.10,Kabupaten Manggarai,1,53.10,8.1,10.7
+20260922202530,3.5,2,3,3,Kendari,nama,74.71,Kota Kendari,3,74.71,12.4,12.6
+20260922213635,4.5,2,2,3,Kab. Manggarai,nama,53.10,Kabupaten Manggarai,1,53.10,10.5,10.6
+20260922222742,4.6,20,2,3,Sumur,nama,36.01.01,Sumur,7,36.01.01,20.3,28.5
+20260923020244,4.7,9,2,3,Kab. Manggarai,nama,53.10,Kabupaten Manggarai,1,53.10,15.8,18.2
+20260923121656,1.8,12,2,3,Kab. Lembata,nama,53.13,Kabupaten Lembata,1,53.13,0.0,12.0
+20260924002635,4.3,10,2,2,Sarmi,nama,91.10.01,Sarmi,2,91.10.01,16.0,18.9
+20260924033028,4.6,12,2,3,Kota Bima,nama,52.72,Kota Bima,1,52.72,42.7,44.3
+20260924033028,4.6,12,2,3,Kabupaten Bima,nama,52.06,Kabupaten Bima,1,52.06,9.0,15.0
+20260924210135,3.7,7,3,3,Pidie,nama,11.07,Kabupaten Pidie,2,11.07,3.4,7.8
+20260924210135,3.7,7,2,2,Pidie Jaya,nama,11.18,Kabupaten Pidie Jaya,1,11.18,29.7,30.5
+20260925080442,2.4,7,2,3,Kota Cianjur,kota-sebagai-kecamatan,32.03.01,Cianjur,1,32.03.01,6.9,9.8
+20260925080442,2.4,7,2,3,Cibeber,nama,32.03.03,Cibeber,10,32.03.03,0.0,7.0
+20260925080442,2.4,7,2,3,Warungkondang,nama,32.03.02,Warungkondang,1,32.03.02,0.0,7.0
+20260925134730,4.7,10,3,3,Sumur,nama,36.01.01,Sumur,7,36.01.01,26.8,28.6
+20260925134730,4.7,10,3,3,Muara Binuangeun,alias,36.02.21.2005,Muara,1,36.02.21,76.1,76.7
+20260925134730,4.7,10,3,3,Bayah,nama,36.02.03,Bayah,1,36.02.03,112.0,112.4
+20260925134730,4.7,10,3,3,Panggarangan,nama,36.02.02,Panggarangan,2,36.02.02,106.1,106.6
+20260925134730,4.7,10,3,3,Malingping,nama,36.02.01,Malingping,1,36.02.01,84.5,85.1
+20260925134730,4.7,10,2,3,Anyer,alias,36.04.30,Anyar,1,36.04.30,126.4,126.8
+20260925134730,4.7,10,2,3,Rangkasbitung,nama,36.02.14,Rangkasbitung,1,36.02.14,134.2,134.6
+20260925193929,4.9,9,3,4,Kab. Manggarai,nama,53.10,Kabupaten Manggarai,1,53.10,5.8,10.7
+20260926193702,4.9,10,3,3,Kab. Manggarai Barat,nama,53.15,Kabupaten Manggarai Barat,1,53.15,20.3,22.6
+20260927112900,2.5,5,2,2,Mamasa,nama,76.03,Kabupaten Mamasa,3,76.03,0.0,5.0
+20260927175405,3.4,10,3,3,Aceh Tengah,nama,11.04,Kabupaten Aceh Tengah,1,11.04,1.3,10.1
+20260927175405,3.4,10,3,3,Bener Meriah,nama,11.17,Kabupaten Bener Meriah,2,11.17,0.0,10.0
+20260928043048,4.5,1,3,3,Kab. Manggarai,nama,53.10,Kabupaten Manggarai,1,53.10,17.1,17.1
+20260928104149,4.2,6,2,3,Kab. Manggarai,nama,53.10,Kabupaten Manggarai,1,53.10,25.0,25.7
+20260928144309,4.5,10,3,4,Aceh Besar,nama,11.06,Kabupaten Aceh Besar,1,11.06,85.4,86.0
+20260928144309,4.5,10,3,4,Banda Aceh,nama,11.71,Kota Banda Aceh,1,11.71,103.6,104.0
+20260929143913,3.1,3,3,3,Kolaka,nama,74.01,Kabupaten Kolaka,4,74.01,0.3,3.0
+20260930013316,4.6,26,3,3,Ciracap,nama,32.02.26,Ciracap,2,32.02.26,27.3,37.7
+20260930013316,4.6,26,3,3,Cisolok,nama,32.02.05,Cisolok,2,32.02.05,43.9,51.0
+20260930013316,4.6,26,2,3,Kabandungan,nama,32.02.19,Kabandungan,2,32.02.19,68.1,72.9
+20260930013316,4.6,26,2,2,Palabuhan Ratu,tanpa-spasi,32.02.01,Palabuhanratu,2,32.02.01,52.0,58.2
+20260930013316,4.6,26,2,2,Surade,nama,32.02.24,Surade,2,32.02.24,39.8,47.6
+20260930013316,4.6,26,2,2,Cibadak,nama,32.02.37.2006,Cibadak,16,32.02.37,65.5,70.4
+20260930013316,4.6,26,2,2,Waluran,nama,32.02.20,Waluran,2,32.02.20,42.6,49.9
+20260930023554,4.1,5,3,4,Calang,alias,11.14.02,Krueng Sabee,1,11.14.02,47.5,47.8
+20260930023554,4.1,5,3,3,Aceh Besar,nama,11.06,Kabupaten Aceh Besar,1,11.06,40.9,41.2
+20260930023554,4.1,5,3,3,Banda Aceh,nama,11.71,Kota Banda Aceh,1,11.71,77.6,77.8
+20260930023554,4.1,5,2,2,Sigli,nama,11.07.09,Kota Sigli,1,11.07.09,106.9,107.0
+20260930105851,4.7,10,4,4,Kab. Kupang,nama,53.01,Kabupaten Kupang,1,53.01,0.5,10.0
+20260930105851,4.7,10,4,4,Kota Kupang,nama,53.71,Kota Kupang,1,53.71,11.8,15.5
+20261001004306,3.1,6,2,3,Kab. Kupang,nama,53.01,Kabupaten Kupang,1,53.01,0.0,6.0
+20261001004306,3.1,6,2,3,Kota Kupang,nama,53.71,Kota Kupang,1,53.71,11.3,12.8
+20261001062452,3.2,25,2,2,Kab. Jayapura,nama,91.03,Kabupaten Jayapura,1,91.03,0.0,25.0
+20261001115140,3.6,47,2,3,Kab. Gorontalo Utara,nama,75.05,Kabupaten Gorontalo Utara,1,75.05,3.3,47.1
+20261001142000,5.1,10,3,3,Benteng Selayar,nama+induk,73.01.01,Benteng,2,73.01.01,110.7,111.1
+20261001142000,5.1,10,4,4,Jampea Kep. Selayar,nama+induk,73.01.06,Pasimasunggu,1,73.01.06,9.4,13.7
+20261002004654,3.8,86,2,3,Kuta,nama,51.03.01,Kuta,9,51.03.01,28.8,90.7
+20261002004654,3.8,86,2,3,Kuta Selatan,nama,51.03.05,Kuta Selatan,1,51.03.05,27.1,90.2
+20261002004654,3.8,86,2,2,Denpasar,nama,51.71,Kota Denpasar,1,51.71,31.1,91.4
+20261002064810,4.3,17,2,3,Kab. Manggarai,nama,53.10,Kabupaten Manggarai,1,53.10,53.6,56.2
+20261002113410,2.1,5,2,3,Kolaka,nama,74.01,Kabupaten Kolaka,4,74.01,0.0,5.0
+20261015105823,4.1,5,4,4,Pamijahan,nama,32.01.17,Pamijahan,5,32.01.17,0.0,5.0
+20261015105823,4.1,5,4,4,Kabandungan,nama,32.02.19,Kabandungan,2,32.02.19,2.3,5.5
+20261015153238,2.7,4,3,3,Darajat,alias,32.05.08,Pasirwangi,1,32.05.08,0.4,4.0
+20261015153238,2.7,4,3,3,Pasirwangi,nama,32.05.08,Pasirwangi,3,32.05.08,0.4,4.0
+20261016032155,2.5,9,2,2,Kabandungan,nama,32.02.19,Kabandungan,2,32.02.19,5.7,10.6
+20261016142204,2.3,18,2,2,Leuwiliang,nama,32.01.14,Leuwiliang,3,32.01.14,4.5,18.6
+20261017082052,4.2,3,3,3,Sorong,nama,96.71,Kota Sorong,4,96.71,4.5,5.4
+20261017124617,4.6,10,3,3,Sumba Barat Daya,nama,53.18,Kabupaten Sumba Barat Daya,1,53.18,42.7,43.9
+20261017124617,4.6,10,3,3,Kota Bima,nama,52.72,Kota Bima,1,52.72,113.5,113.9
+20261017124617,4.6,10,3,3,Kab. Bima,nama,52.06,Kabupaten Bima,1,52.06,70.8,71.5
+20261017124617,4.6,10,3,3,Sumbawa,nama,52.04,Kabupaten Sumbawa,3,52.04,83.7,84.3
+20261017124617,4.6,10,3,3,Sumba Barat,nama,53.12,Kabupaten Sumba Barat,1,53.12,68.6,69.3
+20261017154527,2.6,5,2,3,Kolonodale,nama,72.12.01.1001,Kolonodale,1,72.12.01,0.0,5.0
+20261018080008,5.3,10,4,5,Kab. Manggarai,nama,53.10,Kabupaten Manggarai,1,53.10,21.6,23.8
+20261018080008,5.3,10,3,3,Kab. Manggarai Barat,nama,53.15,Kabupaten Manggarai Barat,1,53.15,21.4,23.7
+20261018080008,5.3,10,2,3,Kab. Bima,nama,52.06,Kabupaten Bima,1,52.06,108.6,109.1
+20261018080008,5.3,10,2,3,Kota Bima,nama,52.72,Kota Bima,1,52.72,156.4,156.8
+20261018080008,5.3,10,1,2,Kab. Nagekeo,nama,53.16,Kabupaten Nagekeo,1,53.16,107.8,108.3
+20261018080246,4.1,5,2,3,Kab. Manggarai,nama,53.10,Kabupaten Manggarai,1,53.10,15.8,16.6
+20261019094557,4.8,19,1,2,Kab. Manggarai,nama,53.10,Kabupaten Manggarai,1,53.10,31.7,37.0
+20261019101056,4.7,5,2,2,Kab. Manggarai,nama,53.10,Kabupaten Manggarai,1,53.10,42.8,43.1
+20261019120602,4.5,6,2,2,Kab. Manggarai,nama,53.10,Kabupaten Manggarai,1,53.10,39.1,39.5
+20261019134611,4.2,5,3,3,Kab. Gayo Lues,nama,11.13,Kabupaten Gayo Lues,1,11.13,0.0,5.0
+20261019134611,4.2,5,2,2,Aceh Timur,nama,11.03,Kabupaten Aceh Timur,1,11.03,0.8,5.1
+20261020095638,3.4,4,3,3,Kab. Kupang,nama,53.01,Kabupaten Kupang,1,53.01,0.0,4.0
+20261020095638,3.4,4,3,3,Kota Kupang,nama,53.71,Kota Kupang,1,53.71,2.9,5.0
+20261020112811,3.7,15,3,3,Kab. Sumbawa,nama,52.04,Kabupaten Sumbawa,1,52.04,3.7,15.4
+20261020162935,5.4,74,3,3,Kab. Aceh Selatan,nama,11.01,Kabupaten Aceh Selatan,1,11.01,137.8,156.4
+20261020162935,5.4,74,3,3,Kab. Simeulue,nama,11.09,Kabupaten Simeulue,1,11.09,92.7,118.6
+20261020162935,5.4,74,3,4,Kab. Aceh Barat,nama,11.05,Kabupaten Aceh Barat,1,11.05,56.2,92.9
+20261020162935,5.4,74,3,4,Kab. Aceh Barat Daya,nama,11.12,Kabupaten Aceh Barat Daya,1,11.12,96.1,121.3
+20261020162935,5.4,74,2,2,Kab. Bener Meriah,nama,11.17,Kabupaten Bener Meriah,1,11.17,151.5,168.6
+20261020162935,5.4,74,2,3,Kota Banda Aceh,nama,11.71,Kota Banda Aceh,1,11.71,197.2,210.6
+20261020162935,5.4,74,2,3,Kab. Aceh Besar,nama,11.06,Kabupaten Aceh Besar,1,11.06,140.3,158.7
+20261020162935,5.4,74,3,4,Kab. Nagan Raya,nama,11.15,Kabupaten Nagan Raya,1,11.15,62.9,97.1
+20261102081310,5.3,148,2,3,Ternate,nama,82.71,Kota Ternate,2,82.71,148.9,209.9
+20261102081310,5.3,148,2,2,Minahasa,nama,71.02,Kabupaten Minahasa,1,71.02,4.0,148.1
+20261102095858,2.6,8,3,3,Jayapura,nama,91.71,Kota Jayapura,8,91.71,0.0,8.0
+20261103114349,4.2,10,2,3,Kab. Nagekeo,nama,53.16,Kabupaten Nagekeo,1,53.16,62.7,63.5
+20261103114349,4.2,10,2,3,Kab. Manggarai,nama,53.10,Kabupaten Manggarai,1,53.10,15.2,18.2
+20261103153750,4.8,87,3,3,Kab. Gorontalo,nama,75.01,Kabupaten Gorontalo,1,75.01,83.4,120.5
+20261103153750,4.8,87,2,3,Kab. Bone Bolango,nama,75.03,Kabupaten Bone Bolango,1,75.03,56.4,103.7
+20261103153750,4.8,87,2,3,Kab. Gorontalo Utara,nama,75.05,Kabupaten Gorontalo Utara,1,75.05,105.7,136.9
+20261103153750,4.8,87,2,3,Kota Gorontalo,nama,75.71,Kota Gorontalo,1,75.71,79.9,118.1
+20261103153750,4.8,87,2,3,Kab. Banggai,nama,72.01,Kabupaten Banggai,1,72.01,42.6,96.9
+20261103153750,4.8,87,2,3,Kab. Banggai Kepulauan,nama,72.07,Kabupaten Banggai Kepulauan,1,72.07,105.2,136.5
+20261103202835,4.1,6,2,3,Morowali Utara,nama,72.12,Kabupaten Morowali Utara,1,72.12,0.0,6.0
+20261104004608,4.6,23,2,3,Nabire,nama,94.01,Kabupaten Nabire,2,94.01,4.8,23.5
+20261104005034,4.4,15,3,3,Kab. Manggarai,nama,53.10,Kabupaten Manggarai,1,53.10,58.7,60.6
+20261104075634,3.4,10,3,3,Sigi,nama,72.10,Kabupaten Sigi,2,72.10,0.0,10.0
+20261104075634,3.4,10,2,2,Palu,nama,72.71,Kota Palu,2,72.71,31.7,33.2
+20261106103055,4.3,17,3,3,Siberut Barat,nama,13.09.05,Siberut Barat,1,13.09.05,0.0,17.0
+20261106103055,4.3,17,3,3,Siberut Utara,nama,13.09.04,Siberut Utara,1,13.09.04,6.5,18.2
+20261106103055,4.3,17,2,2,Siberut Tengah,nama,13.09.07,Siberut Tengah,1,13.09.07,25.7,30.8
+20261106103055,4.3,17,1,1,Kab. Nias Selatan,nama,12.14,Kabupaten Nias Selatan,1,12.14,65.7,67.9
+20261106173852,3.3,5,2,3,Bungku Morowali,nama+induk,72.06.05,Bungku Tengah,1,72.06.05,52.3,52.5
+20261106183208,3.5,18,2,2,Mataram,nama,52.71,Kota Mataram,4,52.71,23.8,29.8
+20261106183208,3.5,18,2,2,Lombok Barat,nama,52.01,Kabupaten Lombok Barat,2,52.01,18.0,25.4
+20261106183208,3.5,18,2,2,Lombok Tengah,nama,52.02,Kabupaten Lombok Tengah,1,52.02,37.1,41.2
+20261106190701,4.9,10,4,4,Sigi,nama,72.10,Kabupaten Sigi,2,72.10,0.0,10.0
+20261106190701,4.9,10,3,3,Palu,nama,72.71,Kota Palu,2,72.71,34.8,36.2
+20261107100552,3.0,10,2,2,Lombok Timur,nama,52.03,Kabupaten Lombok Timur,2,52.03,0.0,10.0
+20261109004458,2.5,10,2,2,Kab. Halmahera Barat,nama,82.01,Kabupaten Halmahera Barat,1,82.01,0.0,10.0

@@ -160,8 +160,16 @@ func FuzzRuleMatchSymmetric(f *testing.F) {
 	})
 }
 
-func TestFeltRadiusMatchesPRDExamples(t *testing.T) {
+// prdPolicy adalah aturan dengan heuristik radius awal PRD (a = 0,5, b = 1),
+// untuk menguji mekanisme rumus dan tabel tingkat dengan angka PRD.
+func prdPolicy() Policy {
 	p := DefaultPolicy()
+	p.FeltSlope, p.FeltIntercept = 0.5, 1
+	return p
+}
+
+func TestFeltRadiusMatchesPRDExamples(t *testing.T) {
+	p := prdPolicy()
 	if err := p.Validate(); err != nil {
 		t.Fatal(err)
 	}
@@ -181,8 +189,57 @@ func TestFeltRadiusMatchesPRDExamples(t *testing.T) {
 	}
 }
 
-func TestLevelAtFollowsPRDTable(t *testing.T) {
+func TestFeltRadiusCalibrated(t *testing.T) {
 	p := DefaultPolicy()
+	if err := p.Validate(); err != nil {
+		t.Fatal(err)
+	}
+	if p.FeltSlope != CalibratedFeltSlope || p.FeltIntercept != CalibratedFeltIntercept {
+		t.Fatalf("bawaan %v %v bukan hasil kalibrasi ADR 0026", p.FeltSlope, p.FeltIntercept)
+	}
+	for _, c := range []struct {
+		m, h, wantR, wantS float64
+	}{
+		{5, 0, 162.18, 162.18}, // ADR 0026: M5 dangkal ≈ 160 km
+		{6, 0, 363.08, 363.08}, // M6 ≈ 360 km
+		{3, 10, 32.36, 30.78},
+		{4, 100, 72.44, 0}, // lebih dalam dari R: tidak dirasakan
+		{5, -3, 162.18, 162.18},
+	} {
+		r, s := p.FeltRadius(c.m, c.h)
+		if math.Abs(r-c.wantR) > 0.01 || math.Abs(s-c.wantS) > 0.01 {
+			t.Errorf("M%v h%v: R=%v R_permukaan=%v, ingin %v %v", c.m, c.h, r, s, c.wantR, c.wantS)
+		}
+	}
+}
+
+func TestLevelAtCalibratedRadius(t *testing.T) {
+	p := DefaultPolicy()
+	cases := []struct {
+		name    string
+		m, h, d float64
+		want    Level
+	}{
+		{"M3 20 km", 3, 10, 20, LevelWaspada},
+		{"M3 40 km", 3, 10, 40, LevelInfo},
+		{"M4 80 km", 4, 1, 80, LevelInfo},
+		{"M4 60 km", 4, 1, 60, LevelWaspada},
+		{"M5 150 km", 5, 10, 150, LevelSiaga},
+		{"M5 170 km", 5, 10, 170, LevelInfo},
+		{"M6 lewat 100 km di dalam radius", 6, 10, 101, LevelSiaga},
+		{"M6 400 km", 6, 10, 400, LevelInfo},
+		{"gempa dalam M5,5 dekat", 5.5, 300, 10, LevelSiaga},
+		{"gempa dalam M4", 4.0, 300, 10, LevelInfo},
+	}
+	for _, c := range cases {
+		if got := p.LevelAt(c.m, c.h, c.d); got != c.want {
+			t.Errorf("%s: %v, ingin %v", c.name, got, c.want)
+		}
+	}
+}
+
+func TestLevelAtFollowsPRDTable(t *testing.T) {
+	p := prdPolicy()
 	cases := []struct {
 		name    string
 		m, h, d float64
@@ -218,32 +275,55 @@ func FuzzLevelMonotone(f *testing.F) {
 			!inRange(dm, 0, 3) || !inRange(dd, 0, 500) {
 			t.Skip()
 		}
-		p := DefaultPolicy()
-		p.MaxQueryRadiusKm = math.Inf(1) // properti berlaku untuk radius tanpa batas atas
-		r, s := p.FeltRadius(m, h)
-		if s < 0 || s > r+1e-9 || math.IsNaN(s) {
-			t.Fatalf("R=%v R_permukaan=%v", r, s)
-		}
-		base := p.LevelAt(m, h, d)
-		if base < LevelInfo || base > LevelBahaya {
-			t.Fatalf("tingkat %v di luar rentang", base)
-		}
-		if bigger := p.LevelAt(math.Min(m+dm, MaxMagnitude), h, d); bigger < base {
-			t.Fatalf("M%v→M%v di %v km: %v turun ke %v", m, m+dm, d, base, bigger)
-		}
-		if farther := p.LevelAt(m, h, d+dd); farther > base {
-			t.Fatalf("%v→%v km: %v naik ke %v", d, d+dd, base, farther)
-		}
-		if base > LevelInfo && d > p.QueryRadiusKm(m, h)+1e-6 {
-			t.Fatalf("tingkat %v di %v km melewati radius pencarian %v", base, d, p.QueryRadiusKm(m, h))
-		}
+		checkLevelMonotone(t, DefaultPolicy(), m, h, d, dm, dd)
+		checkLevelMonotone(t, prdPolicy(), m, h, d, dm, dd)
 	})
+}
+
+// Properti yang sama untuk sembarang koefisien a > 0 (syarat kalibrasi ADR 0026).
+func FuzzLevelMonotoneAnySlope(f *testing.F) {
+	f.Add(4.0, 10.0, 20.0, 0.5, 5.0, 0.35, -0.46)
+	f.Add(6.0, 50.0, 300.0, 1.0, 50.0, 0.05, -2.0)
+	f.Fuzz(func(t *testing.T, m, h, d, dm, dd, slope, intercept float64) {
+		if !inRange(m, MinMagnitude, MaxMagnitude) || !inRange(h, MinDepthKm, MaxDepthKm) || !inRange(d, 0, 2000) ||
+			!inRange(dm, 0, 3) || !inRange(dd, 0, 500) || !inRange(slope, 0.01, 2) || !inRange(intercept, -3, 3) {
+			t.Skip()
+		}
+		p := DefaultPolicy()
+		p.FeltSlope, p.FeltIntercept = slope, intercept
+		if err := p.Validate(); err != nil {
+			t.Fatal(err)
+		}
+		checkLevelMonotone(t, p, m, h, d, dm, dd)
+	})
+}
+
+func checkLevelMonotone(t *testing.T, p Policy, m, h, d, dm, dd float64) {
+	t.Helper()
+	p.MaxQueryRadiusKm = math.Inf(1) // properti berlaku untuk radius tanpa batas atas
+	r, s := p.FeltRadius(m, h)
+	if s < 0 || s > r+1e-9 || math.IsNaN(s) {
+		t.Fatalf("R=%v R_permukaan=%v", r, s)
+	}
+	base := p.LevelAt(m, h, d)
+	if base < LevelInfo || base > LevelBahaya {
+		t.Fatalf("tingkat %v di luar rentang", base)
+	}
+	if bigger := p.LevelAt(math.Min(m+dm, MaxMagnitude), h, d); bigger < base {
+		t.Fatalf("M%v→M%v di %v km: %v turun ke %v", m, m+dm, d, base, bigger)
+	}
+	if farther := p.LevelAt(m, h, d+dd); farther > base {
+		t.Fatalf("%v→%v km: %v naik ke %v", d, d+dd, base, farther)
+	}
+	if base > LevelInfo && d > p.QueryRadiusKm(m, h)+1e-6 {
+		t.Fatalf("tingkat %v di %v km melewati radius pencarian %v", base, d, p.QueryRadiusKm(m, h))
+	}
 }
 
 func TestAssessSortsFiltersAndEscalatesTsunami(t *testing.T) {
 	p := DefaultPolicy()
 	regions := []RegionDistance{
-		{Code: "32.03.01.2001", Name: "Jauh", DistanceKm: 80},
+		{Code: "32.03.01.2001", Name: "Jauh", DistanceKm: 300},
 		{Code: "32.03.01.2003", Name: "Dekat B", DistanceKm: 12},
 		{Code: "32.03.01.2002", Name: "Dekat A", DistanceKm: 12},
 		{Code: "32.03.01.2004", Name: "Pusat", DistanceKm: 0},

@@ -26,7 +26,9 @@ const (
 // angka adalah nilai awal yang dikalibrasi sebelum R2, jadi disimpan sebagai
 // konfigurasi, bukan konstanta di tengah kode.
 type Policy struct {
-	// Radius dirasakan R = 10^(FeltSlope·M − FeltIntercept) km.
+	// Radius dirasakan R = 10^(FeltSlope·M − FeltIntercept) km (jarak
+	// hiposenter). FeltSlope > 0 supaya radius dan tingkat tidak turun saat
+	// magnitudo naik.
 	FeltSlope     float64
 	FeltIntercept float64
 	// Bahaya: M ≥ BahayaMinMagnitude dan episenter ≤ BahayaMaxDistanceKm.
@@ -43,11 +45,19 @@ type Policy struct {
 	MaxQueryRadiusKm float64
 }
 
-// DefaultPolicy mengembalikan angka PRD.
+// Koefisien radius dirasakan dari kalibrasi dengan gempa dirasakan BMKG
+// (make felt-radius, ADR 0026): wilayah dirasakan terjauh 90% gempa ada di
+// dalam R. Heuristik awal PRD (0,5 dan 1) hanya mencakup 20%.
+const (
+	CalibratedFeltSlope     = 0.35
+	CalibratedFeltIntercept = -0.46
+)
+
+// DefaultPolicy mengembalikan angka PRD, dengan radius dirasakan terkalibrasi.
 func DefaultPolicy() Policy {
 	return Policy{
-		FeltSlope:              0.5,
-		FeltIntercept:          1,
+		FeltSlope:              CalibratedFeltSlope,
+		FeltIntercept:          CalibratedFeltIntercept,
 		BahayaMinMagnitude:     6,
 		BahayaMaxDistanceKm:    100,
 		SiagaFeltMinMagnitude:  5,
@@ -83,7 +93,7 @@ func (p Policy) Validate() error {
 }
 
 // FeltRadius menghitung estimasi radius dirasakan (hiposenter) dan radius di
-// permukaan: R = 10^(0,5M − 1) km, R_permukaan = √(R² − h²). Bila kedalaman h
+// permukaan: R = 10^(aM − b) km, R_permukaan = √(R² − h²). Bila kedalaman h
 // melebihi R, gempa dianggap tidak dirasakan di permukaan (R_permukaan = 0).
 // Kedalaman negatif (di atas muka laut, USGS) dihitung nol.
 func (p Policy) FeltRadius(magnitude, depthKm float64) (hypocentralKm, surfaceKm float64) {

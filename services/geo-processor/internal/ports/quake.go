@@ -148,3 +148,33 @@ type LabeledOrigin struct {
 	MagnitudeType string
 	Note          string
 }
+
+// FeltEvent adalah hiposenter satu gempa di bahan kalibrasi radius
+// dirasakan (ADR 0026).
+type FeltEvent struct {
+	ID         string
+	OccurredAt time.Time
+	Latitude   float64
+	Longitude  float64
+	DepthKm    float64
+	Magnitude  float64
+}
+
+// DYFICell adalah satu sel intensitas DYFI USGS (sel UTM 10 km).
+type DYFICell struct {
+	FeltEvent
+	MagnitudeType string
+	CDI           float64
+	Responses     int
+	// HypocentralKm dari USGS, atau dihitung dari jarak episenter berkas lama.
+	HypocentralKm float64
+	Suspect       bool
+	Place         string
+}
+
+// BMKGFelt adalah satu gempa dirasakan BMKG dengan kolom "Dirasakan" apa adanya.
+type BMKGFelt struct {
+	FeltEvent
+	Region string
+	Felt   string
+}

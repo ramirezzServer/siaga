@@ -1,0 +1,71 @@
+# Gempa dirasakan BMKG dari arsip payload gempadirasakan.json (make felt-radius, ADR 0026). Jangan diedit manual.
+# Sumber: BMKG, https://data.bmkg.go.id/gempabumi/ (isi payload terakhir yang memuat gempa itu).
+# 28 payload (0 tidak terbaca, 0 gempa ditolak validasi) diambil 2026-09-24T17:36:20Z..2026-11-09T02:21:23Z; 67 gempa, 2 dengan isi Dirasakan berubah
+bmkg_id,waktu_utc,lintang,bujur,kedalaman_km,magnitudo,wilayah,dirasakan,pertama_terlihat_utc,terakhir_terlihat_utc,versi_dirasakan
+20260920175133,2026-09-20T17:51:33Z,-9.44,115.80,22,4.5,Pusat gempa berada di laut 91 km Baratdaya Lombok Barat,"II Mataram, II Kab. Lombok Barat, II Kab. Lombok Tengah",2026-09-24T17:36:20Z,2026-09-24T17:36:20Z,1
+20260920213346,2026-09-20T21:33:46Z,-7.24,107.62,4,2.7,Pusat gempa berada di darat 27 km selatan Kab. Bandung,"III Pangalengan, III Kertasari",2026-09-24T17:36:20Z,2026-09-24T17:36:20Z,1
+20260921014137,2026-09-21T01:41:37Z,-8.33,120.59,10,5.3,Pusat gempa berada di darat 34 km Timur Laut Ruteng,"III-IV Manggarai, III-IV Bajawa, III-IV Labuan Bajo, II-III Nagekeo, II-III Waingapu, II Maumere",2026-09-24T17:36:20Z,2026-09-25T12:42:52Z,1
+20260921055925,2026-09-21T05:59:25Z,-8.28,120.57,7,3.5,"Pusat gempa berada di laut 38 km utara Ruteng, Manggarai",II-III Manggarai,2026-09-24T17:36:20Z,2026-09-25T12:42:52Z,1
+20260921073107,2026-09-21T07:31:07Z,-0.70,122.45,10,5.3,Pusat gempa berada di laut 26 km BaratDaya Pulau Puah,"IV-V Luwuk, II-III Kab. Pohuwato",2026-09-24T17:36:20Z,2026-09-26T16:36:14Z,1
+20260921123522,2026-09-21T12:35:22Z,-0.52,99.37,10,4.5,Pusat gempa berada di laut 76 km Barat Daya Agam,"III-IV Agam, II-III Kab. Padang Pariaman, II-III Kota Pariaman, II-III Kota Padang",2026-09-24T17:36:20Z,2026-09-26T19:56:45Z,1
+20260922033627,2026-09-22T03:36:27Z,-8.43,121.44,14,4.8,"Pusat gempa berada di laut 31 km timur laut Mbay, Nagekeo","IV Kab. Nagekeo, III Kab. Ngada, III Kab. Sikka, III Kab. Ende, II Kab. Manggarai",2026-09-24T17:36:20Z,2026-09-27T12:00:32Z,1
+20260922172014,2026-09-22T17:20:14Z,-8.21,120.28,7,4.2,"Pusat gempa berada di laut 49 km Barat Laut Ruteng, Manggarai",II-III Kab. Manggarai,2026-09-24T17:36:20Z,2026-09-27T12:00:32Z,1
+20260922202530,2026-09-22T20:25:30Z,-4.15,122.66,2,3.5,Pusat gempa berada di darat 26 km tenggara Kota Kendari,III Kendari,2026-09-24T17:36:20Z,2026-09-27T12:00:32Z,1
+20260922213635,2026-09-22T21:36:35Z,-8.16,120.38,2,4.5,Pusat gempa berada di laut 51 km Utara RUTENG-MANGGARAI,II - III Kab. Manggarai,2026-09-24T17:36:20Z,2026-09-28T11:42:53Z,1
+20260922222742,2026-09-22T22:27:42Z,-7.00,105.57,20,4.6,Pusat gempa berada di laut 38 Km Selatan Sumur,II - III Sumur,2026-09-24T17:36:20Z,2026-09-28T14:52:57Z,1
+20260923020244,2026-09-23T02:02:44Z,-8.21,120.61,9,4.7,Pusat gempa berada di laut 48 km utara Ruteng-Manggarai,II - III Kab. Manggarai,2026-09-24T17:36:20Z,2026-09-28T14:52:57Z,1
+20260923121656,2026-09-23T12:16:56Z,-8.51,123.27,12,1.8,Pusat gempa berada di darat 24 km barat daya Lembata,II-III Kab. Lembata,2026-09-24T17:36:20Z,2026-09-28T14:52:57Z,1
+20260924002635,2026-09-24T00:26:35Z,-1.60,138.93,10,4.3,Pusat gempa berada di laut 36 km timur laut Sarmi,II Sarmi,2026-09-24T17:36:20Z,2026-09-30T10:09:37Z,1
+20260924033028,2026-09-24T03:30:28Z,-8.32,119.25,12,4.6,Pusat gempa berada di laut 57 km timur Kota Bima,"II - III Kota Bima, II - III Kabupaten Bima",2026-09-24T17:36:20Z,2026-09-30T11:19:07Z,1
+20260924210135,2026-09-24T21:01:35Z,5.21,95.76,7,3.7,Pusat gempa berada di darat 17 km Timur Jantho Aceh Besar,"III Pidie, II Pidie Jaya",2026-09-25T12:25:18Z,2026-09-30T11:19:07Z,1
+20260925080442,2026-09-25T08:04:42Z,-6.90,107.11,7,2.4,Pusat gempa berada di darat 10 km selatan Kab. Cianjur,"II - III Kota Cianjur, II - III Cibeber, II - III Warungkondang",2026-09-25T12:25:18Z,2026-10-01T11:46:57Z,1
+20260925134730,2026-09-25T13:47:30Z,-7.04,105.22,10,4.7,Pusat gempa berada di laut 58 km barat daya Sumur,"III Sumur, III Muara Binuangeun, III Bayah, III Panggarangan, III Malingping, II - III Anyer, II - III Rangkasbitung",2026-09-26T12:54:15Z,2026-10-01T12:04:18Z,1
+20260925193929,2026-09-25T19:39:29Z,-8.23,120.31,9,4.9,Pusat gempa berada di laut 46 km utara Ruteng-Manggarai,III-IV Kab. Manggarai,2026-09-26T12:54:15Z,2026-10-01T14:46:43Z,2
+20260926193702,2026-09-26T19:37:02Z,-8.10,120.28,10,4.9,"Pusat gempa berada di laut 61 km utara Ruteng, Manggarai",III Kab. Manggarai Barat,2026-09-26T19:56:45Z,2026-10-02T04:47:16Z,1
+20260927112900,2026-09-27T11:29:00Z,-2.93,119.40,5,2.5,Pusat gempa berada di darat 2.7 km timur laut Mamasa,II Mamasa,2026-09-27T12:00:32Z,2026-10-02T07:49:20Z,1
+20260927175405,2026-09-27T17:54:05Z,4.76,96.70,10,3.4,Pusat gempa berada di darat 18 km barat Bener Meriah,"III Aceh Tengah, III Bener Meriah",2026-09-28T11:42:53Z,2026-10-02T12:00:50Z,1
+20260928043048,2026-09-28T04:30:48Z,-8.10,120.49,1,4.5,Pusat gempa berada di laut 57 km Utara Ruteng-Manggarai,III Kab. Manggarai,2026-09-28T11:42:53Z,2026-10-02T12:00:50Z,1
+20260928104149,2026-09-28T10:41:49Z,-8.09,120.60,6,4.2,"Pusat gempa berada di laut 60 km utara Ruteng, Manggarai",II - III Kab. Manggarai,2026-09-28T11:42:53Z,2026-10-02T12:00:50Z,1
+20260928144309,2026-09-28T14:43:09Z,5.19,94.41,10,4.5,Pusat gempa berada di laut 127 km Barat Daya Kota Sabang,"III-IV Aceh Besar, III-IV Banda Aceh",2026-09-28T14:52:57Z,2026-10-02T12:00:50Z,1
+20260929143913,2026-09-29T14:39:13Z,-4.05,121.58,3,3.1,Pusat gempa berada di darat 5 km Barat Kolaka,III Kolaka,2026-09-30T10:09:37Z,2026-10-02T12:00:50Z,1
+20260930013316,2026-09-30T01:33:16Z,-7.28,106.14,26,4.6,Pusat gempa berada di laut 40 km barat daya Bayah,"III Ciracap, III Cisolok, II-III Kabandungan, II Palabuhan Ratu, II Surade, II Cibadak, II Waluran",2026-09-30T10:09:37Z,2026-10-02T12:00:50Z,1
+20260930023554,2026-09-30T02:35:54Z,4.84,95.14,5,4.1,Pusat gempa berada di laut 54 km barat laut Calang-Aceh Jaya,"III-IV Calang, III Aceh Besar, III Banda Aceh, II Sigli",2026-09-30T10:09:37Z,2026-10-02T12:00:50Z,1
+20260930105851,2026-09-30T10:58:51Z,-10.02,123.65,10,4.7,Pusat gempa berada di laut 26 km Barat Kab. Kupang,"IV Kab. Kupang, IV Kota Kupang",2026-09-30T11:19:07Z,2026-10-02T12:00:50Z,1
+20261001004306,2026-10-01T00:43:06Z,-10.04,123.61,6,3.1,Pusat gempa berada di Laut 31 km Barat Kab. Kupang,"II - III Kab. Kupang, II - III Kota Kupang",2026-10-01T11:46:57Z,2026-10-02T12:00:50Z,1
+20261001062452,2026-10-01T06:24:52Z,-2.46,140.38,25,3.2,Pusat gempa berada di darat 15 km Barat Laut Sentani,II Kab. Jayapura,2026-10-01T11:46:57Z,2026-10-02T12:00:50Z,1
+20261001115140,2026-10-01T11:51:40Z,0.95,122.69,47,3.6,Pusat gempa berada di laut 26 km barat laut Gorontalo Utara,II - III Kab. Gorontalo Utara,2026-10-01T12:04:18Z,2026-10-02T12:00:50Z,1
+20261001142000,2026-10-01T14:20:00Z,-7.07,120.80,10,5.1,Pusat gempa berada di laut 111 km tenggara Selayar,"III Benteng Selayar, IV Jampea Kep. Selayar",2026-10-01T14:46:43Z,2026-10-02T12:00:50Z,1
+20261002004654,2026-10-02T00:46:54Z,-8.67,114.89,86,3.8,Pusat gempa berada di laut 29 km barat daya Tabanan,"II - III Kuta, II - III Kuta Selatan, II Denpasar",2026-10-02T01:05:34Z,2026-10-02T12:00:50Z,2
+20261002064810,2026-10-02T06:48:10Z,-8.00,120.88,17,4.3,Pusat gempa berada di laut 82 km Timur Laut RUTENG-MANGGARAI-NTT,II-III Kab. Manggarai,2026-10-02T07:49:20Z,2026-10-02T12:00:50Z,1
+20261002113410,2026-10-02T11:34:10Z,-4.06,121.60,5,2.1,Pusat gempa berada di darat 2 km Barat Kolaka,II - III Kolaka,2026-10-02T12:00:50Z,2026-10-02T12:00:50Z,1
+20261015105823,2026-10-15T10:58:23Z,-6.73,106.61,5,4.1,Pusat gempa berada di darat 26 km barat daya kota Bogor,"IV Pamijahan, IV Kabandungan",2026-10-20T12:18:41Z,2026-10-20T12:18:41Z,1
+20261015153238,2026-10-15T15:32:38Z,-7.22,107.71,4,2.7,Pusat gempa berada di darat 21 km barat Kab. Garut,"III Darajat, III Pasirwangi",2026-10-20T12:18:41Z,2026-10-20T16:56:15Z,1
+20261016032155,2026-10-16T03:21:55Z,-6.69,106.63,9,2.5,Pusat gempa berada di darat 21 km Barat Daya Kota Bogor,II Kabandungan,2026-10-20T12:18:41Z,2026-10-20T16:56:15Z,1
+20261016142204,2026-10-16T14:22:04Z,-6.76,106.63,18,2.3,Pusat gempa berada di darat 26 km Barat Daya Kota Bogor,II Leuwiliang,2026-10-20T12:18:41Z,2026-10-20T16:56:15Z,1
+20261017082052,2026-10-17T08:20:52Z,-0.75,131.38,3,4.2,Pusat gempa berada di Laut 11 km TimurLaut Kota Sorong,III Sorong,2026-10-20T12:18:41Z,2026-10-20T16:56:15Z,1
+20261017124617,2026-10-17T12:46:17Z,-9.52,118.54,10,4.6,Pusat gempa berada di laut 49 km Barat KODI-SUMBABARATDAYA,"III Sumba Barat Daya, III Kota Bima, III Kab. Bima, III Sumbawa, III Sumba Barat",2026-10-20T12:18:41Z,2026-10-20T16:56:15Z,1
+20261017154527,2026-10-17T15:45:27Z,-1.98,121.33,5,2.6,Pusat gempa berada di darat 39 km selatan Morowali Utara,II - III Kolonodale,2026-10-20T12:18:41Z,2026-10-20T16:56:15Z,1
+20261018080008,2026-10-18T08:00:08Z,-8.09,120.26,10,5.3,Pusat gempa berada di laut 60 km timur laut Labuan Bajo,"IV-V Kab. Manggarai, III Kab. Manggarai Barat, II-III Kab. Bima, II-III Kota Bima, I-II Kab. Nagekeo",2026-10-20T12:18:41Z,2026-10-20T16:56:15Z,1
+20261018080246,2026-10-18T08:02:46Z,-8.14,120.29,5,4.1,Pusat gempa berada di laut 56 km utara Ruteng,II-III Kab. Manggarai,2026-10-20T12:18:41Z,2026-10-20T16:56:15Z,1
+20261019094557,2026-10-19T09:45:57Z,-8.12,120.05,19,4.8,Pusat gempa berada di laut 45 km timur laut Labuan Bajo,I-II Kab. Manggarai,2026-10-20T12:18:41Z,2026-10-20T16:56:15Z,1
+20261019101056,2026-10-19T10:10:56Z,-7.97,120.06,5,4.7,Pusat gempa berada di laut 61 km utara Labuan Bajo,II Kab. Manggarai,2026-10-20T12:18:41Z,2026-10-20T16:56:15Z,1
+20261019120602,2026-10-19T12:06:02Z,-7.99,120.09,6,4.5,Pusat gempa berada di laut 60 km Utara Labuanbajo,II Kab. Manggarai,2026-10-20T12:18:41Z,2026-10-20T16:56:15Z,1
+20261019134611,2026-10-19T13:46:11Z,4.16,97.51,5,4.2,Pusat gempa berada di darat 26 km Timur Laut Kab. Gayo Lues,"III Kab. Gayo Lues, II Aceh Timur",2026-10-20T12:18:41Z,2026-10-20T16:56:15Z,1
+20261020095638,2026-10-20T09:56:38Z,-10.19,123.71,4,3.4,Pusat gempa berada di darat 30km Barat Daya Kab. Kupang,"III Kab. Kupang, III Kota Kupang",2026-10-20T12:18:41Z,2026-10-20T16:56:15Z,1
+20261020112811,2026-10-20T11:28:11Z,-8.37,116.99,15,3.7,Pusat gempa berada di laut 6 km Barat Laut Pulau Saringi,III Kab. Sumbawa,2026-10-20T12:18:41Z,2026-10-20T16:56:15Z,1
+20261020162935,2026-10-20T16:29:35Z,3.79,95.72,74,5.4,Pusat gempa berada di laut 59 km barat daya Meulaboh,"III Kab. Aceh Selatan, III Kab. Simeulue, III-IV Kab. Aceh Barat, III-IV Kab. Aceh Barat Daya, II Kab. Bener Meriah, II-III Kota Banda Aceh, II-III Kab. Aceh Besar , III-IV Kab. Nagan Raya",2026-10-20T16:56:15Z,2026-10-20T16:56:15Z,1
+20261102081310,2026-11-02T08:13:10Z,1.31,124.83,148,5.3,Pusat gempa berada di darat 1 km Barat Daya Tomohon,"II - III Ternate, II Minahasa",2026-11-09T02:21:23Z,2026-11-09T02:21:23Z,1
+20261102095858,2026-11-02T09:58:58Z,-2.49,140.66,8,2.6,Pusat gempa berada di darat 9 km Utara Kota Jayapura,III Jayapura,2026-11-09T02:21:23Z,2026-11-09T02:21:23Z,1
+20261103114349,2026-11-03T11:43:49Z,-8.27,120.63,10,4.2,"Pusat gempa berada di laut 42 km Timur Laut Ruteng, Manggarai","II - III Kab. Nagekeo, II - III Kab. Manggarai",2026-11-09T02:21:23Z,2026-11-09T02:21:23Z,1
+20261103153750,2026-11-03T15:37:50Z,-0.20,123.32,87,4.8,Pusat gempa berada di laut 86 km Selatan Kota Gorontalo,"III Kab. Gorontalo, II - III Kab. Bone Bolango, II - III Kab. Gorontalo Utara, II - III Kota Gorontalo, II - III Kab. Banggai, II - III Kab. Banggai Kepulauan",2026-11-09T02:21:23Z,2026-11-09T02:21:23Z,1
+20261103202835,2026-11-03T20:28:35Z,-2.08,121.02,6,4.1,Pusat gempa berada di darat 61 km utara Luwu Timur,II - III Morowali Utara,2026-11-09T02:21:23Z,2026-11-09T02:21:23Z,1
+20261104004608,2026-11-04T00:46:08Z,-3.22,135.53,23,4.6,Pusat gempa berada di laut 16 km utara Nabire,II - III Nabire,2026-11-09T02:21:23Z,2026-11-09T02:21:23Z,1
+20261104005034,2026-11-04T00:50:34Z,-7.94,120.89,15,4.4,"Pusat gempa berada di laut 88 km timur laut Ruteng, Manggarai",III Kab. Manggarai,2026-11-09T02:21:23Z,2026-11-09T02:21:23Z,1
+20261104075634,2026-11-04T07:56:34Z,-1.14,120.15,10,3.4,Pusat gempa berada di darat 40 km timur laut Sigi,"III Sigi, II Palu",2026-11-09T02:21:23Z,2026-11-09T02:21:23Z,1
+20261106103055,2026-11-06T10:30:55Z,-1.19,98.73,17,4.3,Pusat gempa berada di darat 130 km barat laut Kep. Mentawai,"III Siberut Barat, III Siberut Utara, II Siberut Tengah, I Kab. Nias Selatan",2026-11-09T02:21:23Z,2026-11-09T02:21:23Z,1
+20261106173852,2026-11-06T17:38:52Z,-2.96,122.31,5,3.3,Pusat gempa berada di laut 54 km Tenggara Morowali,II - III Bungku Morowali,2026-11-09T02:21:23Z,2026-11-09T02:21:23Z,1
+20261106183208,2026-11-06T18:32:08Z,-8.48,115.87,18,3.5,Pusat gempa berada di laut 34 km barat daya Lombok Utara,"II Mataram, II Lombok Barat, II Lombok Tengah",2026-11-09T02:21:23Z,2026-11-09T02:21:23Z,1
+20261106190701,2026-11-06T19:07:01Z,-1.13,120.22,10,4.9,Pusat gempa berada di darat 47 km Timur Laut Sigi,"IV Sigi, III Palu",2026-11-09T02:21:23Z,2026-11-09T02:21:23Z,1
+20261107100552,2026-11-07T10:05:52Z,-8.37,116.54,10,3.0,Pusat gempa berada di darat 31 km utara Lombok Timur,II Lombok Timur,2026-11-09T02:21:23Z,2026-11-09T02:21:23Z,1
+20261107185412,2026-11-07T18:54:12Z,-4.01,122.69,5,3.3,Pusat gempa berada di darat 20 km timur Kendari,,2026-11-09T02:21:23Z,2026-11-09T02:21:23Z,1
+20261109004458,2026-11-09T00:44:58Z,1.06,127.47,10,2.5,Pusat gempa berada di laut 1 km timur Jailolo,II Kab. Halmahera Barat,2026-11-09T02:21:23Z,2026-11-09T02:21:23Z,1

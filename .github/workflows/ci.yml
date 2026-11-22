@@ -90,6 +90,10 @@ jobs:
           fz ./internal/domain/quake FuzzClusteringInvariantsUnderCrowding
           fz ./internal/domain/quake FuzzApplyOrderIndependent
           fz ./internal/domain/quake FuzzLevelMonotone
+          fz ./internal/domain/quake FuzzLevelMonotoneAnySlope
+          fz ./internal/domain/quake FuzzParseFelt
+          fz ./internal/domain/region FuzzDistanceKm
+          fz ./internal/domain/gazetteer FuzzNormalize
           fz ./internal/domain/quake FuzzRuleMatchSymmetric
           fz ./internal/app/quakes FuzzServiceOrderIndependent
           fz ./internal/domain/weather FuzzDeriveOrderIndependent
@@ -124,6 +128,7 @@ jobs:
           fz ./internal/domain/firecluster FuzzEvaluateMonotone
           fz ./internal/adapters/quakeml FuzzParse
           fz ./internal/domain/quakelabel FuzzBuildOrderIndependent
+          fz ./internal/adapters/dyfi FuzzParseCells
           cd ../../libs/go/platform
           fz ./otelx FuzzValidTraceParent
 
