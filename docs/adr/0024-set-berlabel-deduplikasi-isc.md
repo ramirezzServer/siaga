@@ -37,5 +37,5 @@ Yang diukur 2026-11-09 sebelum kode ditulis (catatan sesi di titipan, `catatan-1
 - Label ISC mencerminkan solusi final agensi yang dikirim ke ISC, bukan solusi pertama di feed. Arsip real-time menunjukkan USGS Indonesia sudah ditinjau saat terbit; BMKG bisa merevisi, jadi pasangan arsip real-time tetap dikumpulkan selama ingest berjalan dan ditambahkan ke `dedup-arsip.csv`.
 - Origin DJA berkurang menjelang akhir 2024, jadi negatif lebih banyak dari 2021–2023.
 - Workspace asisten dan shell desktop app tidak menjangkau ISC; browser bawaan bisa. Alat dijalankan di WSL; bila WSL juga tidak menjangkau ISC, binary Windows dipakai seperti `fire-threshold.exe` (1e-3c-1a).
-- Radius dirasakan (1e-3c-2b) memakai jalur lain: arsip `gempadirasakan` BMKG dan DYFI USGS.
+- Radius dirasakan (1e-3c-2b) memakai jalur lain: arsip `gempadirasakan` BMKG dan DYFI USGS (ADR 0026).
 - Hasil jalan penuh dan keputusan ambang (1e-3c-2c): ADR 0025. Pemeriksaan FP, gabungan USGS–USGS, dan origin tanpa magnitudo dari cache ISC juga dicatat di sana.
