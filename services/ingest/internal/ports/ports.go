@@ -9,6 +9,7 @@ import (
 	"iter"
 	"strings"
 	"time"
+	"unicode/utf8"
 )
 
 // Request adalah permintaan ke sumber data.
@@ -30,6 +31,32 @@ type Request struct {
 
 // Redacted mengembalikan URL dengan setiap rahasia diganti "***".
 func (r Request) Redacted() string { return Redact(r.URL, r.Secrets) }
+
+// Brief mengembalikan URL untuk galat dan log: rahasia diganti "***" dan
+// query string yang panjang dipotong (lihat Brief).
+func (r Request) Brief() string { return Brief(r.URL, r.Secrets) }
+
+// MaxBriefQuery adalah panjang query string paling banyak yang ditulis Brief.
+// URL Open-Meteo memuat semua koordinat titik (ribuan karakter); di log
+// cukup awalnya, URL lengkap tetap ada di atribut span url.full.
+const MaxBriefQuery = 80
+
+// Brief menyamarkan rahasia di s lalu memotong query string yang lebih
+// panjang dari MaxBriefQuery menjadi awalannya ditambah jumlah karakter yang
+// dibuang. Rahasia disamarkan sebelum dipotong, jadi potongan rahasia tidak
+// pernah tertulis.
+func Brief(s string, secrets []string) string {
+	s = Redact(s, secrets)
+	base, query, ok := strings.Cut(s, "?")
+	if !ok || len(query) <= MaxBriefQuery {
+		return s
+	}
+	cut := query[:MaxBriefQuery]
+	for len(cut) > 0 && !utf8.ValidString(cut) {
+		cut = cut[:len(cut)-1]
+	}
+	return fmt.Sprintf("%s?%s…(+%d karakter)", base, cut, len(query)-len(cut))
+}
 
 // Redact mengganti setiap rahasia yang tidak kosong di s dengan "***".
 func Redact(s string, secrets []string) string {

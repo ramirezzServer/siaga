@@ -59,10 +59,22 @@ type Result struct {
 	// akan dicoba lagi di polling berikutnya; polling itu sendiri tetap sukses.
 	Failed int
 	// Contoh kegagalan, paling banyak MaxRejectionsKept.
-	Failures   []ports.Rejection
+	Failures []ports.Rejection
+	// Recovered adalah record yang terbit di polling ini setelah gagal
+	// diambil atau basi di polling sebelumnya, paling banyak
+	// MaxRejectionsKept. Dicatat supaya pemulihan terlihat di log dengan
+	// kuncinya, bukan hanya sebagai published=1.
+	Recovered  []Recovery
 	ArchiveKey string
 	// ArchiveErr tidak menggagalkan polling: peringatan lebih penting daripada arsip.
 	ArchiveErr error
+}
+
+// Recovery adalah record yang akhirnya terbit setelah Retries percobaan
+// ulang (gagal diambil atau dokumen basi) di polling sebelumnya.
+type Recovery struct {
+	Key     string
+	Retries int
 }
 
 // Poll menjalankan satu polling.
@@ -73,7 +85,7 @@ func (p *Poller) Poll(ctx context.Context) (Result, error) {
 
 	resp, err := p.fetch.Fetch(ctx, req)
 	if err != nil {
-		return res, fmt.Errorf("%s: mengambil %s: %w", p.conn.Name(), req.Redacted(), err)
+		return res, fmt.Errorf("%s: mengambil %s: %w", p.conn.Name(), req.Brief(), err)
 	}
 	fetchedAt := p.clock.Now().UTC()
 	if resp.NotModified {

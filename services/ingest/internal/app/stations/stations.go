@@ -123,7 +123,7 @@ func (p *Poller) Poll(ctx context.Context) (poll.Result, error) {
 		err = errors.New("sumber menjawab 304 untuk request tanpa validator")
 	}
 	if err != nil {
-		return res, fmt.Errorf("%s: mengambil %s: %w", p.src.Name(), req.Redacted(), err)
+		return res, fmt.Errorf("%s: mengambil %s: %w", p.src.Name(), req.Brief(), err)
 	}
 	fetchedAt := p.clock.Now().UTC()
 	sum := emit.Sum(resp.Body)
@@ -197,7 +197,7 @@ func (p *Poller) station(ctx context.Context, st Station, s *state, res *poll.Re
 			s.done, s.attempts = st.LastReport, 0
 			err = fmt.Errorf("menyerah setelah %d percobaan: %w", p.opts.MaxAttempts, err)
 		}
-		p.fail(res, ports.Rejection{Key: st.ID, Reason: fmt.Errorf("mengambil %s: %w", req.Redacted(), err)})
+		p.fail(res, ports.Rejection{Key: st.ID, Reason: fmt.Errorf("mengambil %s: %w", req.Brief(), err)})
 		return nil
 	}
 	s.attempts = 0

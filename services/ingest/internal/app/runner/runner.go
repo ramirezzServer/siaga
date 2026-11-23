@@ -350,11 +350,16 @@ func (r *Runner) pollOnce(ctx context.Context, j Job) (Status, error) {
 	default:
 		r.log.DebugContext(pctx, "polling selesai", attrs...)
 	}
+	// Kunci record ikut ditulis di pesan: filter baris Loki (|=) hanya
+	// mencari di badan log, bukan di atribut.
 	for _, rej := range res.Rejections {
-		r.log.WarnContext(pctx, "record ditolak", slog.String("connector", name), slog.String("key", rej.Key), slog.Any("reason", rej.Reason))
+		r.log.WarnContext(pctx, "record ditolak: "+rej.Key, slog.String("connector", name), slog.String("key", rej.Key), slog.Any("reason", rej.Reason))
 	}
 	for _, f := range res.Failures {
-		r.log.WarnContext(pctx, "record gagal diambil; dicoba lagi di polling berikutnya", slog.String("connector", name), slog.String("key", f.Key), slog.Any("error", f.Reason))
+		r.log.WarnContext(pctx, "record gagal diambil; dicoba lagi di polling berikutnya: "+f.Key, slog.String("connector", name), slog.String("key", f.Key), slog.Any("error", f.Reason))
+	}
+	for _, rc := range res.Recovered {
+		r.log.InfoContext(pctx, "record terbit setelah dicoba lagi: "+rc.Key, slog.String("connector", name), slog.String("key", rc.Key), slog.Int("retries", rc.Retries))
 	}
 	if res.ArchiveErr != nil {
 		r.log.WarnContext(pctx, "arsip gagal, event tetap diterbitkan", slog.String("connector", name), slog.Any("error", res.ArchiveErr))

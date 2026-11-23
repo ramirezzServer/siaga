@@ -464,13 +464,18 @@ func TestStalePrimaryIsRetriedThenPublished(t *testing.T) {
 		t.Fatalf("galat %+v", f)
 	}
 	// Dokumen lama di arsip tetap tersimpan (RSS + dokumen basi).
-	if len(r.a.keys) != 2 {
-		t.Fatalf("arsip %v", r.a.keys)
+	if len(r.a.keys) != 2 || len(res.Recovered) != 0 {
+		t.Fatalf("arsip %v, pulih %v", r.a.keys, res.Recovered)
 	}
 	r.src.docs["id/"+file(idJabar)] = fresh
 	res = mustPoll(t, r)
 	if !res.NotModified || res.Published != 1 || r.f.count("id/"+file(idJabar)) != 2 || r.p.Pending() != 0 {
 		t.Fatalf("%+v %v", res, r.f.requests)
+	}
+	// Pemulihan dilaporkan dengan kunci pesan dan jumlah percobaan ulang;
+	// dokumen yang diambil ulang ikut masuk arsip walau RSS tidak berubah.
+	if len(res.Recovered) != 1 || res.Recovered[0] != (poll.Recovery{Key: idJabar, Retries: 1}) || len(r.a.keys) != 4 {
+		t.Fatalf("pulih %v, arsip %v", res.Recovered, r.a.keys)
 	}
 	if got := string(r.pub.msgs[0].Data); !strings.HasPrefix(got, idJabar+"|en:") {
 		t.Fatalf("pesan %q", got)
@@ -483,7 +488,7 @@ func TestStaleTranslationIsRetried(t *testing.T) {
 	r.src.docs["en/"+file(idJabar)] = warn(idLama, "en")
 	res := mustPoll(t, r)
 	// Peringatan terbit tanpa terjemahan basi, lalu revisi setelah terjemahannya benar.
-	if res.Published != 1 || res.Failed != 1 || !errors.Is(res.Failures[0].Reason, ErrStale) || res.Failures[0].Key != idJabar+" [en]" || r.p.Pending() != 1 {
+	if res.Published != 1 || res.Failed != 1 || !errors.Is(res.Failures[0].Reason, ErrStale) || res.Failures[0].Key != idJabar+" [en]" || r.p.Pending() != 1 || len(res.Recovered) != 0 {
 		t.Fatalf("%+v", res)
 	}
 	if strings.Contains(string(r.pub.msgs[0].Data), "en:") {
@@ -493,6 +498,9 @@ func TestStaleTranslationIsRetried(t *testing.T) {
 	res = mustPoll(t, r)
 	if res.Published != 1 || r.f.count("id/"+file(idJabar)) != 1 || !strings.Contains(string(r.pub.msgs[1].Data), "en:Hujan lebat en") || r.p.Pending() != 0 {
 		t.Fatalf("%+v %q", res, r.pub.msgs)
+	}
+	if len(res.Recovered) != 1 || res.Recovered[0] != (poll.Recovery{Key: idJabar, Retries: 1}) {
+		t.Fatalf("pulih %v", res.Recovered)
 	}
 }
 

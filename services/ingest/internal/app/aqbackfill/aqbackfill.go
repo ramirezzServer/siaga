@@ -379,7 +379,7 @@ func (b *Backfiller) get(ctx context.Context, req ports.Request) ([]byte, time.T
 		if ctx.Err() != nil {
 			return nil, time.Time{}, ctx.Err()
 		}
-		last = fmt.Errorf("mengambil %s: %w", req.Redacted(), err)
+		last = fmt.Errorf("mengambil %s: %w", req.Brief(), err)
 		if sc, ok := errors.AsType[ports.StatusCoder](err); ok && sc.HTTPStatus() < 500 && sc.HTTPStatus() != 429 {
 			return nil, time.Time{}, last // 4xx selain 429 tidak membaik dengan diulang
 		}

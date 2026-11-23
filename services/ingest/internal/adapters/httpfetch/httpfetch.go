@@ -121,15 +121,21 @@ func (f *Fetcher) Fetch(ctx context.Context, r ports.Request) (ports.Response, e
 	}, nil
 }
 
-// redact menyamarkan rahasia di galat net/http, yang menyertakan URL lengkap
-// (misal `Get "https://…/KEY/…": dial tcp …`). Galat lain dikembalikan apa
-// adanya karena tidak memuat URL.
+// redact merapikan galat net/http, yang menyertakan URL lengkap (misal
+// `Get "https://…/KEY/…": dial tcp …`): rahasia disamarkan dan query string
+// panjang dipotong (ports.Brief), karena pemanggil sudah menulis URL-nya
+// sendiri di galat luar. Galat lain dikembalikan apa adanya karena tidak
+// memuat URL.
 func redact(err error, secrets []string) error {
 	var ue *url.Error
-	if len(secrets) == 0 || !errors.As(err, &ue) {
+	if !errors.As(err, &ue) {
 		return err
 	}
-	return &url.Error{Op: ue.Op, URL: ports.Redact(ue.URL, secrets), Err: redactedError{ue.Err, secrets}}
+	cause := ue.Err
+	if len(secrets) > 0 {
+		cause = redactedError{ue.Err, secrets}
+	}
+	return &url.Error{Op: ue.Op, URL: ports.Brief(ue.URL, secrets), Err: cause}
 }
 
 // redactedError menyamarkan rahasia di pesan penyebab, tetapi tetap bisa

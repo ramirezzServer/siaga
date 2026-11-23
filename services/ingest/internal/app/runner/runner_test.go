@@ -83,7 +83,10 @@ func TestLoopBackoffAndRecovery(t *testing.T) {
 		{err: boom},
 		{err: &ports.RetryAfterError{Status: 429, After: 3 * time.Minute}},
 		{res: poll.Result{Unchanged: true}},
-		{res: poll.Result{Published: 1, Rejected: 1, Rejections: []ports.Rejection{{Key: "x", Reason: boom}}, ArchiveErr: boom}},
+		{res: poll.Result{
+			Published: 1, Rejected: 1, Rejections: []ports.Rejection{{Key: "x", Reason: boom}}, ArchiveErr: boom,
+			Failed: 1, Failures: []ports.Rejection{{Key: "y", Reason: boom}}, Recovered: []poll.Recovery{{Key: "z", Retries: 2}},
+		}},
 	}}
 	r.Run(ctx, []Job{{Poller: p, Interval: 30 * time.Second}})
 
@@ -104,7 +107,13 @@ func TestLoopBackoffAndRecovery(t *testing.T) {
 		t.Fatalf("LastChange/LastSuccess %+v", st[0])
 	}
 	out := logs.String()
-	for _, want := range []string{"level=WARN msg=\"polling gagal\"", "level=ERROR msg=\"polling gagal\"", "record ditolak", "arsip gagal"} {
+	for _, want := range []string{
+		"level=WARN msg=\"polling gagal\"", "level=ERROR msg=\"polling gagal\"", "arsip gagal",
+		// Kunci record ada di badan pesan, bukan hanya atribut (filter baris Loki).
+		"level=WARN msg=\"record ditolak: x\"",
+		"level=WARN msg=\"record gagal diambil; dicoba lagi di polling berikutnya: y\"",
+		"level=INFO msg=\"record terbit setelah dicoba lagi: z\" connector=uji key=z retries=2",
+	} {
 		if !strings.Contains(out, want) {
 			t.Errorf("log tidak memuat %q", want)
 		}

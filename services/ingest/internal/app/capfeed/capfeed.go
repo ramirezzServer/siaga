@@ -107,6 +107,22 @@ type itemState struct {
 	stale    map[string]int
 	// published adalah hash isi event terakhir yang terbit.
 	published string
+	// reported adalah jumlah percobaan ulang yang sudah dilaporkan lewat
+	// Result.Recovered; revisi tanpa percobaan ulang baru tidak dilaporkan lagi.
+	reported int
+}
+
+// retries menjumlahkan percobaan ulang semua bahasa: gagal ambil dan
+// dokumen basi.
+func (st *itemState) retries() int {
+	n := 0
+	for _, v := range st.attempts {
+		n += v
+	}
+	for _, v := range st.stale {
+		n += v
+	}
+	return n
 }
 
 // New membuat Poller. archive boleh nil.
@@ -147,7 +163,7 @@ func (p *Poller) Poll(ctx context.Context) (poll.Result, error) {
 	req.ETag, req.LastModified = p.etag, p.lastModified
 	resp, err := p.fetch.Fetch(ctx, req)
 	if err != nil {
-		return res, fmt.Errorf("%s: mengambil %s: %w", p.src.Name(), req.Redacted(), err)
+		return res, fmt.Errorf("%s: mengambil %s: %w", p.src.Name(), req.Brief(), err)
 	}
 	fetchedAt := p.clock.Now().UTC()
 	if resp.NotModified {
@@ -237,6 +253,9 @@ func (p *Poller) process(ctx context.Context, items []ports.FeedItem, res *poll.
 // galat penerbitan (atau ctx batal) yang dikembalikan.
 func (p *Poller) processItem(ctx context.Context, st *itemState, res *poll.Result) error {
 	it := st.item
+	// Hanya percobaan ulang dari polling sebelumnya yang membuat terbitan
+	// ini sebuah pemulihan; kegagalan di polling ini sendiri belum.
+	retried := st.retries()
 	if st.primary == nil {
 		d, err := p.document(ctx, st, warning.LanguagePrimary)
 		switch {
@@ -325,6 +344,12 @@ func (p *Poller) processItem(ctx context.Context, st *itemState, res *poll.Resul
 		res.Duplicates++
 	} else {
 		res.Published++
+		if retried > st.reported {
+			st.reported = retried
+			if len(res.Recovered) < poll.MaxRejectionsKept {
+				res.Recovered = append(res.Recovered, poll.Recovery{Key: it.Key, Retries: retried})
+			}
+		}
 	}
 	st.published = sum
 	return nil
@@ -379,7 +404,7 @@ func (p *Poller) document(ctx context.Context, st *itemState, lang string) (*doc
 		err = errors.New("sumber menjawab 304 untuk request tanpa validator")
 	}
 	if err != nil {
-		return nil, fmt.Errorf("%w %s: %w", errFetch, req.Redacted(), err)
+		return nil, fmt.Errorf("%w %s: %w", errFetch, req.Brief(), err)
 	}
 	d := &doc{fetchedAt: p.clock.Now().UTC(), sum: emit.Sum(resp.Body)}
 	if p.archive != nil {

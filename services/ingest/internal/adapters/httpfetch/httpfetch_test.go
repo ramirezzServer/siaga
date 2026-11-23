@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -142,5 +143,20 @@ func TestFetchSecrets(t *testing.T) {
 	}
 	if got := ports.Redact("a/K/b/K", []string{"", "K"}); got != "a/***/b/***" {
 		t.Fatal(got)
+	}
+}
+
+// Galat koneksi tidak memuat query string panjang (URL Open-Meteo dengan
+// semua koordinat), tetapi tetap bisa dibuka dengan errors.As.
+func TestFetchLongQueryError(t *testing.T) {
+	long := "latitude=" + strings.Repeat("-6.25,", 400) + "&longitude=" + strings.Repeat("107.5,", 400)
+	f := New(5 * time.Second)
+	_, err := f.Fetch(context.Background(), ports.Request{URL: "http://127.0.0.1:1/v1/forecast?" + long})
+	var ue *url.Error
+	if !errors.As(err, &ue) {
+		t.Fatalf("bukan *url.Error: %v", err)
+	}
+	if len(err.Error()) > 400 || strings.Contains(err.Error(), "&longitude=") || !strings.Contains(err.Error(), "/v1/forecast?latitude=-6.25,") {
+		t.Fatalf("galat terlalu panjang atau salah potong (%d karakter): %.300s", len(err.Error()), err)
 	}
 }
