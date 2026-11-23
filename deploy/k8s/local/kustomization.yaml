@@ -23,6 +23,11 @@ configMapGenerator:
     behavior: merge
     literals:
       - SIAGA_ENV=lokal
+      # Laptop biasanya juga menjalankan `make ingest` sebagai pengumpul arsip
+      # utama. Sapuan prakiraan penuh (±6.000 request BMKG, ±2 jam) dari dua
+      # proses di IP yang sama menggandakan laju ke BMKG; di cluster lokal
+      # cukup 100 kode wilayah pertama (wilayah fokus) per sapuan.
+      - INGEST_FORECAST_LIMIT=100
   - name: siaga-geo-env
     behavior: merge
     literals:

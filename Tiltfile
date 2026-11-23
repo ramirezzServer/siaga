@@ -1,5 +1,9 @@
 # Profil "full": lingkungan Kubernetes lokal yang identik dengan produksi.
 # Prasyarat: make k3d-up. Jalankan: tilt up
+#
+# Port-forward memakai 1xxxx supaya bisa jalan bersamaan dengan Compose lite
+# (`make up`, yang memakai port aslinya): NATS 14222, Valkey 16379, Mailpit
+# 18025, Garage 13900, PostgreSQL 15432, ingest 18081, geo-processor 18082.
 load("ext://helm_resource", "helm_repo", "helm_resource")
 
 allow_k8s_contexts("k3d-siaga")
@@ -28,7 +32,7 @@ helm_resource(
     namespace="siaga",
     flags=["--values=deploy/k8s/base/nats-values.yaml", "--wait"],
     resource_deps=["nats-repo", "dev-secrets"],
-    port_forwards=["4222:4222"],
+    port_forwards=["14222:4222"],
     labels=["platform"],
 )
 
@@ -38,8 +42,8 @@ k8s_kind("Cluster", api_version="postgresql.cnpg.io/v1", image_json_path="{.spec
 
 k8s_yaml(kustomize("deploy/k8s/local", flags=["--load-restrictor=LoadRestrictionsNone"]))
 k8s_resource("siaga-db", resource_deps=["cnpg-operator", "dev-secrets"], labels=["data"])
-k8s_resource("valkey", port_forwards=["6379:6379"], labels=["data"])
-k8s_resource("mailpit", port_forwards=["8025:8025"], labels=["tools"])
+k8s_resource("valkey", port_forwards=["16379:6379"], labels=["data"])
+k8s_resource("mailpit", port_forwards=["18025:8025"], labels=["tools"])
 
 # Garage (arsip payload mentah) dan OTel Collector (telemetri ke Grafana Cloud
 # atau Grafana lokal, sesuai OTEL_EXPORTER_OTLP_* di .env). S3 Garage cluster
@@ -83,7 +87,8 @@ k8s_resource(
     labels=["pipa-data"],
 )
 # ingest tidak otomatis jalan: bila `make ingest` (Compose) juga hidup, kuota
-# sumber terpakai dua kali. Nyalakan dari dashboard Tilt bila perlu.
+# sumber terpakai dua kali. Nyalakan dari dashboard Tilt atau `tilt trigger
+# ingest`; sapuan prakiraan BMKG di cluster dibatasi (overlay local).
 k8s_resource(
     "ingest",
     resource_deps=["nats", "garage", "otel-collector", "dev-secrets"],
