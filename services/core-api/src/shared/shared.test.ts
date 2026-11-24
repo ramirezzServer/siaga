@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 
@@ -58,6 +60,19 @@ describe("loadConfig", () => {
       LOG_FORMAT: "json",
     });
     expect(loadConfig({ DATABASE_URL: "postgres://u:p@h/db" }).CORS_ORIGINS).toEqual([]);
+  });
+
+  it("menerima semua variabel .env.example (Makefile mengekspor .env ke core-api)", () => {
+    const example = readFileSync(new URL("../../../../.env.example", import.meta.url), "utf8");
+    const env: Record<string, string> = {};
+    for (const line of example.split("\n")) {
+      const m = /^([A-Z][A-Z0-9_]*)=(.*)$/.exec(line);
+      if (m?.[1] !== undefined && m[2] !== undefined) env[m[1]] = m[2];
+    }
+    expect(env["LOG_LEVEL"]).toBeDefined();
+    expect(loadConfig({ ...env, DATABASE_URL: "postgres://u:p@h/db" }).LOG_LEVEL).toBe(
+      env["LOG_LEVEL"],
+    );
   });
 
   it("galat menyebut variabelnya", () => {

@@ -18,7 +18,9 @@ const schema = z.object({
     .pipe(z.array(z.url())),
   DB_POOL_MAX: z.coerce.number().int().min(1).max(50).default(10),
   DB_STATEMENT_TIMEOUT_MS: z.coerce.number().int().min(100).max(60_000).default(5_000),
-  LOG_LEVEL: z.enum(["error", "warn", "log", "debug"]).default("log"),
+  // Kosakata sama dengan layanan Go (LOG_LEVEL=info di .env.example dan manifest),
+  // karena Makefile mengekspor seluruh .env ke setiap proses.
+  LOG_LEVEL: z.enum(["error", "warn", "info", "debug"]).default("info"),
   LOG_FORMAT: z.enum(["json", "text"]).default("json"),
   SIAGA_VERSION: z.string().default("dev"),
 });

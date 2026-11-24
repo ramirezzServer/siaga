@@ -3,13 +3,19 @@ import "reflect-metadata";
 import { Logger, type LogLevel } from "@nestjs/common";
 
 import { createApp } from "./app.js";
-import { loadConfig } from "./config.js";
+import { loadConfig, type Config } from "./config.js";
 import { PgHazardReader } from "./hazards/adapters/pg-hazard-reader.js";
 import { PgRegionReader } from "./regions/adapters/pg-region-reader.js";
 import { createPool, PgReadinessProbe } from "./shared/adapters/postgres.js";
 import { systemClock } from "./shared/domain/clock.js";
 
-const ORDER: LogLevel[] = ["fatal", "error", "warn", "log", "debug"];
+// LOG_LEVEL (gaya Go) ke tingkat Nest: info = log.
+const NEST_LEVELS: Record<Config["LOG_LEVEL"], LogLevel[]> = {
+  error: ["fatal", "error"],
+  warn: ["fatal", "error", "warn"],
+  info: ["fatal", "error", "warn", "log"],
+  debug: ["fatal", "error", "warn", "log", "debug"],
+};
 
 async function main(): Promise<void> {
   const config = loadConfig(process.env);
@@ -30,7 +36,7 @@ async function main(): Promise<void> {
     clock: systemClock,
     version: config.SIAGA_VERSION,
     corsOrigins: config.CORS_ORIGINS,
-    logLevels: ORDER.slice(0, ORDER.indexOf(config.LOG_LEVEL) + 1),
+    logLevels: NEST_LEVELS[config.LOG_LEVEL],
     logJson: config.LOG_FORMAT === "json",
   });
   app
