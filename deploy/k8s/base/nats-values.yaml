@@ -5,8 +5,12 @@ config:
   jetstream:
     enabled: true
     fileStore:
+      # Chart membatasi JetStream (max_file_store) sebesar PVC. Stream RAW
+      # 2 GiB + HAZARD 1 GiB + DLQ 256 MiB (libs/go/contracts/streams)
+      # dipesan penuh saat dibuat; dengan 2Gi ingest gagal "insufficient
+      # storage resources" (1f-2). 5Gi menyisakan ruang untuk stream baru.
       pvc:
-        size: 2Gi
+        size: 5Gi
 # Sidecar prometheus-nats-exporter (port 7777, prefix nats_) yang di-scrape
 # OTel Collector (ADR 0017). Pod label chart: app.kubernetes.io/name=nats,
 # component=nats (server) atau nats-box; NetworkPolicy memakainya.

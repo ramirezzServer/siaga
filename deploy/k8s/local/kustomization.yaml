@@ -4,6 +4,7 @@ kind: Kustomization
 namespace: siaga
 resources:
   - ../base/namespace.yaml
+  - ../base/postgres-image-catalog.yaml
   - ../base/postgres-cluster.yaml
   - ../base/valkey.yaml
   - ../base/mailpit.yaml

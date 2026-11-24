@@ -1,5 +1,10 @@
 # PostgreSQL dikelola CloudNativePG. Image kustom dari deploy/images/postgres
 # (berbasis image resmi postgres, UID 999). Lihat docs/adr/0002.
+#
+# Image diambil dari ImageCatalog siaga-postgres (postgres-image-catalog.yaml),
+# bukan spec.imageName: CNPG membaca versi mayor dari tag imageName, sehingga
+# tag hasil build Tilt (tilt-<hash>) atau sha-<commit> CI ditolak webhook.
+# Di katalog versi mayor ditulis eksplisit dan tag bebas.
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
@@ -7,7 +12,11 @@ metadata:
   namespace: siaga
 spec:
   instances: 1
-  imageName: siaga-postgres
+  imageCatalogRef:
+    apiGroup: postgresql.cnpg.io
+    kind: ImageCatalog
+    name: siaga-postgres
+    major: 17
   postgresUID: 999
   postgresGID: 999
   enableSuperuserAccess: true

@@ -103,3 +103,21 @@ DNS tunneling WSL (resolver `10.255.255.254`) tidak jalan di laptop ini. `/etc/w
 ### Integrasi WSL Docker "Catastrophic failure"
 
 Quit Docker Desktop dulu sebelum `wsl --shutdown`; kalau tidak, integrasi WSL gagal saat WSL hidup lagi. Quit Docker Desktop sepenuhnya lalu buka ulang.
+
+### Profil full (k3d + Tilt): pod `ImagePullBackOff`, galat DNS di cluster
+
+Ditemukan saat 1f-2 (23 Nov 2026). DNS dari dalam container node k3d ke resolver Docker Desktop (`192.168.65.254`) putus-sambung, walau Docker di WSL bisa menarik image yang sama. Akibatnya pod chart (CNPG, NATS) tertahan `ErrImagePull`/`ImagePullBackOff`. Perbaikan:
+
+```bash
+make k3d-pull   # tarik lewat Docker host, impor ke node k3d (ctr), hapus pod yang tertahan
+```
+
+`k3d image import` tidak dipakai karena gagal dengan containerd image store Docker Desktop (`content digest … not found`); `scripts/k3d-pull.sh` mengekspor satu platform saja lalu mengimpor dengan `ctr`. Galat DNS yang sama sesekali muncul di log OTel Collector (`lookup … on 10.43.0.10:53: server misbehaving`); Collector mencoba ulang sendiri dan tidak ada data hilang, jadi tidak perlu tindakan. Masalah ini hanya di laptop, bukan di VM produksi.
+
+Ukuran PVC NATS (`deploy/k8s/base/nats-values.yaml`) tidak bisa diubah di tempat karena dibuat StatefulSet. Setelah mengganti ukurannya, pasang ulang NATS di cluster lokal (isi stream di cluster ikut hilang; data utama tetap di Compose lite):
+
+```bash
+helm -n siaga uninstall nats
+kubectl -n siaga get pvc -o name | grep nats-js | xargs -r kubectl -n siaga delete
+tilt trigger nats
+```

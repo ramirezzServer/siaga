@@ -16,7 +16,10 @@ spec:
   failedJobsHistoryLimit: 3
   jobTemplate:
     spec:
-      backoffLimit: 1
+      # OnFailure: lihat geo-processor/migrate-job.yaml (race NetworkPolicy
+      # kube-router pada pod yang langsung konek saat start). Ketiga langkah
+      # aman diulang.
+      backoffLimit: 3
       activeDeadlineSeconds: 3600
       ttlSecondsAfterFinished: 604800
       template:
@@ -24,7 +27,7 @@ spec:
           labels:
             app.kubernetes.io/name: archive-maintenance
         spec:
-          restartPolicy: Never
+          restartPolicy: OnFailure
           automountServiceAccountToken: false
           enableServiceLinks: false
           securityContext:

@@ -7,11 +7,20 @@
 load("ext://helm_resource", "helm_repo", "helm_resource")
 
 allow_k8s_contexts("k3d-siaga")
+# helm_resource memakai --wait: pemasangan chart menunggu pod siap, termasuk
+# menarik image pertama kali. Batas bawaan Tilt 30 detik selalu terlampaui.
+update_settings(k8s_upsert_timeout_secs=600)
 # Registry lokal k3d terdeteksi otomatis lewat ConfigMap local-registry-hosting.
 
 # Secret lokal (password database acak, Garage dan key sumber dari .env, tujuan
 # OTLP Collector); nama sama dengan secret SOPS produksi. Lihat scripts/dev-secrets.sh.
 local_resource("dev-secrets", cmd="scripts/dev-secrets.sh", labels=["platform"])
+
+# Versi chart dikunci (yang terverifikasi di 1f-2: operator CNPG 1.30.2, NATS
+# 2.15.3) supaya `make tilt` dari clone baru memasang hal yang sama; naikkan
+# dengan sengaja lalu ulangi cek profil full.
+CNPG_CHART_VERSION = "0.29.2"
+NATS_CHART_VERSION = "2.15.3"
 
 # Operator CloudNativePG.
 helm_repo("cnpg-repo", "https://cloudnative-pg.github.io/charts", labels=["platform"])
@@ -19,7 +28,7 @@ helm_resource(
     "cnpg-operator",
     "cnpg-repo/cloudnative-pg",
     namespace="cnpg-system",
-    flags=["--create-namespace", "--wait"],
+    flags=["--version=" + CNPG_CHART_VERSION, "--create-namespace", "--wait"],
     resource_deps=["cnpg-repo"],
     labels=["platform"],
 )
@@ -30,18 +39,21 @@ helm_resource(
     "nats",
     "nats-repo/nats",
     namespace="siaga",
-    flags=["--values=deploy/k8s/base/nats-values.yaml", "--wait"],
+    flags=["--version=" + NATS_CHART_VERSION, "--values=deploy/k8s/base/nats-values.yaml", "--wait"],
     resource_deps=["nats-repo", "dev-secrets"],
     port_forwards=["14222:4222"],
     labels=["platform"],
 )
 
-# Image PostgreSQL kustom; Tilt menyuntikkan tag hasil build ke spec.imageName.
+# Image PostgreSQL kustom; Tilt menyuntikkan tag hasil build ke ImageCatalog
+# siaga-postgres (CNPG menolak tag tilt-<hash> di spec.imageName Cluster).
 docker_build("siaga-postgres", ".", dockerfile="deploy/images/postgres/Dockerfile")
-k8s_kind("Cluster", api_version="postgresql.cnpg.io/v1", image_json_path="{.spec.imageName}")
+k8s_kind("ImageCatalog", api_version="postgresql.cnpg.io/v1", image_json_path="{.spec.images[0].image}")
+k8s_kind("Cluster", api_version="postgresql.cnpg.io/v1")
 
 k8s_yaml(kustomize("deploy/k8s/local", flags=["--load-restrictor=LoadRestrictionsNone"]))
-k8s_resource("siaga-db", resource_deps=["cnpg-operator", "dev-secrets"], labels=["data"])
+k8s_resource("siaga-postgres", new_name="siaga-db-image", resource_deps=["cnpg-operator"], labels=["data"])
+k8s_resource("siaga-db", resource_deps=["cnpg-operator", "dev-secrets", "siaga-db-image"], labels=["data"])
 k8s_resource("valkey", port_forwards=["16379:6379"], labels=["data"])
 k8s_resource("mailpit", port_forwards=["18025:8025"], labels=["tools"])
 

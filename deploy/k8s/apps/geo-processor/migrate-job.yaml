@@ -10,6 +10,11 @@ metadata:
     argocd.argoproj.io/hook: PreSync
     argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
 spec:
+  # OnFailure, bukan Never: NetworkPolicy k3s (kube-router) baru mengizinkan
+  # IP pod beberapa saat setelah pod start, dan goose langsung konek lalu
+  # keluar. Dengan Never setiap percobaan ulang adalah pod baru (IP baru)
+  # yang kalah race yang sama; OnFailure mengulang container di pod yang
+  # sama setelah jeda 10/20/40 detik (ditemukan saat 1f-2).
   backoffLimit: 3
   activeDeadlineSeconds: 600
   ttlSecondsAfterFinished: 86400
@@ -18,7 +23,7 @@ spec:
       labels:
         app.kubernetes.io/name: geo-processor-migrate
     spec:
-      restartPolicy: Never
+      restartPolicy: OnFailure
       automountServiceAccountToken: false
       enableServiceLinks: false
       securityContext:

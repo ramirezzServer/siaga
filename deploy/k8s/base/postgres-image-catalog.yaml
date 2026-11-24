@@ -1,0 +1,13 @@
+# Katalog image PostgreSQL untuk Cluster siaga-db (CloudNativePG). Versi
+# mayor ditulis di sini, jadi tag image bebas (Tilt: tilt-<hash>; CI:
+# sha-<commit>). Saat image di katalog berganti, CNPG melakukan rolling
+# update instance. Lihat postgres-cluster.yaml.
+apiVersion: postgresql.cnpg.io/v1
+kind: ImageCatalog
+metadata:
+  name: siaga-postgres
+  namespace: siaga
+spec:
+  images:
+    - major: 17
+      image: siaga-postgres

@@ -300,7 +300,7 @@ secrets-check: ## Pastikan semua file *.enc.yaml benar-benar terenkripsi (tanpa 
 	@scripts/sops-check.sh
 
 ##@ Kubernetes lokal (k3d + Tilt, profil full)
-.PHONY: k3d-up k3d-down tilt k3d-usage
+.PHONY: k3d-up k3d-down tilt k3d-usage k3d-pull
 k3d-up: ## Buat cluster k3d "siaga"
 	k3d cluster create --config deploy/k3d/cluster.yaml
 
@@ -312,3 +312,6 @@ tilt: ## Jalankan Tilt (dashboard di http://localhost:10350)
 
 k3d-usage: ## Memori dan CPU per pod + node k3d (pengganti kubectl top; INTERVAL=15)
 	@scripts/k3d-usage.sh
+
+k3d-pull: ## Tarik lewat Docker host image yang gagal ditarik node k3d (ImagePullBackOff), impor ke cluster
+	@scripts/k3d-pull.sh
