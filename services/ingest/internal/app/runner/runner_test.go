@@ -333,3 +333,66 @@ func TestLimiterStats(t *testing.T) {
 		t.Fatalf("setelah dua pesanan %+v (pesanan rendah yang ditolak tidak dihitung)", st)
 	}
 }
+
+// fakeReporter mencatat hasil polling; err dikembalikan ke setiap Report.
+type fakeReporter struct {
+	got []ports.PollReport
+	err error
+}
+
+func (f *fakeReporter) Report(_ context.Context, r ports.PollReport) error {
+	f.got = append(f.got, r)
+	return f.err
+}
+
+func TestReportEveryPoll(t *testing.T) {
+	clk := &fakeClock{now: time.Date(2026, 11, 24, 15, 0, 0, 0, time.UTC)}
+	rep := &fakeReporter{}
+	var buf bytes.Buffer
+	r := New(clk, slog.New(slog.NewTextHandler(&buf, nil)), Options{Rand: func() float64 { return 0.5 }, Report: rep})
+	ctx, cancel := context.WithCancel(context.Background())
+	boom := errors.New("sumber mati")
+	p := &scriptPoller{name: "bmkg-autogempa", clock: clk, cancel: cancel, steps: []step{
+		{res: poll.Result{Published: 1, Events: 1}},
+		{res: poll.Result{NotModified: true}},
+		{res: poll.Result{Unchanged: true, Published: 1}}, // dokumen yang ditunda terbit
+		{err: boom},
+		{err: context.Canceled}, // dimatikan: tidak dilaporkan
+	}}
+	r.Run(ctx, []Job{{Poller: p, Interval: 30 * time.Second, Subject: "raw.quake.bmkg"}})
+
+	if len(rep.got) != 4 {
+		t.Fatalf("dilaporkan %d polling, ingin 4: %+v", len(rep.got), rep.got)
+	}
+	want := []struct{ ok, published bool }{{true, true}, {true, false}, {true, true}, {false, false}}
+	for i, w := range want {
+		g := rep.got[i]
+		if g.OK != w.ok || (g.Published > 0) != w.published || g.Connector != "bmkg-autogempa" || g.Subject != "raw.quake.bmkg" ||
+			g.Interval != 30*time.Second || !g.StartedAt.Equal(p.at[i]) || g.FinishedAt.Before(g.StartedAt) {
+			t.Errorf("laporan %d = %+v, ingin ok=%v terbit=%v", i, g, w.ok, w.published)
+		}
+	}
+	if rep.got[0].Published != 1 || rep.got[0].StartedAt.Location() != time.UTC {
+		t.Fatalf("laporan pertama %+v", rep.got[0])
+	}
+	if strings.Contains(buf.String(), "gagal diterbitkan") {
+		t.Fatal("tidak ada galat penerbitan yang perlu dicatat")
+	}
+}
+
+func TestReportFailureOnlyLogged(t *testing.T) {
+	clk := &fakeClock{now: time.Date(2026, 11, 24, 15, 0, 0, 0, time.UTC)}
+	rep := &fakeReporter{err: errors.New("nats putus")}
+	var buf bytes.Buffer
+	r := New(clk, slog.New(slog.NewTextHandler(&buf, nil)), Options{Report: rep})
+	p := &scriptPoller{name: "usgs-2.5-day", clock: clk, steps: []step{{res: poll.Result{Published: 2}}}}
+	if err := r.RunOnce(context.Background(), []Job{{Poller: p, Interval: time.Minute, Subject: "raw.quake.usgs"}}); err != nil {
+		t.Fatalf("galat penerbitan status tidak boleh menggagalkan polling: %v", err)
+	}
+	if st := r.Snapshot()[0]; st.ConsecutiveFailures != 0 || st.Published != 2 {
+		t.Fatalf("status %+v", st)
+	}
+	if !strings.Contains(buf.String(), "hasil polling gagal diterbitkan ke stream STATUS") || !strings.Contains(buf.String(), "nats putus") {
+		t.Fatalf("log: %s", buf.String())
+	}
+}

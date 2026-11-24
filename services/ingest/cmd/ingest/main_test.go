@@ -2,13 +2,16 @@ package main
 
 import (
 	"log/slog"
+	"maps"
 	"slices"
 	"testing"
 	"time"
 
 	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/archiveurl"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/nopub"
+	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/pollstatus"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/sysclock"
+	"github.com/ramirezzServer/siaga/services/ingest/internal/ports"
 )
 
 func lookup(m map[string]string) func(string) (string, bool) {
@@ -292,5 +295,50 @@ func TestPlanKeyedSources(t *testing.T) {
 	s, _ = config(lookup(map[string]string{"FIRMS_MAP_KEY": "pendek"}))
 	if _, _, err := plan(s, d); err == nil {
 		t.Error("MAP_KEY berformat salah harus ditolak")
+	}
+}
+
+// Setiap job dan sapuan membawa subjek raw yang benar-benar diisi
+// konektornya, karena subjek itu yang menentukan jenis data di status
+// sumber publik (ADR 0030).
+func TestPlanSubjects(t *testing.T) {
+	lim, err := budgets()
+	if err != nil {
+		t.Fatal(err)
+	}
+	rep := pollstatus.New(&nopub.Publisher{})
+	d := deps{clock: sysclock.Clock{}, log: slog.New(slog.DiscardHandler), limiters: lim, pub: &nopub.Publisher{}, report: rep}
+	s, err := config(lookup(map[string]string{"OPENAQ_API_KEY": "KUNCIUJIKUNCIUJIKUNC", "FIRMS_MAP_KEY": "KUNCIUJIKUNCIUJIKUNCIUJIKUNCIUJI"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	jobs, sweepers, err := plan(s, d)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := map[string]string{
+		"bmkg-autogempa": "raw.quake.bmkg", "bmkg-gempaterkini": "raw.quake.bmkg", "bmkg-gempadirasakan": "raw.quake.bmkg",
+		"usgs-2.5-day": "raw.quake.usgs", "bmkg-cap": "raw.weather.bmkg", "bmkg-prakiraan": "raw.forecast.bmkg",
+		"openmeteo-cuaca": "raw.forecast.openmeteo", "openmeteo-udara": "raw.aq.openmeteo",
+		"openmeteo-sungai": "raw.flood.openmeteo", "openmeteo-hujan": "raw.rain.openmeteo",
+		"openaq-stasiun":         "raw.aq.openaq",
+		"firms-viirs-noaa20-nrt": "raw.fire.firms", "firms-viirs-noaa21-nrt": "raw.fire.firms", "firms-modis-nrt": "raw.fire.firms",
+	}
+	got := map[string]string{}
+	for _, j := range jobs {
+		got[j.Poller.Name()] = j.Subject
+	}
+	for _, sw := range sweepers {
+		got[sw.Name()] = sw.Subject()
+	}
+	if !maps.Equal(got, want) {
+		t.Fatalf("subjek per konektor\n dapat %v\ningin %v", got, want)
+	}
+	// Setiap nama konektor bisa menjadi subjek status (misal titik di usgs-2.5-day).
+	for name, subject := range got {
+		rep := ports.PollReport{Connector: name, Subject: subject, Interval: time.Minute, StartedAt: time.Now(), FinishedAt: time.Now()}
+		if _, err := pollstatus.Message(rep); err != nil {
+			t.Errorf("%s: %v", name, err)
+		}
 	}
 }

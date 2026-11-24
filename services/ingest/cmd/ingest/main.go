@@ -53,6 +53,7 @@ import (
 	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/nopub"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/openaq"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/openmeteo"
+	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/pollstatus"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/regionlist"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/sitelist"
 	"github.com/ramirezzServer/siaga/services/ingest/internal/adapters/sysclock"
@@ -223,6 +224,18 @@ type connectorSpec struct {
 	conn     ports.Connector
 	interval time.Duration
 	budget   string
+	// subject adalah subjek raw yang diisi konektor, untuk hasil polling (ADR 0030).
+	subject string
+}
+
+// rawSubject membentuk subjek raw dari konstanta paket streams; tokennya
+// selalu valid, jadi galat berarti konstanta rusak (panik saat start).
+func rawSubject(k streams.Kind, src streams.Source) string {
+	s, err := streams.RawSubject(k, src)
+	if err != nil {
+		panic(err)
+	}
+	return s
 }
 
 func connectors(s settings) []connectorSpec {
@@ -232,9 +245,12 @@ func connectors(s settings) []connectorSpec {
 		if c.Name() == "bmkg-autogempa" {
 			interval = 30 * time.Second
 		}
-		out = append(out, connectorSpec{conn: c, interval: interval, budget: "bmkg"})
+		out = append(out, connectorSpec{conn: c, interval: interval, budget: "bmkg", subject: rawSubject(streams.KindQuake, streams.SourceBMKG)})
 	}
-	out = append(out, connectorSpec{conn: usgs.NewSummaryConnector(s.usgsURL), interval: time.Minute, budget: "usgs"})
+	out = append(out, connectorSpec{
+		conn: usgs.NewSummaryConnector(s.usgsURL), interval: time.Minute, budget: "usgs",
+		subject: rawSubject(streams.KindQuake, streams.SourceUSGS),
+	})
 	return out
 }
 
@@ -271,9 +287,9 @@ func openMeteoConnectors(s settings, now func() time.Time) ([]connectorSpec, err
 		return nil, err
 	}
 	out := []connectorSpec{
-		{conn: weather, interval: openMeteoGridInterval, budget: "openmeteo"},
-		{conn: air, interval: openMeteoGridInterval, budget: "openmeteo"},
-		{conn: flood, interval: openMeteoFloodInterval, budget: "openmeteo"},
+		{conn: weather, interval: openMeteoGridInterval, budget: "openmeteo", subject: rawSubject(streams.KindForecast, streams.SourceOpenMeteo)},
+		{conn: air, interval: openMeteoGridInterval, budget: "openmeteo", subject: rawSubject(streams.KindAQ, streams.SourceOpenMeteo)},
+		{conn: flood, interval: openMeteoFloodInterval, budget: "openmeteo", subject: rawSubject(streams.KindFlood, streams.SourceOpenMeteo)},
 	}
 	if len(lists.Catchments) > 0 {
 		// Endpoint sama dengan cuaca grid (Forecast API), model ecmwf_ifs.
@@ -281,7 +297,7 @@ func openMeteoConnectors(s settings, now func() time.Time) ([]connectorSpec, err
 		if err != nil {
 			return nil, err
 		}
-		out = append(out, connectorSpec{conn: rain, interval: openMeteoRainInterval, budget: "openmeteo"})
+		out = append(out, connectorSpec{conn: rain, interval: openMeteoRainInterval, budget: "openmeteo", subject: rawSubject(streams.KindRain, streams.SourceOpenMeteo)})
 	}
 	return out, nil
 }
@@ -312,6 +328,7 @@ func keyedSources(cfg settings, d deps, explicit func(string) bool) ([]runner.Jo
 				Poller:   poll.New(c, d.fetch, d.archive, d.pub, d.clock),
 				Interval: firmsInterval,
 				Limiters: []*runner.Limiter{d.limiters["firms"]},
+				Subject:  rawSubject(streams.KindFire, streams.SourceFIRMS),
 			})
 		}
 	case explicit("firms"):
@@ -330,7 +347,10 @@ func keyedSources(cfg settings, d deps, explicit func(string) bool) ([]runner.Jo
 		if err != nil {
 			return nil, err
 		}
-		jobs = append(jobs, runner.Job{Poller: p, Interval: openAQInterval, Limiters: []*runner.Limiter{d.limiters["openaq"]}})
+		jobs = append(jobs, runner.Job{
+			Poller: p, Interval: openAQInterval, Limiters: []*runner.Limiter{d.limiters["openaq"]},
+			Subject: rawSubject(streams.KindAQ, streams.SourceOpenAQ),
+		})
 	case explicit("openaq"):
 		missing = append(missing, "OPENAQ_API_KEY")
 	default:
@@ -373,6 +393,9 @@ type deps struct {
 	limiters map[string]*runner.Limiter
 	// sweepObserve membuat pengamat per konektor sapuan; boleh nil.
 	sweepObserve func(connector string) sweep.ItemObserver
+	// report menerima hasil setiap sapuan (ADR 0030); boleh nil. Hasil
+	// polling biasa dilaporkan lewat runner.Options.Report.
+	report ports.PollReporter
 }
 
 // plan merakit semua job polling dan sapuan sesuai konfigurasi.
@@ -391,6 +414,7 @@ func plan(cfg settings, d deps) ([]runner.Job, []*sweep.Sweeper, error) {
 			Poller:   poll.New(spec.conn, d.fetch, d.archive, d.pub, d.clock),
 			Interval: spec.interval,
 			Limiters: []*runner.Limiter{d.limiters[spec.budget]},
+			Subject:  spec.subject,
 		})
 	}
 	explicit := func(prefix string) bool {
@@ -414,6 +438,7 @@ func plan(cfg settings, d deps) ([]runner.Job, []*sweep.Sweeper, error) {
 				capfeed.Options{Provinces: cfg.capProvinces, Languages: cfg.capLanguages}),
 			Interval: capInterval,
 			Limiters: []*runner.Limiter{d.limiters["bmkg"]},
+			Subject:  rawSubject(streams.KindWeather, streams.SourceBMKG),
 		})
 	}
 
@@ -434,6 +459,7 @@ func plan(cfg settings, d deps) ([]runner.Job, []*sweep.Sweeper, error) {
 		}
 		opts := sweep.DefaultOptions()
 		opts.Interval, opts.Limit = cfg.forecastInterval, cfg.forecastLimit
+		opts.Report, opts.Subject = d.report, rawSubject(streams.KindForecast, streams.SourceBMKG)
 		if d.sweepObserve != nil {
 			opts.Observe = d.sweepObserve(fcSrc.Name())
 		}
@@ -487,6 +513,9 @@ func run() error {
 	}
 
 	var pub ports.Publisher = &nopub.Publisher{}
+	// Hasil polling hanya diterbitkan di mode layanan (ADR 0030); rekaman
+	// sekali jalan (-once) tidak mengubah status sumber.
+	var report ports.PollReporter
 	ready := func() bool { return true }
 	if *publish {
 		nc, err := natsx.Connect(cfg.natsURL, service, log)
@@ -500,13 +529,19 @@ func run() error {
 		}
 		setupCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
 		_, err = natsx.EnsureStream(setupCtx, js, streams.Raw, service)
+		if err == nil {
+			_, err = natsx.EnsureStream(setupCtx, js, streams.Status, service)
+		}
 		cancel()
 		if err != nil {
 			return err
 		}
 		pub = jspub.New(js, streams.Raw.Name)
+		if !*once {
+			report = pollstatus.New(jspub.New(js, streams.Status.Name))
+		}
 		ready = func() bool { return nc.Status() == nats.CONNECTED }
-		if _, err := natsx.ObserveStreams(otel.GetMeterProvider().Meter(telemetry.Scope), js, streams.Raw.Name); err != nil {
+		if _, err := natsx.ObserveStreams(otel.GetMeterProvider().Meter(telemetry.Scope), js, streams.Raw.Name, streams.Status.Name); err != nil {
 			return err
 		}
 	}
@@ -522,13 +557,13 @@ func run() error {
 	clock := sysclock.Clock{}
 	jobs, sweepers, err := plan(cfg, deps{
 		fetch: inst.Fetcher(httpfetch.New(20 * time.Second)), archive: archive, pub: pub, clock: clock, log: log,
-		limiters: limiters, sweepObserve: inst.SweepItem,
+		limiters: limiters, sweepObserve: inst.SweepItem, report: report,
 	})
 	if err != nil {
 		return err
 	}
 
-	r := runner.New(clock, log, runner.Options{MaxBackoff: 10 * time.Minute, JitterFrac: 0.1, Observe: inst.Poll})
+	r := runner.New(clock, log, runner.Options{MaxBackoff: 10 * time.Minute, JitterFrac: 0.1, Observe: inst.Poll, Report: report})
 	if *once {
 		errs := []error{r.RunOnce(ctx, jobs)}
 		for _, sw := range sweepers {

@@ -203,6 +203,29 @@ type StatusCoder interface {
 	HTTPStatus() int
 }
 
+// PollReport adalah hasil satu percobaan konektor (satu polling, atau satu
+// sapuan penuh), bahan status sumber yang tahan restart (ADR 0030).
+type PollReport struct {
+	Connector string
+	// Subject adalah subjek raw yang diisi konektor, misal "raw.quake.bmkg".
+	Subject string
+	// Interval adalah jarak polling normal (sapuan: jarak antar-awal sapuan).
+	Interval   time.Duration
+	StartedAt  time.Time
+	FinishedAt time.Time
+	// OK false bila sumber gagal diambil atau payload tidak bisa dibaca.
+	OK bool
+	// Published adalah pesan raw baru yang diterima broker (bukan duplikat);
+	// lebih dari nol berarti percobaan membawa data baru.
+	Published int
+}
+
+// PollReporter menerbitkan hasil percobaan konektor. Galatnya hanya dicatat:
+// status yang gagal terbit tidak boleh menahan polling berikutnya.
+type PollReporter interface {
+	Report(ctx context.Context, r PollReport) error
+}
+
 // Throttle menahan pemanggil sampai anggaran request mengizinkan satu request.
 // Dipakai use case yang mengirim lebih dari satu request per putaran (misal
 // dokumen CAP per peringatan atau sapuan prakiraan per kelurahan).

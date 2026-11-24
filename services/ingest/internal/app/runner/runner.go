@@ -1,6 +1,7 @@
 // Package runner menjadwalkan polling semua konektor: satu goroutine per
-// konektor, anggaran request bersama per sumber, backoff saat gagal, dan
-// status kesehatan tiap konektor untuk endpoint /status.
+// konektor, anggaran request bersama per sumber, backoff saat gagal, status
+// kesehatan tiap konektor untuk endpoint /status, dan hasil setiap polling
+// untuk status sumber yang tahan restart (ADR 0030).
 package runner
 
 import (
@@ -149,6 +150,9 @@ type Job struct {
 	Interval time.Duration
 	// Semua anggaran harus mengizinkan sebelum request dikirim.
 	Limiters []*Limiter
+	// Subject adalah subjek raw yang diisi konektor (misal "raw.quake.bmkg"),
+	// ikut dikirim di hasil polling.
+	Subject string
 }
 
 // Status adalah kesehatan satu konektor.
@@ -184,6 +188,9 @@ type Options struct {
 	Rand func() float64
 	// Observe boleh nil.
 	Observe PollObserver
+	// Report menerima hasil setiap polling, kecuali polling yang terputus
+	// karena layanan berhenti. Boleh nil.
+	Report ports.PollReporter
 }
 
 // Runner menjalankan Job.
@@ -303,7 +310,11 @@ func (r *Runner) pollOnce(ctx context.Context, j Job) (Status, error) {
 	}
 	start := r.clock.Now()
 	res, err := j.Poller.Poll(pctx)
-	elapsed := r.clock.Now().Sub(start)
+	end := r.clock.Now()
+	elapsed := end.Sub(start)
+	if err == nil || ctx.Err() == nil {
+		r.report(pctx, j, start, end, res, err)
+	}
 	done(res, err)
 
 	r.mu.Lock()
@@ -365,4 +376,20 @@ func (r *Runner) pollOnce(ctx context.Context, j Job) (Status, error) {
 		r.log.WarnContext(pctx, "arsip gagal, event tetap diterbitkan", slog.String("connector", name), slog.Any("error", res.ArchiveErr))
 	}
 	return snap, err
+}
+
+// report meneruskan hasil polling ke Options.Report. Galat hanya dicatat.
+func (r *Runner) report(ctx context.Context, j Job, start, end time.Time, res poll.Result, err error) {
+	if r.opt.Report == nil {
+		return
+	}
+	rep := ports.PollReport{
+		Connector: j.Poller.Name(), Subject: j.Subject, Interval: j.Interval,
+		StartedAt: start.UTC(), FinishedAt: end.UTC(),
+		OK: err == nil, Published: res.Published,
+	}
+	if rerr := r.opt.Report.Report(ctx, rep); rerr != nil {
+		r.log.WarnContext(ctx, "hasil polling gagal diterbitkan ke stream STATUS",
+			slog.String("connector", rep.Connector), slog.Any("error", rerr))
+	}
 }

@@ -47,6 +47,11 @@ type Options struct {
 	// Observe boleh nil. Dipanggil untuk setiap kode setelah izin anggaran
 	// didapat; lihat ItemObserver.
 	Observe ItemObserver
+	// Report menerima hasil setiap sapuan yang selesai (tidak untuk sapuan
+	// yang terputus karena layanan berhenti). Boleh nil. Subject adalah
+	// subjek raw sapuan, ikut di laporan (ADR 0030).
+	Report  ports.PollReporter
+	Subject string
 }
 
 // ItemObserver dipanggil di awal pengambilan satu kode. Context yang
@@ -141,6 +146,9 @@ func New(src Source, codes []string, fetch ports.Fetcher, archive ports.Archive,
 
 // Name mengembalikan nama konektor.
 func (s *Sweeper) Name() string { return s.src.Name() }
+
+// Subject mengembalikan subjek raw sapuan (Options.Subject).
+func (s *Sweeper) Subject() string { return s.opts.Subject }
 
 // Snapshot mengembalikan salinan status.
 func (s *Sweeper) Snapshot() Status {
@@ -247,7 +255,25 @@ func (s *Sweeper) Sweep(ctx context.Context) (Progress, error) {
 		queue = retry
 	}
 	s.finish(p, false)
+	s.report(ctx, *p)
 	return *p, nil
+}
+
+// report meneruskan hasil sapuan ke Options.Report. Sapuan dianggap berhasil
+// bila tidak semua kode gagal diambil (kode yang tidak dikenal sumber bukan
+// kegagalan); galat penerbitan hanya dicatat.
+func (s *Sweeper) report(ctx context.Context, p Progress) {
+	if s.opts.Report == nil {
+		return
+	}
+	rep := ports.PollReport{
+		Connector: s.src.Name(), Subject: s.opts.Subject, Interval: s.opts.Interval,
+		StartedAt: p.StartedAt, FinishedAt: p.FinishedAt,
+		OK: p.Total == 0 || p.Failed < p.Total, Published: p.Published,
+	}
+	if err := s.opts.Report.Report(ctx, rep); err != nil {
+		s.log.WarnContext(ctx, "hasil sapuan gagal diterbitkan ke stream STATUS", slog.Any("error", err))
+	}
 }
 
 // item menunggu izin anggaran lalu mengambil satu kode.

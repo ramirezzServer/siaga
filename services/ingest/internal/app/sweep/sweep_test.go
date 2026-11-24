@@ -372,3 +372,64 @@ func TestObserverSeesEveryItem(t *testing.T) {
 		}
 	}
 }
+
+// fakeReporter mencatat hasil sapuan; err dikembalikan ke setiap Report.
+type fakeReporter struct {
+	got []ports.PollReport
+	err error
+}
+
+func (f *fakeReporter) Report(_ context.Context, r ports.PollReport) error {
+	f.got = append(f.got, r)
+	return f.err
+}
+
+func TestReportEachCompletedSweep(t *testing.T) {
+	rep := &fakeReporter{}
+	r := newRig(t, []string{"A", "B"}, map[string][]reply{
+		"A": {{body: "ok:1", etag: `"a"`}, {body: "ok:1", etag: `"a"`}},
+		"B": {{err: statusError(http.StatusNotFound)}, {err: statusError(http.StatusNotFound)}},
+	}, func(o *Options) { o.Report, o.Subject, o.Interval = rep, "raw.forecast.bmkg", 6*time.Hour })
+	for range 2 {
+		if _, err := r.s.Sweep(t.Context()); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if len(rep.got) != 2 {
+		t.Fatalf("laporan %+v", rep.got)
+	}
+	first, second := rep.got[0], rep.got[1]
+	if !first.OK || first.Published != 1 || first.Connector != "bmkg-prakiraan" ||
+		first.Subject != "raw.forecast.bmkg" || first.Interval != 6*time.Hour ||
+		!first.StartedAt.Equal(t0) || !first.FinishedAt.After(first.StartedAt) {
+		t.Fatalf("sapuan pertama %+v", first)
+	}
+	// Sapuan kedua: A 304, B 404. Sumber terjangkau tetapi tidak ada yang baru.
+	if !second.OK || second.Published != 0 {
+		t.Fatalf("sapuan kedua %+v", second)
+	}
+
+	// Semua kode gagal: sapuan dilaporkan gagal, dan galat penerbitan hanya dicatat.
+	rep = &fakeReporter{err: errors.New("nats putus")}
+	boom := errors.New("502")
+	r = newRig(t, []string{"A", "B"}, map[string][]reply{"A": {{err: boom}}, "B": {{err: boom}}},
+		func(o *Options) { o.Report, o.Subject, o.Retries = rep, "raw.forecast.bmkg", 0 })
+	if _, err := r.s.Sweep(t.Context()); err != nil {
+		t.Fatal(err)
+	}
+	if len(rep.got) != 1 || rep.got[0].OK || rep.got[0].Published != 0 {
+		t.Fatalf("laporan %+v", rep.got)
+	}
+	if !strings.Contains(r.logs.String(), "hasil sapuan gagal diterbitkan ke stream STATUS") {
+		t.Fatalf("log: %s", r.logs.String())
+	}
+
+	// Sapuan yang terputus karena layanan berhenti tidak dilaporkan.
+	rep = &fakeReporter{}
+	r = newRig(t, []string{"A"}, map[string][]reply{"A": {{body: "ok:1"}}}, func(o *Options) { o.Report = rep })
+	ctx, cancel := context.WithCancel(t.Context())
+	cancel()
+	if _, err := r.s.Sweep(ctx); !errors.Is(err, context.Canceled) || len(rep.got) != 0 {
+		t.Fatalf("err=%v laporan %+v", err, rep.got)
+	}
+}
