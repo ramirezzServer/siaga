@@ -215,6 +215,19 @@ jobs:
           SIAGA_TEST_DATABASE_URL: postgres://siaga_geo:ci-password@localhost:5432/siaga?sslmode=disable
         # -p 1: paket berbagi database uji, jadi tidak boleh jalan bersamaan.
         run: go test -race -count=1 -p 1 -tags integration ./...
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - name: Test integrasi core-api (role siaga_core)
+        env:
+          SIAGA_TEST_DATABASE_URL: postgres://siaga_geo:ci-password@localhost:5432/siaga?sslmode=disable
+          SIAGA_TEST_CORE_DATABASE_URL: postgres://siaga_core:ci-password@localhost:5432/siaga?sslmode=disable
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm --filter "@siaga/core-api^..." run build
+          pnpm --filter @siaga/core-api run test:integration
       - name: Import Jawa Barat dari data asli
         env:
           DATABASE_URL: postgres://siaga_geo:ci-password@localhost:5432/siaga?sslmode=disable

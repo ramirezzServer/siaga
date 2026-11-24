@@ -1,0 +1,36 @@
+{
+  "name": "@siaga/core-api",
+  "version": "0.1.0",
+  "private": true,
+  "description": "SIAGA Core API (NestJS + Fastify). Fase 2: modul publik baca-saja untuk peta (ADR 0029).",
+  "type": "module",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node dist/main.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint src test",
+    "test": "vitest run --coverage",
+    "test:integration": "vitest run --config vitest.integration.config.ts"
+  },
+  "dependencies": {
+    "@nestjs/common": "12.6.0",
+    "@nestjs/core": "12.6.0",
+    "@nestjs/platform-fastify": "12.6.0",
+    "fastify": "5.12.8",
+    "pg": "8.23.1",
+    "reflect-metadata": "0.2.2",
+    "rxjs": "7.8.2",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@siaga/api-client": "workspace:*",
+    "@types/node": "22.20.5",
+    "@types/pg": "8.23.1",
+    "@vitest/coverage-v8": "5.0.1",
+    "ajv": "8.20.0",
+    "ajv-formats": "3.0.1",
+    "vitest": "5.0.1",
+    "yaml": "2.9.1"
+  }
+}

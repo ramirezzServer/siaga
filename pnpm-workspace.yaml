@@ -1,8 +1,14 @@
 packages:
   - "apps/*"
   - "packages/*"
+  - "services/core-api"
 
 # Hanya paket berikut yang boleh menjalankan skrip install (keamanan supply chain).
 onlyBuiltDependencies:
   - "@bufbuild/buf"
   - lefthook
+
+# fast-uri < 3.1.9 (GHSA-333x-w4r6-6crp dan kawan-kawan) ikut lewat fastify > @fastify/ajv-compiler.
+# Hapus setelah fastify menarik versi yang sudah diperbaiki.
+overrides:
+  "fast-uri@<3.1.9": "^3.1.9"

@@ -20,6 +20,8 @@ export default tseslint.config(
       "@typescript-eslint/no-explicit-any": "error",
       "@typescript-eslint/consistent-type-imports": "error",
       "@typescript-eslint/switch-exhaustiveness-check": "error",
+      // Module NestJS adalah kelas kosong berdekorator.
+      "@typescript-eslint/no-extraneous-class": ["error", { allowWithDecorator: true }],
     },
   },
   {

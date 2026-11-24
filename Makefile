@@ -24,6 +24,9 @@ GEO_DATABASE_URL ?= postgres://siaga_geo:$(SIAGA_GEO_PASSWORD)@localhost:$(POSTG
 # Resep yang memakai URL berisi password diawali @ supaya make tidak mencetaknya;
 # gantinya dicetak versi tersamar ini.
 GEO_DATABASE_URL_SAFE = postgres://siaga_geo:***@localhost:$(POSTGRES_PORT)/$(POSTGRES_DB)
+# core-api memakai role siaga_core: hanya SELECT di skema hazard, ref, ts (ADR 0029).
+CORE_DATABASE_URL ?= postgres://siaga_core:$(SIAGA_CORE_PASSWORD)@localhost:$(POSTGRES_PORT)/$(POSTGRES_DB)?sslmode=disable
+CORE_DATABASE_URL_SAFE = postgres://siaga_core:***@localhost:$(POSTGRES_PORT)/$(POSTGRES_DB)
 # Arsip payload mentah ingest di Garage (ADR 0014), dan folder lokal untuk
 # rekaman sampel (ingest-record) serta arsip fase 1a–1d sebelum Garage.
 INGEST_ARCHIVE_URL ?= s3://$(or $(ARCHIVE_BUCKET),siaga-arsip)/raw?endpoint=http://127.0.0.1:$(or $(GARAGE_S3_PORT),3900)
@@ -111,7 +114,7 @@ grid-list: regions-fetch ## Bangun ulang simpul grid 0,25° Open-Meteo ingest (P
 	  -grid-out ../ingest/internal/adapters/sitelist/data/grid025_$(PROVINCE).txt
 
 ##@ Pipa data
-.PHONY: ingest ingest-record geo calibrate-dedup dedup-labels felt-radius river-snap flood-threshold rain-threshold fire-threshold calibration-copy archive-ls archive-verify archive-upload archive-backup archive-backup-verify archive-restore archive-prune archive-maintain backup-setup replay backfill-openaq
+.PHONY: core ingest ingest-record geo calibrate-dedup dedup-labels felt-radius river-snap flood-threshold rain-threshold fire-threshold calibration-copy archive-ls archive-verify archive-upload archive-backup archive-backup-verify archive-restore archive-prune archive-maintain backup-setup replay backfill-openaq
 ingest: ## Jalankan ingest (butuh `make up`); arsip ke Garage, status di http://127.0.0.1:8081/status
 	cd services/ingest && INGEST_ARCHIVE_URL="$(INGEST_ARCHIVE_URL)" go run ./cmd/ingest
 
@@ -163,6 +166,12 @@ replay: ## Putar ulang arsip Garage ke NATS (FROM, TO, CONNECTORS, SPEED; ARGS=-
 backfill-openaq: ## Isi ulang nilai stasiun OpenAQ yang terlewat, maks ±7 hari (FROM wajib, TO, STATIONS; ARGS=-publish=false)
 	@cd services/ingest && INGEST_ARCHIVE_URL="$(INGEST_ARCHIVE_URL)" go run ./cmd/backfill openaq \
 	  -from "$(FROM)" -to "$(TO)" -stations "$(STATIONS)" $(ARGS)
+
+core: ## Build lalu jalankan core-api (butuh `make up seed`); API di http://127.0.0.1:8083/v1/hazards
+	@echo "core-api ($(CORE_DATABASE_URL_SAFE))"
+	@pnpm --filter @siaga/core-api... run build >/dev/null
+	@cd services/core-api && DATABASE_URL="$(CORE_DATABASE_URL)" LOG_FORMAT=text \
+	  CORS_ORIGINS="$(or $(CORE_CORS_ORIGINS),http://localhost:3000)" node dist/main.js
 
 geo: ## Jalankan geo-processor (butuh `make up seed`); status di http://127.0.0.1:8082/status
 	@echo "geo-processor ($(GEO_DATABASE_URL_SAFE))"
@@ -247,6 +256,10 @@ test-integration: ## Test integrasi (butuh `make up migrate`; paket dijalankan b
 	@cd services/geo-processor && SIAGA_TEST_DATABASE_URL="$(GEO_DATABASE_URL)" go test -race -count=1 -p 1 -tags integration ./...
 	@echo "test integrasi ingest (Garage http://127.0.0.1:$(or $(GARAGE_S3_PORT),3900))"
 	@cd services/ingest && SIAGA_TEST_S3_ENDPOINT="http://127.0.0.1:$(or $(GARAGE_S3_PORT),3900)" go test -race -count=1 -tags integration ./internal/adapters/s3archive/
+	@echo "test integrasi core-api ($(CORE_DATABASE_URL_SAFE))"
+	@pnpm --filter @siaga/core-api^... run build >/dev/null
+	@cd services/core-api && SIAGA_TEST_DATABASE_URL="$(GEO_DATABASE_URL)" SIAGA_TEST_CORE_DATABASE_URL="$(CORE_DATABASE_URL)" \
+	  pnpm run test:integration
 
 fuzz: ## Fuzzing singkat semua target fuzz (30 detik per target)
 	@cd services/geo-processor && for t in ./internal/domain/region:FuzzParseCode ./internal/domain/region:FuzzParseLatLngPath ./internal/adapters/cahyadsn:FuzzParseDump ./internal/domain/quake:FuzzClusteringOrderIndependent ./internal/domain/quake:FuzzClusteringInvariantsUnderCrowding ./internal/domain/quake:FuzzApplyOrderIndependent ./internal/domain/quake:FuzzLevelMonotone ./internal/domain/quake:FuzzLevelMonotoneAnySlope ./internal/domain/quake:FuzzParseFelt ./internal/domain/region:FuzzDistanceKm ./internal/domain/gazetteer:FuzzNormalize ./internal/domain/quake:FuzzRuleMatchSymmetric ./internal/app/quakes:FuzzServiceOrderIndependent ./internal/domain/weather:FuzzDeriveOrderIndependent ./internal/app/warnings:FuzzServiceOrderIndependent ./internal/domain/series:FuzzWeatherValidate ./internal/domain/flood:FuzzDayMaxSumMatchesCalibration ./internal/domain/flood:FuzzLevelMonotone ./internal/domain/fire:FuzzLevelMonotone ./internal/app/fires:FuzzServiceOrderIndependent; do \

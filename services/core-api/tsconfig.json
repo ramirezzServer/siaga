@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "dist",
+    "lib": ["ES2023"],
+    "types": ["node"],
+    // NestJS memakai dekorator gaya lama. Metadata tipe tidak dipancarkan:
+    // setiap dependensi disuntik eksplisit dengan @Inject(TOKEN), jadi build
+    // tsc dan transform Vitest berperilaku sama.
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": false
+  },
+  "include": ["src", "test", "vitest.config.ts", "vitest.integration.config.ts"]
+}
