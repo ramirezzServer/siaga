@@ -45,7 +45,7 @@ func setup(t *testing.T) (jetstream.JetStream, context.Context) {
 	for _, s := range []struct {
 		spec  streams.Spec
 		owner string
-	}{{streams.Raw, "ingest"}, {streams.Hazard, "geo-processor"}, {streams.DLQ, "geo-processor"}} {
+	}{{streams.Raw, "ingest"}, {streams.Status, "ingest"}, {streams.Hazard, "geo-processor"}, {streams.DLQ, "geo-processor"}} {
 		if _, err := natsx.EnsureStream(ctx, js, s.spec, s.owner); err != nil {
 			t.Fatal(err)
 		}
@@ -210,10 +210,58 @@ func TestHeaderValue(t *testing.T) {
 		FloodRainConsumer:           "raw.rain.openmeteo",
 		FireHazardConsumer:          "raw.fire.firms",
 	} {
-		if spec.Filter != subject || seen[spec.Durable] || spec.Description == "" {
+		if spec.Filter != subject || seen[spec.Durable] || spec.Description == "" || spec.StreamName() != streams.Raw.Name {
 			t.Errorf("%+v", spec)
 		}
 		seen[spec.Durable] = true
+	}
+	if s := SourceStatusConsumer; s.StreamName() != "STATUS" || s.Filter != "status.connector.>" || seen[s.Durable] {
+		t.Errorf("consumer status %+v", s)
+	}
+}
+
+// Consumer status membaca stream STATUS, bukan RAW: pesan status tidak
+// pernah sampai ke consumer raw, dan sebaliknya.
+func TestStatusConsumerReadsStatusStream(t *testing.T) {
+	js, ctx := setup(t)
+	var got atomic.Value
+	h, err := consume.New(func(b []byte) (string, error) { return string(b), nil },
+		func(_ context.Context, s string) (consume.Outcome, error) {
+			got.Store(s)
+			return consume.Outcome{Changed: true}, nil
+		}, nil, consume.DefaultOptions(), time.Now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	spec := SourceStatusConsumer
+	spec.Durable = "test-status"
+	c, err := NewConsumer(ctx, js, spec, "geo-processor", h, quiet, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	runCtx, stop := context.WithCancel(ctx)
+	done := make(chan error, 1)
+	go func() { done <- c.Run(runCtx) }()
+	for subject, body := range map[string]string{"raw.quake.bmkg": "raw", "status.connector.bmkg-autogempa": "status"} {
+		m := nats.NewMsg(subject)
+		m.Data = []byte(body)
+		if _, err := js.PublishMsg(ctx, m); err != nil {
+			t.Fatal(err)
+		}
+	}
+	deadline := time.Now().Add(10 * time.Second)
+	for got.Load() == nil {
+		if time.Now().After(deadline) {
+			t.Fatal("pesan status tidak diterima")
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	stop()
+	if err := <-done; err != nil {
+		t.Fatal(err)
+	}
+	if got.Load() != "status" || h.Snapshot().Received != 1 {
+		t.Fatalf("diterima %v, stats %+v", got.Load(), h.Snapshot())
 	}
 }
 

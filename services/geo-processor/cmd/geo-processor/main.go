@@ -7,8 +7,10 @@
 // outbox transaksional.
 // Prakiraan cuaca, kualitas udara, debit sungai, dan hujan sub-DAS, nilai
 // sensor stasiun kualitas udara, dan titik panas satelit disimpan ke
-// hypertable schema ts. Ambang banjir dan saringan sumber panas tetap
-// disematkan ke binary dan diselaraskan ke schema ref saat start.
+// hypertable schema ts. Hasil polling setiap konektor ingest (stream STATUS)
+// dilipat menjadi status sumber di ts.source_status (ADR 0030). Ambang banjir
+// dan saringan sumber panas tetap disematkan ke binary dan diselaraskan ke
+// schema ref saat start.
 //
 // Konfigurasi lewat environment variable; lihat config() di bawah.
 package main
@@ -46,12 +48,14 @@ import (
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/adapters/rawquake"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/adapters/rawseries"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/adapters/rawweather"
+	"github.com/ramirezzServer/siaga/services/geo-processor/internal/adapters/statuspb"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/adapters/telemetry"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/app/consume"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/app/fires"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/app/floods"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/app/quakes"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/app/relay"
+	"github.com/ramirezzServer/siaga/services/geo-processor/internal/app/sources"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/app/timeseries"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/app/warnings"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/domain/fire"
@@ -59,6 +63,7 @@ import (
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/domain/hotspot"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/domain/quake"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/domain/series"
+	"github.com/ramirezzServer/siaga/services/geo-processor/internal/domain/sourcestatus"
 	"github.com/ramirezzServer/siaga/services/geo-processor/internal/domain/weather"
 )
 
@@ -328,6 +333,14 @@ func serve(ctx context.Context, cfg settings, log *slog.Logger) error {
 	if err != nil {
 		return err
 	}
+	ssvc := sources.New(postgres.NewSourceStatusStore(pool), time.Now)
+	sourceStatus, err := consume.New(statuspb.Decode, func(ctx context.Context, p sourcestatus.Poll) (consume.Outcome, error) {
+		res, err := ssvc.Record(ctx, p)
+		return consume.Outcome{Changed: res.Changed}, err
+	}, []error{sourcestatus.ErrInvalid}, consume.DefaultOptions(), time.Now)
+	if err != nil {
+		return err
+	}
 	consumers := []consumerJob{
 		{spec: natsjs.QuakeConsumer, handler: quakeHandler},
 		{spec: natsjs.WeatherConsumer, handler: weatherHandler},
@@ -341,16 +354,21 @@ func serve(ctx context.Context, cfg settings, log *slog.Logger) error {
 		{spec: natsjs.FloodDischargeConsumer, handler: floodDischarge},
 		{spec: natsjs.FloodRainConsumer, handler: floodRain},
 		{spec: natsjs.FireHazardConsumer, handler: fireHazard},
+		{spec: natsjs.SourceStatusConsumer, handler: sourceStatus},
 	}
 
 	durables := make([]string, len(consumers))
+	byStream := map[string][]string{}
 	for i, c := range consumers {
 		durables[i] = c.spec.Durable
+		byStream[c.spec.StreamName()] = append(byStream[c.spec.StreamName()], c.spec.Durable)
 	}
-	if _, err := natsx.ObserveConsumers(meter, js, streams.Raw.Name, durables...); err != nil {
-		return err
+	for _, name := range []string{streams.Raw.Name, streams.Status.Name} {
+		if _, err := natsx.ObserveConsumers(meter, js, name, byStream[name]...); err != nil {
+			return err
+		}
 	}
-	if _, err := natsx.ObserveStreams(meter, js, streams.Raw.Name, streams.Hazard.Name, streams.DLQ.Name); err != nil {
+	if _, err := natsx.ObserveStreams(meter, js, streams.Raw.Name, streams.Status.Name, streams.Hazard.Name, streams.DLQ.Name); err != nil {
 		return err
 	}
 	if _, err := telemetry.Observe(meter, telemetry.Sources{
@@ -367,6 +385,7 @@ func serve(ctx context.Context, cfg settings, log *slog.Logger) error {
 			natsjs.FloodDischargeConsumer.Durable:      floodDischarge.Snapshot,
 			natsjs.FloodRainConsumer.Durable:           floodRain.Snapshot,
 			natsjs.FireHazardConsumer.Durable:          fireHazard.Snapshot,
+			natsjs.SourceStatusConsumer.Durable:        sourceStatus.Snapshot,
 		},
 		Relay: outbox.Snapshot,
 		Backlog: func(ctx context.Context) (telemetry.Backlog, error) {
@@ -388,7 +407,7 @@ func serve(ctx context.Context, cfg settings, log *slog.Logger) error {
 		},
 		"consumer": func(context.Context) error {
 			if int(consumersReady.Load()) < len(consumers) {
-				return errors.New("menunggu stream RAW dari ingest")
+				return errors.New("menunggu stream RAW dan STATUS dari ingest")
 			}
 			return nil
 		},
@@ -409,8 +428,9 @@ func serve(ctx context.Context, cfg settings, log *slog.Logger) error {
 				natsjs.FloodDischargeConsumer.Durable: floodDischarge.Snapshot(),
 				natsjs.FloodRainConsumer.Durable:      floodRain.Snapshot(),
 			},
-			"fire_consumer": fireHazard.Snapshot(),
-			"outbox":        outbox.Snapshot(), "rules": cfg.rules, "weather_policy": cfg.weather,
+			"fire_consumer":          fireHazard.Snapshot(),
+			"source_status_consumer": sourceStatus.Snapshot(),
+			"outbox":                 outbox.Snapshot(), "rules": cfg.rules, "weather_policy": cfg.weather,
 			"flood_calibration": floodStatus(cal), "fire_calibration": fireStatus(cfg.fire, fireCal),
 		}
 	}
@@ -511,8 +531,8 @@ type consumerJob struct {
 	handler natsjs.Handler
 }
 
-// consumeLoop menyiapkan consumer (menunggu stream RAW bila ingest belum
-// pernah jalan) lalu memproses pesan sampai ctx selesai.
+// consumeLoop menyiapkan consumer (menunggu stream RAW atau STATUS bila
+// ingest belum pernah jalan) lalu memproses pesan sampai ctx selesai.
 func consumeLoop(ctx context.Context, js jetstream.JetStream, c consumerJob, after func(), log *slog.Logger, ready func()) error {
 	for {
 		cons, err := natsjs.NewConsumer(ctx, js, c.spec, service, c.handler, log, after)
@@ -523,7 +543,7 @@ func consumeLoop(ctx context.Context, js jetstream.JetStream, c consumerJob, aft
 		if !errors.Is(err, jetstream.ErrStreamNotFound) {
 			return err
 		}
-		log.Warn("stream RAW belum ada; jalankan ingest. Dicoba lagi dalam 5 detik", slog.String("consumer", c.spec.Durable))
+		log.Warn("stream "+c.spec.StreamName()+" belum ada; jalankan ingest. Dicoba lagi dalam 5 detik", slog.String("consumer", c.spec.Durable))
 		select {
 		case <-ctx.Done():
 			return nil

@@ -76,11 +76,21 @@ func (p *Publisher) Publish(ctx context.Context, subject, msgID string, data []b
 	return nil
 }
 
-// ConsumerSpec adalah identitas satu durable consumer di stream RAW.
+// ConsumerSpec adalah identitas satu durable consumer.
 type ConsumerSpec struct {
 	Durable     string
 	Description string
 	Filter      string
+	// Stream asal pesan; kosong berarti RAW.
+	Stream string
+}
+
+// StreamName mengembalikan stream asal consumer.
+func (s ConsumerSpec) StreamName() string {
+	if s.Stream == "" {
+		return streams.Raw.Name
+	}
+	return s.Stream
 }
 
 // Consumer geo-processor (docs/events.md, bagian Consumer).
@@ -137,6 +147,12 @@ var (
 	FloodRainConsumer = ConsumerSpec{
 		Durable: "geo-processor-hazard-flood-rain", Filter: "raw.rain.openmeteo",
 		Description: "geo-processor: indikasi potensi banjir dari indeks hujan sub-DAS (hazard.flood.*)",
+	}
+	// Status sumber: hasil polling konektor ingest dari stream STATUS ke
+	// ts.source_status (ADR 0030).
+	SourceStatusConsumer = ConsumerSpec{
+		Durable: "geo-processor-source-status", Filter: "status.connector.>", Stream: streams.Status.Name,
+		Description: "geo-processor: hasil polling konektor ingest ke ts.source_status",
 	}
 )
 
@@ -207,10 +223,11 @@ func newInstruments() (*instruments, error) {
 	return &instruments{process: process, queue: queue, pipeline: pipeline}, nil
 }
 
-// NewConsumer menyiapkan durable consumer di stream RAW. Stream RAW milik
-// ingest; bila belum ada, galatnya dikembalikan supaya pemanggil mencoba lagi.
+// NewConsumer menyiapkan durable consumer di stream asalnya (RAW atau
+// STATUS, keduanya milik ingest); bila stream belum ada, galatnya
+// dikembalikan supaya pemanggil mencoba lagi.
 func NewConsumer(ctx context.Context, js jetstream.JetStream, spec ConsumerSpec, service string, h Handler, log *slog.Logger, after func()) (*Consumer, error) {
-	cons, err := js.CreateOrUpdateConsumer(ctx, streams.Raw.Name, ConsumerConfig(spec))
+	cons, err := js.CreateOrUpdateConsumer(ctx, spec.StreamName(), ConsumerConfig(spec))
 	if err != nil {
 		return nil, fmt.Errorf("menyiapkan consumer %s: %w", spec.Durable, err)
 	}

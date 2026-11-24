@@ -16,11 +16,13 @@ import (
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nats.go/jetstream"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	commonv1 "github.com/ramirezzServer/siaga/libs/go/contracts/gen/siaga/common/v1"
 	hazardv1 "github.com/ramirezzServer/siaga/libs/go/contracts/gen/siaga/hazard/v1"
 	rawv1 "github.com/ramirezzServer/siaga/libs/go/contracts/gen/siaga/raw/v1"
+	statusv1 "github.com/ramirezzServer/siaga/libs/go/contracts/gen/siaga/status/v1"
 	"github.com/ramirezzServer/siaga/libs/go/contracts/streams"
 	"github.com/ramirezzServer/siaga/libs/go/platform/natsx"
 	"github.com/ramirezzServer/siaga/libs/go/platform/natsx/natstest"
@@ -52,8 +54,10 @@ func TestEndToEnd(t *testing.T) {
 	}
 	defer nc.Close()
 	js, _ := jetstream.New(nc)
-	if _, err := natsx.EnsureStream(ctx, js, streams.Raw, "ingest"); err != nil {
-		t.Fatal(err)
+	for _, spec := range []streams.Spec{streams.Raw, streams.Status} {
+		if _, err := natsx.EnsureStream(ctx, js, spec, "ingest"); err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	cleanup := func() {
@@ -83,6 +87,7 @@ func TestEndToEnd(t *testing.T) {
 			`DELETE FROM ts.weather_forecast WHERE site_id = 'catchment:uji-e2e'`,
 			`DELETE FROM ts.series WHERE site_id = 'catchment:uji-e2e'`,
 			`DELETE FROM ts.site WHERE id = 'catchment:uji-e2e'`,
+			`DELETE FROM ts.source_status WHERE connector LIKE 'uji-e2e-%'`,
 		} {
 			if _, err := pg.Exec(ctx, q); err != nil {
 				t.Fatal(err)
@@ -216,6 +221,7 @@ func TestEndToEnd(t *testing.T) {
 	checkSeries(ctx, t, js, dbURL)
 	checkFlood(ctx, t, js, dbURL)
 	checkObservations(ctx, t, js, dbURL)
+	checkSourceStatus(ctx, t, js, dbURL)
 
 	stop()
 	if err := <-done; err != nil {
@@ -642,4 +648,67 @@ func checkFlood(ctx context.Context, t *testing.T, js jetstream.JetStream, dbURL
 		t.Fatalf("titik %q, %d ambang debit, %v", kind, thresholds, err)
 	}
 	t.Logf("banjir: %s (%s), %s (%s)", river.GetTitle(), river.GetLevel(), basin.GetTitle(), basin.GetLevel())
+}
+
+// checkSourceStatus: hasil polling di stream STATUS → consumer
+// geo-processor-source-status → ts.source_status (ADR 0030). Pesan ulangan
+// tidak mengubah keadaan; pesan rusak masuk DLQ.
+func checkSourceStatus(ctx context.Context, t *testing.T, js jetstream.JetStream, dbURL string) {
+	t.Helper()
+	pg := mustPool(ctx, t, dbURL)
+	defer pg.Close()
+	start := time.Date(2001, 11, 21, 7, 0, 0, 0, time.UTC)
+	send := func(id string, at time.Duration, outcome statusv1.PollOutcome) {
+		b, err := proto.Marshal(&statusv1.ConnectorPoll{
+			Connector: "uji-e2e-cap", Subject: "raw.weather.bmkg", Interval: durationpb.New(2 * time.Minute),
+			StartedAt: timestamppb.New(start.Add(at)), FinishedAt: timestamppb.New(start.Add(at + time.Second)),
+			Outcome: outcome,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		msg := nats.NewMsg("status.connector.uji-e2e-cap")
+		msg.Data = b
+		msg.Header.Set(jetstream.MsgIDHeader, id)
+		if _, err := js.PublishMsg(ctx, msg); err != nil {
+			t.Fatal(err)
+		}
+	}
+	send("s1", 0, statusv1.PollOutcome_POLL_OUTCOME_OK)
+	send("s2", 2*time.Minute, statusv1.PollOutcome_POLL_OUTCOME_FAILED)
+	send("s2-ulang", 2*time.Minute, statusv1.PollOutcome_POLL_OUTCOME_FAILED)
+	send("s3", 4*time.Minute, statusv1.PollOutcome_POLL_OUTCOME_UNSPECIFIED) // rusak: ke DLQ
+	deadline := time.Now().Add(30 * time.Second)
+	for {
+		var failures int
+		var success, failing time.Time
+		err := pg.QueryRow(ctx, `SELECT consecutive_failures, last_success_at, failing_since FROM ts.source_status WHERE connector = 'uji-e2e-cap'`).
+			Scan(&failures, &success, &failing)
+		if err == nil && failures == 1 {
+			if !success.Equal(start.Add(time.Second)) || !failing.Equal(start.Add(2*time.Minute+time.Second)) {
+				t.Fatalf("status sumber berhasil %v, gagal sejak %v", success, failing)
+			}
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("ts.source_status tidak terisi dalam 30 detik: %d gagal, %v", failures, err)
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+	deadline = time.Now().Add(30 * time.Second)
+	for {
+		dlq, err := js.Stream(ctx, streams.DLQ.Name)
+		if err == nil {
+			info, _ := dlq.Info(ctx)
+			for seq := uint64(1); info != nil && seq <= info.State.LastSeq; seq++ {
+				if m, err := dlq.GetMsg(ctx, seq); err == nil && m.Header.Get("Siaga-Dlq-Stream") == "STATUS" {
+					return
+				}
+			}
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("hasil polling rusak tidak masuk DLQ")
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
 }
