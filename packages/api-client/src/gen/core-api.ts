@@ -154,6 +154,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/sources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Status sumber data
+         * @description Status setiap konektor ingest, urut `id`, untuk label "data terlambat" di peta dan
+         *     halaman status publik. Dihitung dari keadaan yang tersimpan di database (hasil setiap
+         *     polling), bukan dari memori proses ingest, jadi tetap benar setelah ingest dimulai
+         *     ulang dan ikut menua bila ingest mati (ADR 0030). Konektor yang belum pernah
+         *     berjalan tidak ada di daftar.
+         */
+        get: operations["listSources"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -463,6 +487,68 @@ export interface components {
             items: components["schemas"]["ImpactedRegion"][];
             next_cursor: string | null;
         };
+        /**
+         * @description Penyedia data; firms = NASA FIRMS.
+         * @enum {string}
+         */
+        SourceProvider: "bmkg" | "usgs" | "openmeteo" | "openaq" | "firms";
+        /**
+         * @description Jenis data yang diisi konektor: quake gempa, weather peringatan dini cuaca (CAP),
+         *     forecast prakiraan cuaca, aq kualitas udara, flood debit sungai, rain hujan sub-DAS,
+         *     fire titik panas satelit.
+         * @enum {string}
+         */
+        SourceDataset: "quake" | "weather" | "forecast" | "aq" | "flood" | "rain" | "fire";
+        /**
+         * @description ok = ada pengambilan berhasil sebelum `late_after` dan kegagalan beruntun kurang
+         *     dari 3; degraded = masih sebelum `late_after`, tetapi 3 percobaan terakhir atau
+         *     lebih gagal berturut-turut; late = `late_after` sudah lewat, atau belum pernah ada
+         *     pengambilan berhasil.
+         * @enum {string}
+         */
+        SourceState: "ok" | "degraded" | "late";
+        SourceStatus: {
+            /**
+             * @description Nama konektor ingest.
+             * @example bmkg-autogempa
+             */
+            id: string;
+            provider: components["schemas"]["SourceProvider"];
+            dataset: components["schemas"]["SourceDataset"];
+            /** @description Jenis bahaya yang datanya berasal dari konektor ini (bahan label "data terlambat" per lapisan); kosong untuk prakiraan cuaca. */
+            hazard_kinds: components["schemas"]["HazardKind"][];
+            state: components["schemas"]["SourceState"];
+            /** @description Jarak polling normal; untuk sapuan prakiraan, jarak antar-awal sapuan. */
+            interval_seconds: number;
+            /**
+             * Format: date-time
+             * @description Akhir percobaan terbaru, berhasil atau gagal.
+             */
+            last_attempt_at: string;
+            /** @description Akhir pengambilan berhasil terbaru; null bila belum pernah berhasil. */
+            last_success_at: string | null;
+            /**
+             * @description Akhir pengambilan terbaru yang membawa data baru (ada pesan raw baru). Sumber yang
+             *     sepi (misal tidak ada gempa baru) tetap ok walau nilai ini lama.
+             */
+            last_change_at: string | null;
+            /**
+             * @description Saat status menjadi late bila tidak ada pengambilan berhasil lagi:
+             *     `last_success_at` + 2 × interval + 10 menit. Null bila belum pernah berhasil.
+             */
+            late_after: string | null;
+            consecutive_failures: number;
+            /** @description Akhir percobaan gagal pertama sejak pengambilan berhasil terakhir; null bila percobaan terbaru berhasil. */
+            failing_since: string | null;
+        };
+        SourceList: {
+            items: components["schemas"]["SourceStatus"][];
+            /**
+             * Format: date-time
+             * @description Waktu server; `state` dihitung terhadap waktu ini.
+             */
+            generated_at: string;
+        };
         /** @description RFC 9457 Problem Details. */
         Problem: {
             /** Format: uri-reference */
@@ -705,6 +791,28 @@ export interface operations {
             };
             400: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
+            429: components["responses"]["Problem"];
+            503: components["responses"]["Problem"];
+        };
+    };
+    listSources: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Status semua konektor */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SourceList"];
+                };
+            };
             429: components["responses"]["Problem"];
             503: components["responses"]["Problem"];
         };

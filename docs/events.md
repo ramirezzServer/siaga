@@ -19,25 +19,27 @@ Event antar-layanan didefinisikan di `contracts/proto` dan dikirim lewat NATS Je
 | `RAW`    | `raw.>`    | 7 hari  | 24 jam           | 2 GiB        | ingest        |
 | `HAZARD` | `hazard.>` | 30 hari | 24 jam           | 1 GiB        | geo-processor |
 | `DLQ`    | `dlq.>`    | 30 hari | 24 jam           | 256 MiB      | bersama       |
+| `STATUS` | `status.>` | 2 hari  | 1 jam            | 64 MiB       | ingest        |
 
 Pemilik adalah satu-satunya layanan yang membuat dan memperbarui konfigurasi stream (`natsx.EnsureStream` menolak layanan lain), sama seperti satu role pemilik per schema database. `DLQ` milik bersama (`streams.OwnerShared`): setiap konsumen memastikan stream ada, dengan konfigurasi yang selalu berasal dari `libs/go/contracts/streams`.
 
 ## Consumer
 
-| Consumer (durable)                     | Stream | Filter                   | Layanan       | Ack                         |
-| -------------------------------------- | ------ | ------------------------ | ------------- | --------------------------- |
-| `geo-processor-quake`                  | `RAW`  | `raw.quake.>`            | geo-processor | eksplisit, `AckWait` 30 dtk |
-| `geo-processor-weather`                | `RAW`  | `raw.weather.>`          | geo-processor | eksplisit, `AckWait` 30 dtk |
-| `geo-processor-forecast-bmkg`          | `RAW`  | `raw.forecast.bmkg`      | geo-processor | eksplisit, `AckWait` 30 dtk |
-| `geo-processor-forecast-openmeteo`     | `RAW`  | `raw.forecast.openmeteo` | geo-processor | eksplisit, `AckWait` 30 dtk |
-| `geo-processor-aq-openmeteo`           | `RAW`  | `raw.aq.openmeteo`       | geo-processor | eksplisit, `AckWait` 30 dtk |
-| `geo-processor-flood-openmeteo`        | `RAW`  | `raw.flood.openmeteo`    | geo-processor | eksplisit, `AckWait` 30 dtk |
-| `geo-processor-rain-openmeteo`         | `RAW`  | `raw.rain.openmeteo`     | geo-processor | eksplisit, `AckWait` 30 dtk |
-| `geo-processor-aq-openaq`              | `RAW`  | `raw.aq.openaq`          | geo-processor | eksplisit, `AckWait` 30 dtk |
-| `geo-processor-fire-firms`             | `RAW`  | `raw.fire.firms`         | geo-processor | eksplisit, `AckWait` 30 dtk |
-| `geo-processor-hazard-flood-discharge` | `RAW`  | `raw.flood.openmeteo`    | geo-processor | eksplisit, `AckWait` 30 dtk |
-| `geo-processor-hazard-flood-rain`      | `RAW`  | `raw.rain.openmeteo`     | geo-processor | eksplisit, `AckWait` 30 dtk |
-| `geo-processor-hazard-fire`            | `RAW`  | `raw.fire.firms`         | geo-processor | eksplisit, `AckWait` 30 dtk |
+| Consumer (durable)                     | Stream   | Filter                   | Layanan       | Ack                         |
+| -------------------------------------- | -------- | ------------------------ | ------------- | --------------------------- |
+| `geo-processor-quake`                  | `RAW`    | `raw.quake.>`            | geo-processor | eksplisit, `AckWait` 30 dtk |
+| `geo-processor-weather`                | `RAW`    | `raw.weather.>`          | geo-processor | eksplisit, `AckWait` 30 dtk |
+| `geo-processor-forecast-bmkg`          | `RAW`    | `raw.forecast.bmkg`      | geo-processor | eksplisit, `AckWait` 30 dtk |
+| `geo-processor-forecast-openmeteo`     | `RAW`    | `raw.forecast.openmeteo` | geo-processor | eksplisit, `AckWait` 30 dtk |
+| `geo-processor-aq-openmeteo`           | `RAW`    | `raw.aq.openmeteo`       | geo-processor | eksplisit, `AckWait` 30 dtk |
+| `geo-processor-flood-openmeteo`        | `RAW`    | `raw.flood.openmeteo`    | geo-processor | eksplisit, `AckWait` 30 dtk |
+| `geo-processor-rain-openmeteo`         | `RAW`    | `raw.rain.openmeteo`     | geo-processor | eksplisit, `AckWait` 30 dtk |
+| `geo-processor-aq-openaq`              | `RAW`    | `raw.aq.openaq`          | geo-processor | eksplisit, `AckWait` 30 dtk |
+| `geo-processor-fire-firms`             | `RAW`    | `raw.fire.firms`         | geo-processor | eksplisit, `AckWait` 30 dtk |
+| `geo-processor-hazard-flood-discharge` | `RAW`    | `raw.flood.openmeteo`    | geo-processor | eksplisit, `AckWait` 30 dtk |
+| `geo-processor-hazard-flood-rain`      | `RAW`    | `raw.rain.openmeteo`     | geo-processor | eksplisit, `AckWait` 30 dtk |
+| `geo-processor-hazard-fire`            | `RAW`    | `raw.fire.firms`         | geo-processor | eksplisit, `AckWait` 30 dtk |
+| `geo-processor-source-status`          | `STATUS` | `status.connector.>`     | geo-processor | eksplisit, `AckWait` 30 dtk |
 
 Consumer deret waktu satu per subjek karena tiap subjek membawa jenis pesan yang berbeda; semuanya menulis ke hypertable schema `ts` (ADR 0012, 0013). Penilaian banjir dan titik api memakai consumer sendiri di subjek yang sama, jadi kegagalan penyimpanan deret dan penilaian bahaya tidak saling menahan (ADR 0021, 0023). Consumer baru membaca stream `RAW` dari awal (retensi 7 hari), jadi prakiraan BMKG yang terbit sejak fase 1c ikut tersimpan.
 
@@ -45,22 +47,23 @@ Batas percobaan diatur aplikasi, bukan server (`MaxDeliver = -1`): galat sementa
 
 ## Subjek
 
-| Subjek                   | Pesan                                    | Penerbit      | Stream   |
-| ------------------------ | ---------------------------------------- | ------------- | -------- |
-| `raw.quake.bmkg`         | `siaga.raw.v1.QuakeReport`               | ingest        | `RAW`    |
-| `raw.quake.usgs`         | `siaga.raw.v1.QuakeReport`               | ingest        | `RAW`    |
-| `raw.weather.bmkg`       | `siaga.raw.v1.WeatherWarning`            | ingest        | `RAW`    |
-| `raw.forecast.bmkg`      | `siaga.raw.v1.RegionForecast`            | ingest        | `RAW`    |
-| `raw.forecast.openmeteo` | `siaga.raw.v1.GridWeatherForecast`       | ingest        | `RAW`    |
-| `raw.aq.openmeteo`       | `siaga.raw.v1.AirQualityForecast`        | ingest        | `RAW`    |
-| `raw.flood.openmeteo`    | `siaga.raw.v1.RiverDischargeForecast`    | ingest        | `RAW`    |
-| `raw.rain.openmeteo`     | `siaga.raw.v1.CatchmentRainfallForecast` | ingest        | `RAW`    |
-| `raw.aq.openaq`          | `siaga.raw.v1.AirQualityObservation`     | ingest        | `RAW`    |
-| `raw.fire.firms`         | `siaga.raw.v1.FireDetection`             | ingest        | `RAW`    |
-| `hazard.<jenis>.created` | `siaga.hazard.v1.HazardCreated`          | geo-processor | `HAZARD` |
-| `hazard.<jenis>.updated` | `siaga.hazard.v1.HazardUpdated`          | geo-processor | `HAZARD` |
-| `hazard.<jenis>.expired` | `siaga.hazard.v1.HazardExpired`          | geo-processor | `HAZARD` |
-| `dlq.<layanan>`          | payload asli, apa adanya                 | konsumen      | `DLQ`    |
+| Subjek                        | Pesan                                    | Penerbit      | Stream   |
+| ----------------------------- | ---------------------------------------- | ------------- | -------- |
+| `raw.quake.bmkg`              | `siaga.raw.v1.QuakeReport`               | ingest        | `RAW`    |
+| `raw.quake.usgs`              | `siaga.raw.v1.QuakeReport`               | ingest        | `RAW`    |
+| `raw.weather.bmkg`            | `siaga.raw.v1.WeatherWarning`            | ingest        | `RAW`    |
+| `raw.forecast.bmkg`           | `siaga.raw.v1.RegionForecast`            | ingest        | `RAW`    |
+| `raw.forecast.openmeteo`      | `siaga.raw.v1.GridWeatherForecast`       | ingest        | `RAW`    |
+| `raw.aq.openmeteo`            | `siaga.raw.v1.AirQualityForecast`        | ingest        | `RAW`    |
+| `raw.flood.openmeteo`         | `siaga.raw.v1.RiverDischargeForecast`    | ingest        | `RAW`    |
+| `raw.rain.openmeteo`          | `siaga.raw.v1.CatchmentRainfallForecast` | ingest        | `RAW`    |
+| `raw.aq.openaq`               | `siaga.raw.v1.AirQualityObservation`     | ingest        | `RAW`    |
+| `raw.fire.firms`              | `siaga.raw.v1.FireDetection`             | ingest        | `RAW`    |
+| `hazard.<jenis>.created`      | `siaga.hazard.v1.HazardCreated`          | geo-processor | `HAZARD` |
+| `hazard.<jenis>.updated`      | `siaga.hazard.v1.HazardUpdated`          | geo-processor | `HAZARD` |
+| `hazard.<jenis>.expired`      | `siaga.hazard.v1.HazardExpired`          | geo-processor | `HAZARD` |
+| `dlq.<layanan>`               | payload asli, apa adanya                 | konsumen      | `DLQ`    |
+| `status.connector.<konektor>` | `siaga.status.v1.ConnectorPoll`          | ingest        | `STATUS` |
 
 `<jenis>`: `quake`, `weather`, `flood`, `fire`, `aq`. `aq.*`, `report.*`, `notify.*` ditambahkan di fase 3–4.
 
@@ -91,6 +94,14 @@ Event `hazard.*` adalah keadaan kejadian ternormalisasi, diterbitkan geo-process
 - **ID kejadian titik api** adalah UUIDv8 dari SHA-256 ID deteksi yang membuka kejadian (`source_event_id` dan `fire.opened_by`). Deteksi `raw.fire.firms` di luar sumber panas tetap (saringan dari arsip FIRMS) dan bukan S-NPP masuk kejadian aktif yang punya anggota berjarak ≤ 2 km dan berselang ≤ 24 jam; bila tidak ada, deteksi membuka kejadian baru. Deteksi yang menyambung dua kejadian aktif menggabungkannya: yang deteksi pertamanya lebih tua bertahan (`updated`), yang lain `expired` dengan `MERGED`. Tingkat: Info, Waspada bila ada deteksi keyakinan tinggi atau terlihat di ≥ 2 lintasan (produk + waktu) dalam 24 jam, Siaga bila ≥ 5 deteksi dalam 24 jam; tingkat tertinggi selama aktif, tidak pernah turun. `expired` (`ELAPSED`) 24 jam setelah deteksi terakhir diterima. Detail di `fire` (hitungan, puncak 24 jam, produk, semua deteksi anggota). Belum ada area dan wilayah terdampak: aturan ≤ 10 km dihitung alert-engine dari daftar deteksi (ADR 0023).
 - **Wilayah terdampak** di `impacted_regions` dibatasi 100 kelurahan/desa (gempa: terdekat; cuaca: bagian luas tercakup terbesar, minimal `WEATHER_MIN_COVERAGE`); jumlah lengkapnya di `impacted_region_count` dan daftar lengkapnya di tabel `hazard.impact_region`.
 - **Tingkat** (`level`) adalah tingkat tertinggi di wilayah pantauan. Tingkat per lokasi pengguna dihitung alert-engine (fase 3).
+
+## Event status
+
+Event `status.connector.<konektor>` adalah hasil satu percobaan konektor ingest: satu polling, atau satu sapuan penuh untuk `bmkg-prakiraan` (ADR 0030). Ingest menerbitkannya setelah setiap percobaan, berhasil atau gagal, kecuali percobaan yang terputus karena layanan berhenti dan mode rekam (`-once`). Titik di nama konektor diganti `_` di subjek (`usgs-2.5-day` → `status.connector.usgs-2_5-day`); nama aslinya ada di isi pesan.
+
+- **ID pesan** = `<konektor>:<started_at RFC 3339 UTC>`, jadi percobaan yang sama tidak tersimpan dua kali.
+- **Isi**: subjek raw yang diisi konektor, interval polling normal (sapuan: jarak antar-awal sapuan), awal dan akhir percobaan, hasil (`OK`/`FAILED`), dan jumlah pesan raw baru yang diterima broker. Sapuan berhasil bila tidak semua kode gagal diambil.
+- **Konsumen** (geo-processor) melipat pesan ke keadaan terakhir per konektor di `ts.source_status`; pesan yang tidak lebih baru dari percobaan terakhir yang tercatat diabaikan, jadi aman diulang dan datang terlambat. Retensi stream pendek karena yang penting hanya keadaan terakhir.
 
 ## Pesan DLQ
 

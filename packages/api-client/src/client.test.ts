@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { createClient, type Region } from "./index.js";
+import { createClient, type Region, type SourceList } from "./index.js";
 
 const bandung: Region = {
   code: "32.73",
@@ -68,5 +68,36 @@ describe("feed kejadian", () => {
     });
     expect(data?.items).toEqual([]);
     expect(urls).toEqual(["https://api.test/v1/hazards?kind=quake&kind=weather&min_level=2"]);
+  });
+});
+
+describe("status sumber", () => {
+  it("daftar status bertipe, waktu boleh null", async () => {
+    const list: SourceList = {
+      generated_at: "2026-11-24T15:00:00Z",
+      items: [
+        {
+          id: "bmkg-autogempa",
+          provider: "bmkg",
+          dataset: "quake",
+          hazard_kinds: ["quake"],
+          state: "late",
+          interval_seconds: 30,
+          last_attempt_at: "2026-11-24T14:59:30Z",
+          last_success_at: null,
+          last_change_at: null,
+          late_after: null,
+          consecutive_failures: 4,
+          failing_since: "2026-11-24T14:58:00Z",
+        },
+      ],
+    };
+    const client = createClient({
+      baseUrl: "https://api.test",
+      fetch: () => Promise.resolve(Response.json(list)),
+    });
+    const { data } = await client.GET("/v1/sources");
+    expect(data?.items[0]?.state).toBe("late");
+    expect(data?.items[0]?.last_success_at).toBeNull();
   });
 });

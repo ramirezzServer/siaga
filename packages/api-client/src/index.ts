@@ -16,6 +16,8 @@ export type FloodDetail = components["schemas"]["FloodDetail"];
 export type FireDetail = components["schemas"]["FireDetail"];
 export type ImpactedRegion = components["schemas"]["ImpactedRegion"];
 export type ImpactedRegionPage = components["schemas"]["ImpactedRegionPage"];
+export type SourceStatus = components["schemas"]["SourceStatus"];
+export type SourceList = components["schemas"]["SourceList"];
 
 /** Membuat klien Core API. Semua path, parameter, dan respons bertipe dari OpenAPI. */
 export function createClient(options: ClientOptions & { baseUrl: string }) {

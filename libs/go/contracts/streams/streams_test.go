@@ -48,11 +48,27 @@ func TestDLQSubject(t *testing.T) {
 	}
 }
 
+func TestStatusSubject(t *testing.T) {
+	got, err := StatusSubject("bmkg-autogempa")
+	if err != nil || got != "status.connector.bmkg-autogempa" {
+		t.Fatalf("StatusSubject = %q, %v", got, err)
+	}
+	// Titik di nama konektor bukan pemisah token subjek.
+	if got, err := StatusSubject("usgs-2.5-day"); err != nil || got != "status.connector.usgs-2_5-day" {
+		t.Fatalf("StatusSubject usgs = %q, %v", got, err)
+	}
+	for _, bad := range []string{"", "BMKG", "bmkg..autogempa", "bmkg autogempa", "*", "-bmkg", "bmkg.", "bmkg_x"} {
+		if _, err := StatusSubject(bad); err == nil {
+			t.Errorf("StatusSubject(%q) seharusnya gagal", bad)
+		}
+	}
+}
+
 // Invarian yang juga ditegakkan server JetStream; dicek di sini supaya
 // kesalahan ketahuan saat test, bukan saat layanan start.
 func TestSpecsValid(t *testing.T) {
 	names := map[string]bool{}
-	for _, s := range []Spec{Raw, Hazard, DLQ} {
+	for _, s := range []Spec{Raw, Hazard, DLQ, Status} {
 		if names[s.Name] {
 			t.Errorf("nama stream ganda %s", s.Name)
 		}

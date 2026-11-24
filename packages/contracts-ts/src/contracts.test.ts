@@ -1,5 +1,5 @@
 import { create, fromBinary, toBinary, toJson } from "@bufbuild/protobuf";
-import { timestampFromDate } from "@bufbuild/protobuf/wkt";
+import { durationFromMs, timestampFromDate } from "@bufbuild/protobuf/wkt";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -8,6 +8,7 @@ import {
   CapSeverity,
   AirQualityObservationSchema,
   CatchmentRainfallForecastSchema,
+  ConnectorPollSchema,
   FireConfidence,
   FireDetectionSchema,
   FloodIndicator,
@@ -15,6 +16,7 @@ import {
   HazardCreatedSchema,
   HazardKind,
   HazardSchema,
+  PollOutcome,
   QuakeFeed,
   QuakeReportSchema,
   RegionForecastSchema,
@@ -309,5 +311,28 @@ describe("kontrak event raw", () => {
     expect(decoded.frpMw).toBe(0);
     expect(decoded.backgroundBrightnessK).toBeUndefined();
     expect(subjects.raw("fire", "firms")).toBe("raw.fire.firms");
+  });
+});
+
+describe("kontrak status konektor", () => {
+  it("hasil polling bolak-balik biner dan subjeknya per konektor", () => {
+    const poll = create(ConnectorPollSchema, {
+      connector: "bmkg-autogempa",
+      subject: subjects.raw("quake", "bmkg"),
+      interval: durationFromMs(30_000),
+      startedAt: timestampFromDate(new Date("2026-11-24T15:00:00Z")),
+      finishedAt: timestampFromDate(new Date("2026-11-24T15:00:01Z")),
+      outcome: PollOutcome.OK,
+      published: 1,
+    });
+    const decoded = fromBinary(ConnectorPollSchema, toBinary(ConnectorPollSchema, poll));
+    expect(decoded).toEqual(poll);
+    expect(toJson(ConnectorPollSchema, decoded)).toMatchObject({
+      outcome: "POLL_OUTCOME_OK",
+      interval: "30s",
+    });
+    expect(subjects.status("bmkg-autogempa")).toBe("status.connector.bmkg-autogempa");
+    expect(subjects.status("usgs-2.5-day")).toBe("status.connector.usgs-2_5-day");
+    expect(() => subjects.status("bmkg..autogempa")).toThrow();
   });
 });

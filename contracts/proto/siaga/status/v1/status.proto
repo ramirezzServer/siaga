@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package siaga.status.v1;
+
+import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
+
+// Hasil satu percobaan konektor.
+enum PollOutcome {
+  POLL_OUTCOME_UNSPECIFIED = 0;
+  // Sumber terjangkau dan payload terbaca (termasuk 304 dan payload yang
+  // sama dengan sebelumnya). Sapuan: tidak semua kode gagal.
+  POLL_OUTCOME_OK = 1;
+  // Sumber tidak terjangkau, menolak, atau payload tidak bisa dibaca.
+  POLL_OUTCOME_FAILED = 2;
+}
+
+// Hasil satu polling konektor ingest, atau satu sapuan penuh untuk konektor
+// sapuan (bmkg-prakiraan). Diterbitkan setelah setiap percobaan, berhasil
+// atau gagal, supaya status sumber bisa dihitung dari keadaan yang tahan
+// restart (ADR 0030). Subjek NATS: status.connector.<konektor>.
+message ConnectorPoll {
+  // Nama konektor, sama dengan FetchMeta.connector, misal "bmkg-autogempa".
+  string connector = 1;
+  // Subjek raw yang diisi konektor, misal "raw.quake.bmkg".
+  string subject = 2;
+  // Jarak polling normal. Sapuan: jarak antar-awal sapuan.
+  google.protobuf.Duration interval = 3;
+  // Awal dan akhir percobaan (UTC).
+  google.protobuf.Timestamp started_at = 4;
+  google.protobuf.Timestamp finished_at = 5;
+  PollOutcome outcome = 6;
+  // Pesan raw baru yang diterima broker di percobaan ini (bukan duplikat).
+  // Lebih dari nol berarti percobaan membawa data baru; JetStream menolak
+  // pesan yang sama, jadi nilai ini tidak terpengaruh restart ingest.
+  uint32 published = 7;
+}

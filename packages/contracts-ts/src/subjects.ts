@@ -19,6 +19,9 @@ type Transition = "created" | "updated" | "expired";
 export type RawKind = "quake" | "weather" | "flood" | "fire" | "aq" | "forecast" | "rain";
 export type RawSource = "bmkg" | "usgs" | "openmeteo" | "openaq" | "firms";
 
+const TOKEN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+const CONNECTOR = /^[a-z0-9]+([.-][a-z0-9]+)*$/;
+
 /** Pembentuk nama subjek NATS. */
 export const subjects = {
   raw(kind: RawKind, source: RawSource): string {
@@ -27,10 +30,21 @@ export const subjects = {
 
   /** Antrean pesan gagal milik satu layanan, misal `dlq.geo-processor`. */
   dlq(service: string): string {
-    if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(service)) {
+    if (!TOKEN.test(service)) {
       throw new Error(`nama layanan tidak valid: ${service}`);
     }
     return `dlq.${service}`;
+  },
+
+  /**
+   * Hasil polling satu konektor ingest (ADR 0030), misal `status.connector.bmkg-autogempa`.
+   * Titik di nama konektor (`usgs-2.5-day`) diganti `_` karena titik memisahkan token subjek.
+   */
+  status(connector: string): string {
+    if (!CONNECTOR.test(connector)) {
+      throw new Error(`nama konektor tidak valid: ${connector}`);
+    }
+    return `status.connector.${connector.replaceAll(".", "_")}`;
   },
 
   hazard(kind: HazardKind, transition: Transition): string {

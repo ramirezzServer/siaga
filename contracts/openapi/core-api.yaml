@@ -1,12 +1,12 @@
 openapi: 3.1.0
 info:
   title: SIAGA Core API
-  version: 0.2.0
+  version: 0.3.0
   summary: API publik SIAGA untuk web dan mobile.
   description: |
     Fase 2 menambah API baca publik untuk peta (ADR 0029): feed kejadian bahaya, detail
-    kejadian, dan kelurahan/desa terdampak. Semua endpoint di sini hanya membaca dan tidak
-    butuh login. Waktu dalam UTC (RFC 3339); klien menampilkannya dalam WIB. Semua error
+    kejadian, kelurahan/desa terdampak, dan status sumber data (ADR 0030). Semua endpoint
+    di sini hanya membaca dan tidak butuh login. Waktu dalam UTC (RFC 3339); klien menampilkannya dalam WIB. Semua error
     memakai Problem Details (RFC 9457).
   license:
     name: MIT
@@ -24,6 +24,8 @@ tags:
     description: Wilayah administrasi Kemendagri
   - name: hazards
     description: Kejadian bahaya ternormalisasi dan terdeduplikasi (geo-processor)
+  - name: sources
+    description: Status sumber data (konektor ingest)
 paths:
   /healthz:
     get:
@@ -282,6 +284,29 @@ paths:
           $ref: "#/components/responses/Problem"
         "404":
           $ref: "#/components/responses/Problem"
+        "429":
+          $ref: "#/components/responses/Problem"
+        "503":
+          $ref: "#/components/responses/Problem"
+  /v1/sources:
+    get:
+      operationId: listSources
+      tags: [sources]
+      summary: Status sumber data
+      description: |
+        Status setiap konektor ingest, urut `id`, untuk label "data terlambat" di peta dan
+        halaman status publik. Dihitung dari keadaan yang tersimpan di database (hasil setiap
+        polling), bukan dari memori proses ingest, jadi tetap benar setelah ingest dimulai
+        ulang dan ikut menua bila ingest mati (ADR 0030). Konektor yang belum pernah
+        berjalan tidak ada di daftar.
+      security: []
+      responses:
+        "200":
+          description: Status semua konektor
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SourceList"
         "429":
           $ref: "#/components/responses/Problem"
         "503":
@@ -1063,6 +1088,110 @@ components:
           oneOf:
             - type: string
             - type: "null"
+    SourceProvider:
+      type: string
+      description: Penyedia data; firms = NASA FIRMS.
+      enum: [bmkg, usgs, openmeteo, openaq, firms]
+    SourceDataset:
+      type: string
+      description: |
+        Jenis data yang diisi konektor: quake gempa, weather peringatan dini cuaca (CAP),
+        forecast prakiraan cuaca, aq kualitas udara, flood debit sungai, rain hujan sub-DAS,
+        fire titik panas satelit.
+      enum: [quake, weather, forecast, aq, flood, rain, fire]
+    SourceState:
+      type: string
+      description: |
+        ok = ada pengambilan berhasil sebelum `late_after` dan kegagalan beruntun kurang
+        dari 3; degraded = masih sebelum `late_after`, tetapi 3 percobaan terakhir atau
+        lebih gagal berturut-turut; late = `late_after` sudah lewat, atau belum pernah ada
+        pengambilan berhasil.
+      enum: [ok, degraded, late]
+    SourceStatus:
+      type: object
+      required:
+        - id
+        - provider
+        - dataset
+        - hazard_kinds
+        - state
+        - interval_seconds
+        - last_attempt_at
+        - last_success_at
+        - last_change_at
+        - late_after
+        - consecutive_failures
+        - failing_since
+      properties:
+        id:
+          type: string
+          description: Nama konektor ingest.
+          pattern: "^[a-z0-9]+([.-][a-z0-9]+)*$"
+          maxLength: 60
+          examples: [bmkg-autogempa]
+        provider:
+          $ref: "#/components/schemas/SourceProvider"
+        dataset:
+          $ref: "#/components/schemas/SourceDataset"
+        hazard_kinds:
+          type: array
+          description: Jenis bahaya yang datanya berasal dari konektor ini (bahan label "data terlambat" per lapisan); kosong untuk prakiraan cuaca.
+          uniqueItems: true
+          items:
+            $ref: "#/components/schemas/HazardKind"
+        state:
+          $ref: "#/components/schemas/SourceState"
+        interval_seconds:
+          type: integer
+          minimum: 1
+          description: Jarak polling normal; untuk sapuan prakiraan, jarak antar-awal sapuan.
+        last_attempt_at:
+          type: string
+          format: date-time
+          description: Akhir percobaan terbaru, berhasil atau gagal.
+        last_success_at:
+          description: Akhir pengambilan berhasil terbaru; null bila belum pernah berhasil.
+          oneOf:
+            - type: string
+              format: date-time
+            - type: "null"
+        last_change_at:
+          description: |
+            Akhir pengambilan terbaru yang membawa data baru (ada pesan raw baru). Sumber yang
+            sepi (misal tidak ada gempa baru) tetap ok walau nilai ini lama.
+          oneOf:
+            - type: string
+              format: date-time
+            - type: "null"
+        late_after:
+          description: |
+            Saat status menjadi late bila tidak ada pengambilan berhasil lagi:
+            `last_success_at` + 2 × interval + 10 menit. Null bila belum pernah berhasil.
+          oneOf:
+            - type: string
+              format: date-time
+            - type: "null"
+        consecutive_failures:
+          type: integer
+          minimum: 0
+        failing_since:
+          description: Akhir percobaan gagal pertama sejak pengambilan berhasil terakhir; null bila percobaan terbaru berhasil.
+          oneOf:
+            - type: string
+              format: date-time
+            - type: "null"
+    SourceList:
+      type: object
+      required: [items, generated_at]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/SourceStatus"
+        generated_at:
+          type: string
+          format: date-time
+          description: Waktu server; `state` dihitung terhadap waktu ini.
     Problem:
       type: object
       description: RFC 9457 Problem Details.

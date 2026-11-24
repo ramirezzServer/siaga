@@ -6,6 +6,7 @@ package streams
 import (
 	"fmt"
 	"regexp"
+	"strings"
 	"time"
 )
 
@@ -69,6 +70,20 @@ var DLQ = Spec{
 	Owner:           OwnerShared,
 }
 
+// Status menampung hasil setiap polling konektor ingest (subjek
+// status.connector.<konektor>), bahan status sumber yang tahan restart
+// (ADR 0030). Hanya keadaan terakhir per konektor yang penting, jadi
+// retensinya pendek; geo-processor menyimpan keadaan itu di ts.source_status.
+var Status = Spec{
+	Name:            "STATUS",
+	Description:     "Hasil polling setiap konektor ingest",
+	Subjects:        []string{"status.>"},
+	MaxAge:          2 * day,
+	DuplicateWindow: time.Hour,
+	MaxBytes:        64 << 20,
+	Owner:           "ingest",
+}
+
 // Kind adalah potongan subjek untuk jenis data.
 type Kind string
 
@@ -128,6 +143,20 @@ func HazardSubject(k Kind, t Transition) (string, error) {
 		return "", fmt.Errorf("streams: jenis tidak valid %q", k)
 	}
 	return "hazard." + string(k) + "." + string(t), nil
+}
+
+// connectorName adalah nama konektor ingest yang sah: token huruf kecil dan
+// angka dipisah "-" atau "." (misal "usgs-2.5-day").
+var connectorName = regexp.MustCompile(`^[a-z0-9]+([.-][a-z0-9]+)*$`)
+
+// StatusSubject membentuk subjek status.connector.<konektor>. Titik di nama
+// konektor diganti "_" karena titik memisahkan token subjek NATS; nama
+// aslinya ada di isi pesan.
+func StatusSubject(connector string) (string, error) {
+	if !connectorName.MatchString(connector) {
+		return "", fmt.Errorf("streams: nama konektor tidak valid %q", connector)
+	}
+	return "status.connector." + strings.ReplaceAll(connector, ".", "_"), nil
 }
 
 // DLQSubject membentuk subjek dlq.<layanan>.
