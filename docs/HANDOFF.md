@@ -2,9 +2,64 @@
 
 Dokumen ini adalah titik lanjut untuk sesi kerja berikutnya, termasuk chat baru dengan asisten AI. Perbarui setiap akhir sesi.
 
-## Status: Fix dokumen CAP basi terverifikasi di WSL (2026-11-23); semua irisan Fase 1 selesai
+## Status: Gerbang 1f selesai (2026-11-24); berikutnya Fase 2, irisan 2a (API baca publik)
 
-Fase 0 sampai 1e-3c-3 ter-commit dan terverifikasi, termasuk fix dokumen CAP basi (ADR 0028); `main` di `e904e0f`. Replay penuh arsip CAP menemukan dokumen basi (file CAP belum ditimpa saat entri RSS baru muncul) yang membuat Poller menerbitkan ulang pesan lama dan melewatkan pesan baru; dua peringatan Jawa Barat (27 Sep, 20 Okt) hilang karenanya. Fase 1e dipecah: **1e-1** arsip Garage + replay, **1e-2a** OpenTelemetry + dashboard, **1e-2b** deploy (**1e-2b-1** image + CI + manifest, **1e-2b-2** Garage dan Collector di cluster, SOPS, default deny, **1e-2b-3** retensi dan backup arsip), **1e-3** backfill + kalibrasi. 1e-3 dipecah lagi: **1e-3a** pengisian ulang OpenAQ, replay prakiraan BMKG + OpenAQ, peta pemeriksaan titik sungai, **1e-3b** reanalisis GloFAS → ambang banjir → `hazard.flood.*` (**1e-3b-1** pemilihan sel dari reanalisis; **1e-3b-2a** alat ambang banjir dan ambang indeks hujan 7 sub-DAS; **1e-3b-2b** konektor hujan sub-DAS, ambang di geo-processor, `hazard.flood.*`), **1e-3c** dipecah (ADR 0023): **1e-3c-1a** arsip FIRMS dan laporan kalibrasi titik api, **1e-3c-1b** saringan dan aturan terpilih, `hazard.fire.*`, **1e-3c-2** set berlabel T4 dan radius dirasakan (ADR 0024: **1e-3c-2a** alat dan set berlabel T4 dari ISC Bulletin; **1e-3c-2c** keputusan ambang, ADR 0025; **1e-3c-2b** radius dirasakan, ADR 0026), **1e-3c-3** replay CAP.
+Fase 0 sampai 1e-3c-3 ter-commit dan terverifikasi, termasuk fix dokumen CAP basi (ADR 0028), lalu gerbang 1f: **1f-1** demo Fase 1 (12 jam Compose lite, lulus) dan **1f-2** profil full k3d dari kondisi bersih (semua pod Ready, pipa data jalan di cluster, pemakaian RAM terukur). Rencana Fase 2 ada di dokumen proyek "SIAGA — Rencana Fase 2" (irisan 2a–2h, ADR 0029 untuk core-api publik read-only). Replay penuh arsip CAP menemukan dokumen basi (file CAP belum ditimpa saat entri RSS baru muncul) yang membuat Poller menerbitkan ulang pesan lama dan melewatkan pesan baru; dua peringatan Jawa Barat (27 Sep, 20 Okt) hilang karenanya. Fase 1e dipecah: **1e-1** arsip Garage + replay, **1e-2a** OpenTelemetry + dashboard, **1e-2b** deploy (**1e-2b-1** image + CI + manifest, **1e-2b-2** Garage dan Collector di cluster, SOPS, default deny, **1e-2b-3** retensi dan backup arsip), **1e-3** backfill + kalibrasi. 1e-3 dipecah lagi: **1e-3a** pengisian ulang OpenAQ, replay prakiraan BMKG + OpenAQ, peta pemeriksaan titik sungai, **1e-3b** reanalisis GloFAS → ambang banjir → `hazard.flood.*` (**1e-3b-1** pemilihan sel dari reanalisis; **1e-3b-2a** alat ambang banjir dan ambang indeks hujan 7 sub-DAS; **1e-3b-2b** konektor hujan sub-DAS, ambang di geo-processor, `hazard.flood.*`), **1e-3c** dipecah (ADR 0023): **1e-3c-1a** arsip FIRMS dan laporan kalibrasi titik api, **1e-3c-1b** saringan dan aturan terpilih, `hazard.fire.*`, **1e-3c-2** set berlabel T4 dan radius dirasakan (ADR 0024: **1e-3c-2a** alat dan set berlabel T4 dari ISC Bulletin; **1e-3c-2c** keputusan ambang, ADR 0025; **1e-3c-2b** radius dirasakan, ADR 0026), **1e-3c-3** replay CAP.
+
+### Gerbang 1f: demo Fase 1 dan profil full k3d
+
+**1f-1** (23 Nov 22.00–10.00 WIB, `make ingest` + `make geo`, dashboard "SIAGA — Pipa data" di Grafana Cloud): semua sumber tepat waktu, kegagalan beruntun 0, DLQ 0, memori ingest ±26 MiB dan geo-processor ±24 MiB stabil 12 jam, dua sapuan prakiraan penuh (5.957 terbit, 0 gagal), trace gempa ujung-ke-ujung 22 span dari 2 layanan. Fix CAP basi terbukti di data live (dokumen `CJB20261122008` basi 07.01.35 WIB, pesan baru terbit di polling berikutnya). Rincian dan daftar polesan di Rencana Fase 2.
+
+**1f-2** polesan dari 1f-1 (commit `bcdc7eb`, `52cdfd3`, `32d1dda`): URL panjang diringkas di galat (`ports.Brief`), log "record terbit setelah dicoba lagi: <kunci>", kunci record di badan log WARN, port-forward Tilt 1xxxx supaya profil full jalan bersama Compose lite, sapuan prakiraan di cluster lokal dibatasi 100 kode wilayah, `make k3d-usage` (pengganti `kubectl top`), tiga panel dashboard dirapikan. Perbaikan profil full yang ditemukan saat cluster pertama kali dibuat:
+
+| Bagian         | Temuan                                                                                                                                                               | Perbaikan                                                                                                                                                         |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Tilt           | `helm --wait` untuk CNPG dan NATS melewati batas bawaan Tilt 30 detik (tarik image pertama kali)                                                                     | `update_settings(k8s_upsert_timeout_secs=600)`; versi chart dikunci (CNPG 0.29.2 / operator 1.30.2, NATS 2.15.3)                                                  |
+| Tarik image    | Node k3d gagal menarik image Docker Hub (DNS Docker Desktop putus-sambung); `k3d image import` gagal dengan containerd image store                                   | `make k3d-pull` (`scripts/k3d-pull.sh`): `docker pull` di host, `docker save --platform` satu platform, `ctr images import` di tiap node, hapus pod yang tertahan |
+| PostgreSQL     | Webhook CNPG menolak tag `tilt-<hash>` di `spec.imageName` (versi mayor dibaca dari tag); tag `sha-<commit>` CI akan ditolak juga                                    | `ImageCatalog` `siaga-postgres` (major 17), Cluster memakai `imageCatalogRef`; Tilt menyuntik image ke katalog (resource `siaga-db-image`). Catatan di ADR 0002   |
+| Migrasi        | Pod baru ditolak NetworkPolicy kube-router di detik pertama; dengan `restartPolicy: Never` setiap percobaan ulang pod baru yang kalah race yang sama                 | `restartPolicy: OnFailure` di Job `geo-processor-migrate` dan CronJob `archive-maintenance` (`backoffLimit` 3; ketiga langkahnya aman diulang)                    |
+| NATS JetStream | Stream RAW 2 GiB + HAZARD 1 GiB + DLQ 256 MiB dipesan penuh saat dibuat, melebihi `max_file_store` 2Gi (= ukuran PVC): ingest crash "insufficient storage resources" | PVC 5Gi. Ukuran PVC StatefulSet tidak bisa diubah di tempat: pasang ulang NATS (docs/setup/windows-wsl2.md bagian 6)                                              |
+
+### Verifikasi di WSL (1f-2, 2026-11-23)
+
+- `cek-1f-2.sh awal` (titipan, Compose lite, `32d1dda`): pesan `…2026.11.23.00.32.008` ada di `hazard.cap_message` dengan `archive_key` `bmkg-cap/2026/11/23/000333Z-d01bb68c4693.xml.gz` (objek ada dan utuh), jadi dokumen yang diambil ulang ikut terarsip. `replay -compare raw.weather.bmkg` 23 Nov 06.00–08.00 WIB cocok 3/3; dokumen basi `…22.23.32.008` ditolak replay ("sudah keluar dari RSS"). Kedua pengecekan terbuka 1f-1 selesai.
+- Cluster k3d (k3s v1.35.5, k3d 5.9.0, helm 3.22.0) dibuat dari kondisi bersih; setelah perbaikan di atas `cek-1f-2.sh cluster` 0 GAGAL: siaga-db Ready, migrasi selesai, NATS/Garage/Collector/Valkey/Mailpit/geo-processor/ingest siap, ingest mengarsip ke Garage cluster dan mengirim trace/metrics/logs lewat Collector. Isi DB cluster setelah ±5 menit ingest: `hazard.event` quake 30, flood 12, fire 1, weather 1; `hazard.cap_message` 1; `ref.region` 6.612.
+- `cek-1f-2.sh ukur` (ingest cluster jalan 33 menit, 12.34 WIB):
+
+| Ukuran                                                 | Memori    | CPU   |
+| ------------------------------------------------------ | --------- | ----- |
+| siaga-db (PostgreSQL + ekstensi)                       | 240 MiB   | 13m   |
+| otel-collector                                         | 90 MiB    | 6m    |
+| traefik (bawaan k3s)                                   | 65 MiB    | 0     |
+| coredns                                                | 53 MiB    | 6m    |
+| geo-processor                                          | 42 MiB    | 5m    |
+| nats                                                   | 40 MiB    | 10m   |
+| cnpg-operator                                          | 36 MiB    | 5m    |
+| garage                                                 | 32 MiB    | 2m    |
+| ingest                                                 | 21 MiB    | 5m    |
+| lainnya (local-path, mailpit, valkey, svclb, nats-box) | 60 MiB    | 16m   |
+| **semua pod**                                          | 678 MiB   | 69m   |
+| **node k3d (pod + k3s)**                               | 2.039 MiB | ±300m |
+
+Registry lokal k3d (158 MiB) hanya ada di laptop. Selisih node dengan semua pod (±1,3 GiB) adalah k3s server (API server, etcd/kine, kubelet, containerd) ditambah cache halaman yang dihitung kubelet; di VM, angka node inilah yang dipakai untuk perkiraan.
+
+### Pilihan VM (dari angka 1f-2)
+
+Fase 2 menambah Martin, realtime-gateway, dan core-api (perkiraan 0,3–0,5 GiB), jadi node sekitar 2,5 GiB ditambah OS: **VM 4 GB cukup untuk Fase 2**, 8 GB baru diperlukan saat Keycloak, ml-service, dan OSRM masuk (Fase 3–5). Arah tetap sama dengan Rencana Fase 2: coba lagi Oracle Always Free (A1, 12 GB, muat semua fase); bila gagal, laptop + Cloudflare Tunnel dengan web di Vercel (mode replay saat backend mati). Keputusan akhir paling lambat di awal 2h; tidak ada irisan sebelum 2h yang bergantung padanya.
+
+### Langkah di WSL (penutup 1f-2)
+
+```bash
+bash "/mnt/c/KULIAH/PROJECT CODE/siaga-titipan/terapkan-1f-2-akhir.sh"   # cek isi working tree, pin chart + dokumen, make check + k8s-check, 2 commit
+git push
+```
+
+### Temuan yang perlu ditindaklanjuti (1f-2)
+
+- **Deadlock sesaat di consumer hujan sub-DAS.** Sekali `SQLSTATE 40P01` di `geo-processor-rain-openmeteo` saat profil full jalan (pesan diproses ulang, `retried: 1`, tidak masuk DLQ). Dugaan: dua consumer menulis baris cuaca yang sama bersamaan. Periksa urutan penguncian sebelum 2c (realtime-gateway menambah pembaca hazard).
+- **Dua ingest di satu IP kena HTTP 429 BMKG.** Saat ingest Compose dan cluster jalan bersamaan, BMKG membalas 429 untuk `gempaterkini` dan sapuan prakiraan; ingest Compose menahan diri sesuai `Retry-After`. Ingest di cluster lokal tetap manual (`auto_init=False`) dan sebaiknya hanya dinyalakan selama pengujian.
+- **DNS CoreDNS → Docker Desktop** kadang timeout (log Collector `server misbehaving`); hanya di laptop, Collector mencoba ulang sendiri. Dicatat di docs/setup/windows-wsl2.md.
+- **Panel "Platform di cluster" dan tangkapan layar portofolio** (Tilt semua hijau, baris "Platform di cluster", `kubectl get pods -A`) dicek manual saat cluster menyala; bila belum diambil, ambil saat cluster dinyalakan lagi (paling lambat 2h).
 
 ### Fix: dokumen CAP basi (ADR 0028)
 
