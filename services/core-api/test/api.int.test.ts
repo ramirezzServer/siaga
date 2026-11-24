@@ -18,13 +18,18 @@ import { clean, IDS, NOW, seed, urls } from "./support/seed.js";
 const env = urls();
 const d = env ? describe : describe.skip;
 
-let pool: pg.Pool;
-let app: NestFastifyApplication;
+let pool: pg.Pool | undefined;
+let app: NestFastifyApplication | undefined;
+
+function ready<T>(v: T | undefined): T {
+  if (v === undefined) throw new Error("beforeAll gagal; lihat galat seed di atas");
+  return v;
+}
 
 // Tipe body hanya penanda untuk test; bentuknya diperiksa expectSchema terhadap kontrak.
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
 async function get<T = unknown>(url: string): Promise<{ status: number; body: T }> {
-  const res = await app.inject({ method: "GET", url });
+  const res = await ready(app).inject({ method: "GET", url });
   return { status: res.statusCode, body: res.json<T>() };
 }
 
@@ -60,8 +65,9 @@ d("core-api dengan PostgreSQL", () => {
 
   afterAll(async () => {
     if (!env) return;
-    await app.close();
-    await pool.end();
+    // beforeAll bisa gagal sebelum app/pool dibuat; jangan menutupi galat aslinya.
+    await app?.close();
+    await pool?.end();
     await clean(env.geo);
   });
 
@@ -259,10 +265,12 @@ d("core-api dengan PostgreSQL", () => {
 
   describe("batas akses (ADR 0029)", () => {
     it("sesi core-api read-only dan role siaga_core tidak bisa menulis skema hazard", async () => {
-      await expect(pool.query("DELETE FROM hazard.event WHERE false")).rejects.toMatchObject({
-        code: "25006",
-      });
-      const client = await pool.connect();
+      await expect(ready(pool).query("DELETE FROM hazard.event WHERE false")).rejects.toMatchObject(
+        {
+          code: "25006",
+        },
+      );
+      const client = await ready(pool).connect();
       try {
         await client.query("SET SESSION CHARACTERISTICS AS TRANSACTION READ WRITE");
         await expect(client.query("DELETE FROM hazard.event WHERE false")).rejects.toMatchObject({

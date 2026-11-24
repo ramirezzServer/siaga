@@ -23,8 +23,15 @@ export function urls(): { geo: string; core: string } | null {
   return geo && core ? { geo, core } : null;
 }
 
+// Data uji tahun 2001 juga ditulis test Go geo-processor dan bisa tertinggal
+// (pesan CAP, keadaan titik banjir) dengan FK ke kejadiannya, jadi baris yang
+// merujuk kejadian uji dihapus lebih dulu.
+const TEST_EVENTS = `SELECT id FROM hazard.event WHERE occurred_at < '2002-01-01'`;
+
 const CLEAN = [
-  `DELETE FROM hazard.event_source WHERE occurred_at < '2002-01-01'`,
+  `DELETE FROM hazard.cap_message WHERE sent < '2002-01-01' OR event_id IN (${TEST_EVENTS})`,
+  `DELETE FROM hazard.flood_site WHERE event_id IN (${TEST_EVENTS})`,
+  `DELETE FROM hazard.event_source WHERE occurred_at < '2002-01-01' OR event_id IN (${TEST_EVENTS})`,
   `UPDATE hazard.event SET merged_into = NULL, status = 'expired', ended_at = COALESCE(ended_at, occurred_at + interval '1 second')
      WHERE occurred_at < '2002-01-01' AND status = 'merged'`,
   `DELETE FROM hazard.event WHERE occurred_at < '2002-01-01'`,
