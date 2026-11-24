@@ -4,8 +4,8 @@ import type { NestFastifyApplication } from "@nestjs/platform-fastify";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { contractRoutes, expectSchema, openapi } from "../test/support/contract.js";
-import { FakeHazardReader, FakeRegionReader } from "../test/support/fakes.js";
-import { hazard, impacted, quakeDetail, region, T0 } from "../test/support/records.js";
+import { FakeHazardReader, FakeRegionReader, FakeSourceReader } from "../test/support/fakes.js";
+import { hazard, impacted, quakeDetail, region, source, T0 } from "../test/support/records.js";
 import { createApp } from "./app.js";
 import { fixedClock } from "./shared/domain/clock.js";
 import { UnavailableError } from "./shared/domain/errors.js";
@@ -15,6 +15,7 @@ import { UnavailableError } from "./shared/domain/errors.js";
 const ID = "0b6c8a5e-3d1f-5a2b-9c4d-7e8f9a0b1c2d";
 const hazards = new FakeHazardReader();
 const regions = new FakeRegionReader();
+const sources = new FakeSourceReader();
 let ready = true;
 let app: NestFastifyApplication;
 
@@ -43,9 +44,22 @@ beforeAll(async () => {
   );
   hazards.impacts.set(ID, [impacted(), impacted({ code: "32.02.01.2002", distanceKm: 20 })]);
   regions.rows = [region()];
+  sources.rows = [
+    source(),
+    source({
+      connector: "usgs-2.5-day",
+      provider: "usgs",
+      intervalSeconds: 60,
+      lastSuccessAt: new Date(T0.getTime() - 3_600_000),
+      lastChangeAt: null,
+      failingSince: new Date(T0.getTime() - 3_000_000),
+      consecutiveFailures: 40,
+    }),
+  ];
   app = await createApp({
     hazards,
     regions,
+    sources,
     readiness: {
       check: () => (ready ? Promise.resolve() : Promise.reject(new UnavailableError("database"))),
     },
@@ -225,6 +239,28 @@ describe("GET /v1/regions", () => {
 
   it("wilayah yang tidak ada 404", async () => {
     await problem("/v1/regions/32.99", 404);
+  });
+});
+
+describe("GET /v1/sources", () => {
+  it("status tiap konektor sesuai kontrak dengan cache singkat", async () => {
+    const res = await get("/v1/sources");
+    expect(res.status).toBe(200);
+    expectSchema("SourceList", res.body);
+    expect(res.headers["cache-control"]).toBe("public, max-age=15");
+    const body = res.body as { items: { id: string; state: string }[]; generated_at: string };
+    expect(body.items.map((s) => [s.id, s.state])).toEqual([
+      ["bmkg-autogempa", "ok"],
+      ["usgs-2.5-day", "late"],
+    ]);
+    expect(body.generated_at).toBe(T0.toISOString());
+  });
+
+  it("database mati menjadi 503", async () => {
+    sources.failWith = Object.assign(new Error("connect ECONNREFUSED"), { code: "ECONNREFUSED" });
+    const res = await get("/v1/sources");
+    sources.failWith = null;
+    expect(res.status).toBe(503);
   });
 });
 

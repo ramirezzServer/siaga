@@ -8,6 +8,7 @@ import { PgHazardReader } from "./hazards/adapters/pg-hazard-reader.js";
 import { PgRegionReader } from "./regions/adapters/pg-region-reader.js";
 import { createPool, PgReadinessProbe } from "./shared/adapters/postgres.js";
 import { systemClock } from "./shared/domain/clock.js";
+import { PgSourceReader } from "./sources/adapters/pg-source-reader.js";
 
 // LOG_LEVEL (gaya Go) ke tingkat Nest: info = log.
 const NEST_LEVELS: Record<Config["LOG_LEVEL"], LogLevel[]> = {
@@ -32,6 +33,7 @@ async function main(): Promise<void> {
   const app = await createApp({
     hazards: new PgHazardReader(pool),
     regions: new PgRegionReader(pool),
+    sources: new PgSourceReader(pool),
     readiness: new PgReadinessProbe(pool),
     clock: systemClock,
     version: config.SIAGA_VERSION,

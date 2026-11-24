@@ -6,6 +6,7 @@ import type {
   QuakeReportRecord,
 } from "../../src/hazards/domain/hazard.js";
 import type { RegionRecord } from "../../src/regions/domain/region.js";
+import type { SourceRecord } from "../../src/sources/domain/source.js";
 
 export const T0 = new Date("2026-11-24T03:00:00Z");
 
@@ -158,6 +159,23 @@ export function region(over: Partial<RegionRecord> = {}): RegionRecord {
     labelPoint: { latitude: -6.92, longitude: 107.64 },
     bbox: [107.54, -6.97, 107.74, -6.84],
     geometry: null,
+    ...over,
+  };
+}
+
+/** Konektor sehat: berhasil 20 detik sebelum T0, polling tiap 30 detik. */
+export function source(over: Partial<SourceRecord> = {}): SourceRecord {
+  const ok = new Date(T0.getTime() - 20_000);
+  return {
+    connector: "bmkg-autogempa",
+    provider: "bmkg",
+    dataset: "quake",
+    intervalSeconds: 30,
+    lastAttemptAt: ok,
+    lastSuccessAt: ok,
+    lastChangeAt: new Date(T0.getTime() - 3_600_000),
+    failingSince: null,
+    consecutiveFailures: 0,
     ...over,
   };
 }

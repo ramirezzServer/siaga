@@ -7,6 +7,8 @@ import type {
 import type { HazardReader } from "../../src/hazards/ports/hazard-reader.js";
 import type { RegionFilter, RegionRecord } from "../../src/regions/domain/region.js";
 import type { RegionReader } from "../../src/regions/ports/region-reader.js";
+import type { SourceRecord } from "../../src/sources/domain/source.js";
+import type { SourceReader } from "../../src/sources/ports/source-reader.js";
 
 /** Pembaca kejadian palsu: mencatat saringan dan mengembalikan data yang disiapkan. */
 export class FakeHazardReader implements HazardReader {
@@ -53,5 +55,16 @@ export class FakeRegionReader implements RegionReader {
     const r = this.rows.find((x) => x.code === code);
     if (!r) return Promise.resolve(null);
     return Promise.resolve(includeGeometry ? r : { ...r, geometry: null });
+  }
+}
+
+/** Pembaca status sumber palsu. */
+export class FakeSourceReader implements SourceReader {
+  rows: SourceRecord[] = [];
+  failWith: Error | null = null;
+
+  list(): Promise<SourceRecord[]> {
+    if (this.failWith) return Promise.reject(this.failWith);
+    return Promise.resolve([...this.rows]);
   }
 }

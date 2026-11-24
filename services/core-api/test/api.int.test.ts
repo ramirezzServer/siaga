@@ -9,6 +9,7 @@ import { PgHazardReader } from "../src/hazards/adapters/pg-hazard-reader.js";
 import { PgRegionReader } from "../src/regions/adapters/pg-region-reader.js";
 import { createPool, PgReadinessProbe } from "../src/shared/adapters/postgres.js";
 import { fixedClock } from "../src/shared/domain/clock.js";
+import { PgSourceReader } from "../src/sources/adapters/pg-source-reader.js";
 import { expectSchema } from "./support/contract.js";
 import { clean, IDS, NOW, seed, urls } from "./support/seed.js";
 
@@ -55,6 +56,7 @@ d("core-api dengan PostgreSQL", () => {
     app = await createApp({
       hazards: new PgHazardReader(pool),
       regions: new PgRegionReader(pool),
+      sources: new PgSourceReader(pool),
       readiness: new PgReadinessProbe(pool),
       clock: fixedClock(NOW),
       version: "uji",
@@ -259,6 +261,45 @@ d("core-api dengan PostgreSQL", () => {
         kind: "kelurahan",
         parent_code: "99.71.01",
         geometry: { type: "MultiPolygon" },
+      });
+    });
+  });
+
+  describe("status sumber (ADR 0030)", () => {
+    interface Source {
+      id: string;
+      provider: string;
+      dataset: string;
+      hazard_kinds: string[];
+      state: string;
+      interval_seconds: number;
+      late_after: string | null;
+      failing_since: string | null;
+    }
+
+    it("dihitung dari ts.source_status terhadap jam aplikasi", async () => {
+      const res = await get<{ items: Source[] }>("/v1/sources");
+      expect(res.status).toBe(200);
+      expectSchema("SourceList", res.body);
+      // Hanya konektor uji; database lokal bisa berisi status konektor asli.
+      const mine = res.body.items.filter((s) => s.id.startsWith("uji-core-"));
+      expect(mine.map((s) => [s.id, s.state])).toEqual([
+        ["uji-core-cap", "degraded"],
+        ["uji-core-mati", "late"],
+        ["uji-core-sapuan", "ok"],
+        ["uji-core-usgs.2", "late"],
+      ]);
+      expect(mine[2]).toMatchObject({
+        provider: "bmkg",
+        dataset: "forecast",
+        hazard_kinds: [],
+        interval_seconds: 21_600,
+        late_after: "2001-01-02T14:10:00.000Z",
+      });
+      expect(mine[0]).toMatchObject({
+        dataset: "weather",
+        hazard_kinds: ["weather"],
+        failing_since: "2001-01-02T04:52:00.000Z",
       });
     });
   });

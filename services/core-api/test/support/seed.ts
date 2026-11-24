@@ -37,6 +37,7 @@ const CLEAN = [
   `DELETE FROM hazard.event WHERE occurred_at < '2002-01-01'`,
   `DELETE FROM hazard.impact_region WHERE region_code LIKE '99.%'`,
   `DELETE FROM ref.region WHERE code = '99' OR code LIKE '99.%'`,
+  `DELETE FROM ts.source_status WHERE connector LIKE 'uji-core-%'`,
 ];
 
 const sha = `decode(repeat('ab', 32), 'hex')`;
@@ -46,6 +47,19 @@ function box(minLon: number, minLat: number, maxLon: number, maxLat: number): st
 }
 
 const SEED = [
+  // Status konektor uji (ADR 0030), terhadap NOW 05.00 UTC: sapuan sehat,
+  // CAP 3 kali gagal sebelum batas terlambat (05.04), FIRMS belum pernah
+  // berhasil, USGS (nama bertitik) lewat batas terlambat 04.12.
+  `INSERT INTO ts.source_status (connector, subject, poll_interval, last_attempt_at, last_success_at,
+     last_change_at, failing_since, consecutive_failures) VALUES
+   ('uji-core-sapuan', 'raw.forecast.bmkg', interval '6 hours', '2001-01-02T02:00:00Z', '2001-01-02T02:00:00Z',
+     '2001-01-02T02:00:00Z', NULL, 0),
+   ('uji-core-cap', 'raw.weather.bmkg', interval '2 minutes', '2001-01-02T04:56:00Z', '2001-01-02T04:50:00Z',
+     '2001-01-02T03:00:00Z', '2001-01-02T04:52:00Z', 3),
+   ('uji-core-mati', 'raw.fire.firms', interval '30 minutes', '2001-01-02T04:59:00Z', NULL, NULL,
+     '2001-01-02T04:00:00Z', 5),
+   ('uji-core-usgs.2', 'raw.quake.usgs', interval '1 minute', '2001-01-02T04:00:00Z', '2001-01-02T04:00:00Z',
+     NULL, NULL, 0)`,
   // Wilayah: provinsi 99 > Kota Uji > Kecamatan Uji > dua kelurahan.
   ...(
     [

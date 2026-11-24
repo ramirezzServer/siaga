@@ -16,11 +16,15 @@ import { RegionsController } from "./regions/http/regions.controller.js";
 import type { RegionReader } from "./regions/ports/region-reader.js";
 import type { Clock } from "./shared/domain/clock.js";
 import { ProblemFilter } from "./shared/http/problem.js";
+import { SourcesService, SOURCES_SERVICE } from "./sources/app/sources.service.js";
+import { SourcesController } from "./sources/http/sources.controller.js";
+import type { SourceReader } from "./sources/ports/source-reader.js";
 
 /** Semua dependensi luar core-api; main.ts merakit versi asli, test merakit versi palsu. */
 export interface AppDeps {
   readonly hazards: HazardReader;
   readonly regions: RegionReader;
+  readonly sources: SourceReader;
   readonly readiness: ReadinessProbe;
   readonly clock: Clock;
   readonly version: string;
@@ -35,10 +39,11 @@ class AppModule {
   static register(deps: AppDeps): DynamicModule {
     return {
       module: AppModule,
-      controllers: [HealthController, RegionsController, HazardsController],
+      controllers: [HealthController, RegionsController, HazardsController, SourcesController],
       providers: [
         { provide: HAZARDS_SERVICE, useValue: new HazardsService(deps.hazards, deps.clock) },
         { provide: REGIONS_SERVICE, useValue: new RegionsService(deps.regions) },
+        { provide: SOURCES_SERVICE, useValue: new SourcesService(deps.sources, deps.clock) },
         { provide: READINESS_PROBE, useValue: deps.readiness },
         { provide: VERSION, useValue: deps.version },
       ],
