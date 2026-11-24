@@ -2,11 +2,41 @@
 
 Dokumen ini adalah titik lanjut untuk sesi kerja berikutnya, termasuk chat baru dengan asisten AI. Perbarui setiap akhir sesi.
 
-## Status: Fase 2, irisan 2a-1 (core-api baca publik, ADR 0029); berikutnya 2a-2 (status sumber tahan restart)
+## Status: Fase 2, irisan 2a-2 (status sumber tahan restart, ADR 0030); berikutnya 2a-3 (core-api di cluster)
 
 Fase 0 sampai 1e-3c-3 ter-commit dan terverifikasi, termasuk fix dokumen CAP basi (ADR 0028), lalu gerbang 1f: **1f-1** demo Fase 1 (12 jam Compose lite, lulus) dan **1f-2** profil full k3d dari kondisi bersih (semua pod Ready, pipa data jalan di cluster, pemakaian RAM terukur). Rencana Fase 2 ada di dokumen proyek "SIAGA — Rencana Fase 2" (irisan 2a–2h, ADR 0029 untuk core-api publik read-only). Replay penuh arsip CAP menemukan dokumen basi (file CAP belum ditimpa saat entri RSS baru muncul) yang membuat Poller menerbitkan ulang pesan lama dan melewatkan pesan baru; dua peringatan Jawa Barat (27 Sep, 20 Okt) hilang karenanya. Fase 1e dipecah: **1e-1** arsip Garage + replay, **1e-2a** OpenTelemetry + dashboard, **1e-2b** deploy (**1e-2b-1** image + CI + manifest, **1e-2b-2** Garage dan Collector di cluster, SOPS, default deny, **1e-2b-3** retensi dan backup arsip), **1e-3** backfill + kalibrasi. 1e-3 dipecah lagi: **1e-3a** pengisian ulang OpenAQ, replay prakiraan BMKG + OpenAQ, peta pemeriksaan titik sungai, **1e-3b** reanalisis GloFAS → ambang banjir → `hazard.flood.*` (**1e-3b-1** pemilihan sel dari reanalisis; **1e-3b-2a** alat ambang banjir dan ambang indeks hujan 7 sub-DAS; **1e-3b-2b** konektor hujan sub-DAS, ambang di geo-processor, `hazard.flood.*`), **1e-3c** dipecah (ADR 0023): **1e-3c-1a** arsip FIRMS dan laporan kalibrasi titik api, **1e-3c-1b** saringan dan aturan terpilih, `hazard.fire.*`, **1e-3c-2** set berlabel T4 dan radius dirasakan (ADR 0024: **1e-3c-2a** alat dan set berlabel T4 dari ISC Bulletin; **1e-3c-2c** keputusan ambang, ADR 0025; **1e-3c-2b** radius dirasakan, ADR 0026), **1e-3c-3** replay CAP.
 
-Irisan 2a dipecah: **2a-1** kontrak dan core-api baca publik (irisan ini), **2a-2** status sumber data yang tahan restart (`/v1/sources`; temuan 1f-1), **2a-3** core-api di cluster (image, manifest, Tilt, NetworkPolicy, OpenTelemetry, ukur RAM dan p95 dengan k6).
+Irisan 2a dipecah: **2a-1** kontrak dan core-api baca publik (selesai, `0d4d20e`), **2a-2** status sumber data yang tahan restart (`/v1/sources`; temuan 1f-1; irisan ini), **2a-3** core-api di cluster (image, manifest, Tilt, NetworkPolicy, OpenTelemetry, ukur RAM dan p95 dengan k6).
+
+### Fase 2a-2: status sumber data yang tahan restart
+
+Keputusan lengkap di ADR 0030. Status sumber yang tampil ke publik kini dihitung dari keadaan di database, bukan dari memori ingest: ingest menerbitkan hasil setiap percobaan ke stream `STATUS`, geo-processor melipatnya ke `ts.source_status`, core-api menghitung status terhadap jamnya sendiri.
+
+| Bagian        | Isi                                                                                                                                                                                                                                                                                  | Terverifikasi di workspace asisten                                                                                                                                                                                     |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Kontrak event | `siaga.status.v1.ConnectorPoll`, stream `STATUS` (`status.>`, 2 hari, 64 MiB, milik ingest), subjek `status.connector.<konektor>` (titik di nama konektor menjadi `_`), `subjects.status()` di TS, docs/events.md                                                                    | `buf lint`, generate Go + TS; test subjek `usgs-2.5-day` → `status.connector.usgs-2_5-day` (nama bertitik ini ditemukan test core-api; subjek dengan titik akan memecah token NATS)                                    |
+| ingest        | `ports.PollReporter`; runner melaporkan setiap polling (kecuali yang terputus saat berhenti), sapuan melaporkan setiap sapuan selesai (berhasil bila tidak semua kode gagal); adapter `pollstatus` (batas waktu 5 dtk, galat hanya dicatat); subjek raw per konektor di `cmd/ingest` | Test runner, sweep, pollstatus (coverage 98,6/98,9/100%); `TestPlanSubjects` memeriksa subjek raw dan subjek status 13 konektor polling + sapuan                                                                       |
+| geo-processor | `domain/sourcestatus` (Validate, Apply: pesan lama/ulangan diabaikan, kegagalan beruntun dan `failing_since`), `app/sources`, `statuspb`, `SourceStatusStore` (`FOR UPDATE` + upsert, pelanggaran constraint → DLQ), consumer `geo-processor-source-status`, migrasi 00009           | Coverage domain 97,7%, app 100%; `FuzzApplyInvariants` (masuk `make fuzz`); test integrasi store + constraint; `TestEndToEnd` kini juga mengirim hasil polling lewat JetStream (ulangan diabaikan, pesan rusak ke DLQ) |
+| core-api      | Kontrak 0.3.0 `GET /v1/sources` (urut id, `state` ok/degraded/late, `late_after` = berhasil terakhir + 2 × interval + 10 menit, `hazard_kinds` per konektor), modul `sources` hexagonal, cache 15 dtk                                                                                | 111 test unit (domain sources 100% baris), 18 test integrasi (status 4 konektor uji terhadap jam 2001, termasuk nama bertitik), Ajv terhadap kontrak                                                                   |
+
+Uji asap di workspace (nats-server 2.11.9, BMKG tiruan, binary ingest dan geo-processor, `node dist/main.js`): baris `bmkg-autogempa` muncul setelah polling pertama; sumber dimatikan → 2 kegagalan; ingest dimulai ulang → kegagalan ketiga membuat `/v1/sources` `degraded` dengan waktu berhasil lama, sementara `/status` ingest hanya tahu 1 kegagalan; sumber pulih → `ok`. Uji asap pertama juga menunjukkan "data baru" ikut maju setelah restart (ingest lupa hash payload), jadi definisinya diganti menjadi "ada pesan raw baru yang diterima broker" (ADR 0030 butir 4) dan field `changed` dibuang dari kontrak sebelum dirilis.
+
+### Langkah di WSL (2a-2)
+
+```bash
+make archive-maintain                                                     # seperti biasa saat mulai sesi
+bash "/mnt/c/KULIAH/PROJECT CODE/siaga-titipan/terapkan-fase-2a-2.sh"    # cek hash, pasang, make check, 3 commit
+git push
+# hentikan make ingest, make geo, dan make core yang sedang jalan (Ctrl+C) sebelum langkah berikut
+make migrate                                                              # 00009: ts.source_status
+make test-integration                                                     # make geo tetap mati selama test
+make ingest                                                               # terminal 1: versi baru membuat stream STATUS
+make geo                                                                  # terminal 2: consumer geo-processor-source-status
+make core                                                                 # terminal 3
+curl -s http://127.0.0.1:8083/v1/sources | python3 -m json.tool | head -60
+```
+
+Yang dilaporkan: ringkasan `make test-integration` (core-api `Tests 18 passed`), keluaran `curl` setelah ingest jalan ±3 menit (semua konektor kecuali `bmkg-prakiraan` sudah ada; `bmkg-prakiraan` baru muncul setelah sapuan pertama selesai, ±2 jam), lalu `curl` lagi setelah `make ingest` dihentikan ±1 menit dan dijalankan ulang: baris tetap ada dan `last_success_at` tidak hilang. CI: `dart-client` (skema baru) dan `database` (migrasi up/down/up, test integrasi).
 
 ### Fase 2a-1: kontrak OpenAPI 0.2.0 dan core-api modul publik baca-saja
 
@@ -33,6 +63,12 @@ curl -s "http://127.0.0.1:8083/v1/hazards?status=all&limit=3" | head -c 1500; ec
 ```
 
 Yang dilaporkan: ringkasan `make test-integration` (baris core-api: `Tests  N passed`), keluaran `curl` di atas, dan bila sempat `curl -s http://127.0.0.1:8083/v1/hazards/<id gempa dari feed>/regions?limit=3`. CI: job `dart-client` hijau berarti kontrak baru tetap menghasilkan klien Dart yang terkompilasi.
+
+### Verifikasi di WSL (2a-1, 2026-11-24)
+
+- 2a-1 di-push `5fc24e1..4830591`, lalu dua perbaikan: `make core` menolak `LOG_LEVEL=info` dari `.env` (core-api kini menerima kosakata Go, `16edba4`), dan seed test integrasi core-api gagal di `cap_message_event_fk` karena sisa data uji 2001 dari test Go (baris yang merujuk kejadian uji kini dihapus lebih dulu, `0d4d20e`).
+- `make test-integration` lulus semua (geo-processor, ingest, core-api 17/17). `make core` + `curl /v1/hazards` menyajikan data nyata (kejadian banjir Ciliwung Kota Bogor/Depok, Info). CI `0d4d20e` hijau semua, termasuk `dart-client` dan `database`.
+- **Pelajaran: hentikan `make geo` sebelum `make test-integration`.** Relay outbox geo-processor yang sedang jalan menguras `hazard.outbox` di database yang sama, sehingga dua test outbox geo-processor gagal (dan test Go sendiri menghapus seluruh `hazard.outbox`).
 
 ### Gerbang 1f: demo Fase 1 dan profil full k3d
 
@@ -893,6 +929,8 @@ Workspace cloud asisten tidak bisa menjangkau `proxy.golang.org`, `go.dev`, atau
 - Sesi 1e-2b-3: workspace baru; Go 1.27.1 dibangun dari tag (bootstrap Go 1.24.7, ±6 menit), modul dari `modcache-pecahan/` (tiga bagian di-stage, disambung, `GOPROXY=file://… GOSUMDB=off GOTOOLCHAIN=local`; `GOFLAGS` dikosongkan). Rilis GitHub yang dipakai: golangci-lint 2.13.2, kustomize 5.7.1, kubeconform 0.7.0 (skema dari raw.githubusercontent.com terjangkau), sops 3.13.3, age 1.3.2. Source Garage v2.3.0 dari mirror `deuxfleurs-org/garage` (sparse checkout `src/api`, `src/model`, `doc/book`) untuk memastikan dukungan lifecycle; source CLI `Backblaze/B2_Command_Line_Tool` untuk sintaks `key create`/`bucket create` dan keluaran `account authorize`. Dokumen backblaze.com terjangkau lewat WebFetch. Rasio kompresi diukur dengan sampel satu hari UTC penuh (`ukur-arsip.sh` menulis `sampel-arsip-<tgl>.tar` ke titipan).
 
 - Sesi 1e-3c-3: Go 1.27.3 dari `modcache-pecahan/` (tiga bagian di-stage dalam dua panggilan) dengan `GOPROXY=file://… GOSUMDB=off GOTOOLCHAIN=go1.27.3`; golangci-lint 2.15.0 dari rilis GitHub (cek checksum). Repo di-clone dari GitHub (`main` 7e35256). Sampel arsip CAP dari `sampel-arsip-2026-10-01.tar` di titipan; nats-server dalam proses (`natstest`) untuk `jsread` dan `-compare`.
+
+- Sesi 2a-2: repo di-clone dari GitHub (`main` 0d4d20e). Go 1.27.3 dari `modcache-pecahan/` 9 Nov (tiga bagian, dua panggilan stage) dengan `GOPROXY=file://… GOSUMDB=off GOTOOLCHAIN=go1.27.3`, golangci-lint 2.15.0 dari rilis GitHub (cek checksum), `pnpm install` untuk buf, protoc-gen-es, dan openapi-typescript. PostgreSQL 16 + PostGIS 3.4 + h3 dari apt; migrasi 00001–00009 dijalankan dari salinan sementara tanpa statement Timescale. nats-server 2.11.9 dari rilis GitHub (cek `SHA256SUMS`) untuk uji asap lima proses dengan BMKG tiruan (`python3 -m http.server`).
 
 - Sesi fix dokumen CAP basi: sama dengan 1e-3c-3 (Go 1.27.3 dari `modcache-pecahan/`, golangci-lint 2.15.0 dari rilis GitHub), repo di-clone dari GitHub (`main` 5265daf). Arsip CAP penuh tidak ada di workspace (Garage hanya di WSL), jadi pemeriksaan 27 Sep/20 Okt dititipkan sebagai skrip.
 
