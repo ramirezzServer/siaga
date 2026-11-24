@@ -1,11 +1,13 @@
 openapi: 3.1.0
 info:
   title: SIAGA Core API
-  version: 0.1.0
+  version: 0.2.0
   summary: API publik SIAGA untuk web dan mobile.
   description: |
-    Fase 0 hanya mendefinisikan endpoint wilayah dan kesehatan layanan. Endpoint lain
-    ditambahkan per rilis sesuai PRD. Semua error memakai Problem Details (RFC 9457).
+    Fase 2 menambah API baca publik untuk peta (ADR 0029): feed kejadian bahaya, detail
+    kejadian, dan kelurahan/desa terdampak. Semua endpoint di sini hanya membaca dan tidak
+    butuh login. Waktu dalam UTC (RFC 3339); klien menampilkannya dalam WIB. Semua error
+    memakai Problem Details (RFC 9457).
   license:
     name: MIT
     identifier: MIT
@@ -20,16 +22,35 @@ tags:
     description: Status layanan
   - name: regions
     description: Wilayah administrasi Kemendagri
+  - name: hazards
+    description: Kejadian bahaya ternormalisasi dan terdeduplikasi (geo-processor)
 paths:
   /healthz:
     get:
       operationId: getHealth
       tags: [health]
-      summary: Status layanan
+      summary: Status proses (liveness)
+      description: Tidak memeriksa database, supaya database yang lambat tidak membuat proses dimulai ulang.
       security: []
       responses:
         "200":
-          description: Layanan sehat
+          description: Proses hidup
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+        "429":
+          $ref: "#/components/responses/Problem"
+  /readyz:
+    get:
+      operationId: getReadiness
+      tags: [health]
+      summary: Siap melayani (readiness)
+      description: Memeriksa koneksi database dengan query ringan.
+      security: []
+      responses:
+        "200":
+          description: Siap melayani
           content:
             application/json:
               schema:
@@ -43,7 +64,10 @@ paths:
       operationId: listRegions
       tags: [regions]
       summary: Daftar wilayah
-      description: Menyaring berdasarkan induk, level, atau nama (toleran salah ketik).
+      description: |
+        Menyaring berdasarkan induk, level, atau nama. Tanpa `q` diurutkan menurut kode dan
+        bisa dihalaman dengan `cursor`. Dengan `q` (toleran salah ketik) diurutkan menurut
+        kemiripan nama dan hanya satu halaman (`next_cursor` selalu null).
       security: []
       parameters:
         - name: parent
@@ -75,6 +99,8 @@ paths:
           $ref: "#/components/responses/Problem"
         "429":
           $ref: "#/components/responses/Problem"
+        "503":
+          $ref: "#/components/responses/Problem"
   /v1/regions/{code}:
     get:
       operationId: getRegion
@@ -104,6 +130,162 @@ paths:
           $ref: "#/components/responses/Problem"
         "404":
           $ref: "#/components/responses/Problem"
+        "429":
+          $ref: "#/components/responses/Problem"
+        "503":
+          $ref: "#/components/responses/Problem"
+  /v1/hazards:
+    get:
+      operationId: listHazards
+      tags: [hazards]
+      summary: Feed kejadian bahaya
+      description: |
+        Kejadian terbaru lebih dulu (`occurred_at` menurun). Gempa yang dilaporkan BMKG dan
+        USGS sudah digabung menjadi satu kejadian; kejadian berstatus `merged` tidak pernah
+        muncul di feed (US-05).
+
+        - `status=active` (bawaan): kejadian aktif yang belum lewat `expires_at`.
+        - `status=all`: juga kejadian yang sudah berakhir (`expired`) atau ditarik sumber (`retracted`).
+        - `at`: kejadian yang aktif pada saat itu (untuk putar ulang); mengabaikan `status`.
+      security: []
+      parameters:
+        - name: kind
+          in: query
+          description: Jenis bahaya; boleh diulang (`kind=quake&kind=weather`). Tanpa ini semua jenis.
+          style: form
+          explode: true
+          schema:
+            type: array
+            uniqueItems: true
+            maxItems: 5
+            items:
+              $ref: "#/components/schemas/HazardKind"
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, all]
+            default: active
+        - name: at
+          in: query
+          description: Kejadian yang aktif pada waktu ini (paling jauh 400 hari ke belakang).
+          schema:
+            type: string
+            format: date-time
+        - name: since
+          in: query
+          description: "`occurred_at` paling awal (inklusif)."
+          schema:
+            type: string
+            format: date-time
+        - name: until
+          in: query
+          description: "`occurred_at` paling akhir (eksklusif)."
+          schema:
+            type: string
+            format: date-time
+        - name: min_level
+          in: query
+          schema:
+            $ref: "#/components/schemas/AlertLevel"
+        - name: bbox
+          in: query
+          description: "Kotak lokasi kejadian: `min_lon,min_lat,max_lon,max_lat` (WGS84)."
+          schema:
+            type: string
+            pattern: '^-?[0-9]+(\.[0-9]+)?(,-?[0-9]+(\.[0-9]+)?){3}$'
+            maxLength: 100
+            examples: ["105.9,-7.9,108.9,-5.8"]
+        - name: drill
+          in: query
+          description: Sertakan kejadian latihan (mode latihan, fase 3). Bawaan tidak.
+          schema:
+            type: boolean
+            default: false
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: Satu halaman kejadian
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HazardPage"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "429":
+          $ref: "#/components/responses/Problem"
+        "503":
+          $ref: "#/components/responses/Problem"
+  /v1/hazards/{id}:
+    get:
+      operationId: getHazard
+      tags: [hazards]
+      summary: Detail kejadian bahaya
+      description: |
+        Kejadian berstatus `merged` tetap bisa dibuka (tautan lama), dengan `merged_into`
+        menunjuk kejadian yang bertahan. Detail per jenis ada di `quake`, `weather`, `flood`,
+        atau `fire`; yang lain null.
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/HazardId"
+        - name: include
+          in: query
+          description: Sertakan area kejadian (GeoJSON). Default tidak; peta memakai vector tiles.
+          schema:
+            type: string
+            enum: [area]
+      responses:
+        "200":
+          description: Kejadian ditemukan
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HazardDetail"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "429":
+          $ref: "#/components/responses/Problem"
+        "503":
+          $ref: "#/components/responses/Problem"
+  /v1/hazards/{id}/regions:
+    get:
+      operationId: listImpactedRegions
+      tags: [hazards]
+      summary: Kelurahan/desa terdampak (estimasi)
+      description: |
+        Estimasi kelurahan/desa terdampak, hanya tingkat Waspada ke atas (US-06). Gempa:
+        kelurahan/desa dalam radius dirasakan, terdekat lebih dulu. Cuaca: yang beririsan
+        dengan area peringatan, cakupan terluas lebih dulu. Selalu ditampilkan berlabel
+        "estimasi".
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/HazardId"
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 500
+            default: 100
+        - $ref: "#/components/parameters/Cursor"
+      responses:
+        "200":
+          description: Satu halaman wilayah terdampak
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImpactedRegionPage"
+        "400":
+          $ref: "#/components/responses/Problem"
+        "404":
+          $ref: "#/components/responses/Problem"
+        "429":
+          $ref: "#/components/responses/Problem"
+        "503":
+          $ref: "#/components/responses/Problem"
 components:
   parameters:
     Limit:
@@ -121,6 +303,13 @@ components:
       schema:
         type: string
         maxLength: 200
+    HazardId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
   responses:
     Problem:
       description: Error dalam format Problem Details
@@ -162,6 +351,31 @@ components:
           type: number
           minimum: -180
           maximum: 180
+    BBox:
+      type: array
+      description: "[min_lon, min_lat, max_lon, max_lat]"
+      items:
+        type: number
+      minItems: 4
+      maxItems: 4
+    MultiPolygon:
+      type: object
+      description: GeoJSON MultiPolygon (WGS84), koordinat dibulatkan 5 desimal (±1 m).
+      required: [type, coordinates]
+      properties:
+        type:
+          type: string
+          const: MultiPolygon
+        coordinates:
+          type: array
+          items:
+            type: array
+            items:
+              type: array
+              items:
+                type: array
+                items:
+                  type: number
     Region:
       type: object
       required: [code, name, level, kind, parent_code, label_point]
@@ -181,30 +395,9 @@ components:
         label_point:
           $ref: "#/components/schemas/Point"
         bbox:
-          type: array
-          description: "[min_lon, min_lat, max_lon, max_lat]"
-          items:
-            type: number
-          minItems: 4
-          maxItems: 4
+          $ref: "#/components/schemas/BBox"
         geometry:
-          type: object
-          description: GeoJSON MultiPolygon, hanya bila include=geometry.
-          required: [type, coordinates]
-          properties:
-            type:
-              type: string
-              const: MultiPolygon
-            coordinates:
-              type: array
-              items:
-                type: array
-                items:
-                  type: array
-                  items:
-                    type: array
-                    items:
-                      type: number
+          $ref: "#/components/schemas/MultiPolygon"
     RegionPage:
       type: object
       required: [items, next_cursor]
@@ -213,6 +406,659 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Region"
+        next_cursor:
+          oneOf:
+            - type: string
+            - type: "null"
+    RegionRef:
+      type: object
+      description: Wilayah induk ringkas untuk label.
+      required: [code, name, kind]
+      properties:
+        code:
+          $ref: "#/components/schemas/RegionCode"
+        name:
+          type: string
+        kind:
+          $ref: "#/components/schemas/RegionKind"
+    HazardKind:
+      type: string
+      description: quake gempa, weather peringatan dini cuaca (CAP), flood potensi banjir, fire titik api, aq kualitas udara (fase 4).
+      enum: [quake, weather, flood, fire, aq]
+    HazardStatus:
+      type: string
+      description: active; expired = masa aktif habis; merged = digabung ke kejadian lain; retracted = ditarik sumber.
+      enum: [active, expired, merged, retracted]
+    AlertLevel:
+      type: integer
+      description: 1 Info, 2 Waspada, 3 Siaga, 4 Bahaya (sama dengan siaga.hazard.v1.AlertLevel).
+      enum: [1, 2, 3, 4]
+    HazardSource:
+      type: string
+      enum: [bmkg, usgs, openmeteo, openaq, firms, drill]
+    HazardSummary:
+      type: object
+      required:
+        - id
+        - kind
+        - level
+        - status
+        - primary_source
+        - source_event_id
+        - title
+        - summary
+        - occurred_at
+        - detected_at
+        - expires_at
+        - ended_at
+        - updated_at
+        - revision
+        - drill
+        - location
+        - bbox
+        - magnitude
+        - impacted_region_count
+      properties:
+        id:
+          type: string
+          format: uuid
+        kind:
+          $ref: "#/components/schemas/HazardKind"
+        level:
+          $ref: "#/components/schemas/AlertLevel"
+        status:
+          $ref: "#/components/schemas/HazardStatus"
+        primary_source:
+          $ref: "#/components/schemas/HazardSource"
+        source_event_id:
+          type: string
+        title:
+          type: string
+          description: Teks buatan SIAGA (dibedakan dari teks asli BMKG di UI).
+        summary:
+          type: string
+        occurred_at:
+          type: string
+          format: date-time
+        detected_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+        ended_at:
+          oneOf:
+            - type: string
+              format: date-time
+            - type: "null"
+        updated_at:
+          type: string
+          format: date-time
+        revision:
+          type: integer
+          minimum: 1
+        drill:
+          type: boolean
+          description: Kejadian latihan; UI wajib menandainya LATIHAN.
+        location:
+          $ref: "#/components/schemas/Point"
+        bbox:
+          description: Kotak area kejadian; null bila kejadian tidak punya area.
+          oneOf:
+            - $ref: "#/components/schemas/BBox"
+            - type: "null"
+        magnitude:
+          description: Magnitudo gempa; null untuk jenis lain.
+          oneOf:
+            - type: number
+            - type: "null"
+        impacted_region_count:
+          type: integer
+          minimum: 0
+          description: Jumlah kelurahan/desa terdampak (estimasi, Waspada ke atas).
+    HazardPage:
+      type: object
+      required: [items, next_cursor, generated_at]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/HazardSummary"
+        next_cursor:
+          oneOf:
+            - type: string
+            - type: "null"
+        generated_at:
+          type: string
+          format: date-time
+          description: Waktu server saat halaman dibuat.
+    HazardDetail:
+      type: object
+      description: Semua kolom HazardSummary ditambah detail per jenis (ditulis lengkap tanpa allOf supaya generator klien Dart tidak perlu komposisi).
+      required:
+        - id
+        - kind
+        - level
+        - status
+        - primary_source
+        - source_event_id
+        - title
+        - summary
+        - occurred_at
+        - detected_at
+        - expires_at
+        - ended_at
+        - updated_at
+        - revision
+        - drill
+        - location
+        - bbox
+        - magnitude
+        - impacted_region_count
+        - merged_into
+        - area
+        - quake
+        - weather
+        - flood
+        - fire
+      properties:
+        id:
+          type: string
+          format: uuid
+        kind:
+          $ref: "#/components/schemas/HazardKind"
+        level:
+          $ref: "#/components/schemas/AlertLevel"
+        status:
+          $ref: "#/components/schemas/HazardStatus"
+        primary_source:
+          $ref: "#/components/schemas/HazardSource"
+        source_event_id:
+          type: string
+        title:
+          type: string
+          description: Teks buatan SIAGA (dibedakan dari teks asli BMKG di UI).
+        summary:
+          type: string
+        occurred_at:
+          type: string
+          format: date-time
+        detected_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+        ended_at:
+          oneOf:
+            - type: string
+              format: date-time
+            - type: "null"
+        updated_at:
+          type: string
+          format: date-time
+        revision:
+          type: integer
+          minimum: 1
+        drill:
+          type: boolean
+          description: Kejadian latihan; UI wajib menandainya LATIHAN.
+        location:
+          $ref: "#/components/schemas/Point"
+        bbox:
+          description: Kotak area kejadian; null bila kejadian tidak punya area.
+          oneOf:
+            - $ref: "#/components/schemas/BBox"
+            - type: "null"
+        magnitude:
+          description: Magnitudo gempa; null untuk jenis lain.
+          oneOf:
+            - type: number
+            - type: "null"
+        impacted_region_count:
+          type: integer
+          minimum: 0
+          description: Jumlah kelurahan/desa terdampak (estimasi, Waspada ke atas).
+        merged_into:
+          oneOf:
+            - type: string
+              format: uuid
+            - type: "null"
+        area:
+          description: Hanya bila include=area dan kejadian punya area.
+          oneOf:
+            - $ref: "#/components/schemas/MultiPolygon"
+            - type: "null"
+        quake:
+          oneOf:
+            - $ref: "#/components/schemas/QuakeDetail"
+            - type: "null"
+        weather:
+          oneOf:
+            - $ref: "#/components/schemas/WeatherDetail"
+            - type: "null"
+        flood:
+          oneOf:
+            - $ref: "#/components/schemas/FloodDetail"
+            - type: "null"
+        fire:
+          oneOf:
+            - $ref: "#/components/schemas/FireDetail"
+            - type: "null"
+    Tsunami:
+      type: string
+      description: Status potensi tsunami menurut sumber (unknown bila sumber tidak menyebut).
+      enum: [unknown, none, potential]
+    QuakeDetail:
+      type: object
+      required:
+        - magnitude
+        - magnitude_type
+        - depth_km
+        - felt_radius_km
+        - place
+        - felt_description
+        - tsunami
+        - shakemap_url
+        - source_url
+        - reports
+      properties:
+        magnitude:
+          type: number
+        magnitude_type:
+          type: string
+        depth_km:
+          type: number
+        felt_radius_km:
+          type: number
+          minimum: 0
+          description: Estimasi radius dirasakan di permukaan (ADR 0026); 0 bila tidak dirasakan.
+        place:
+          type: string
+        felt_description:
+          type: string
+          description: Teks wilayah dirasakan dari BMKG (MMI), apa adanya.
+        tsunami:
+          $ref: "#/components/schemas/Tsunami"
+        shakemap_url:
+          oneOf:
+            - type: string
+              format: uri
+            - type: "null"
+        source_url:
+          oneOf:
+            - type: string
+              format: uri
+            - type: "null"
+        reports:
+          type: array
+          description: Laporan tiap sumber dan feed yang tergabung ke kejadian ini; laporan sumber utama lebih dulu.
+          items:
+            $ref: "#/components/schemas/QuakeReport"
+    QuakeReport:
+      type: object
+      required:
+        - source
+        - feed
+        - source_event_id
+        - primary
+        - occurred_at
+        - location
+        - magnitude
+        - magnitude_type
+        - depth_km
+        - place
+        - tsunami
+        - url
+        - fetched_at
+      properties:
+        source:
+          $ref: "#/components/schemas/HazardSource"
+        feed:
+          type: string
+          enum: [bmkg-latest, bmkg-recent, bmkg-felt, usgs-summary]
+        source_event_id:
+          type: string
+        primary:
+          type: boolean
+          description: Laporan dari sumber utama kejadian.
+        occurred_at:
+          type: string
+          format: date-time
+        location:
+          $ref: "#/components/schemas/Point"
+        magnitude:
+          type: number
+        magnitude_type:
+          type: string
+        depth_km:
+          type: number
+        place:
+          type: string
+        tsunami:
+          $ref: "#/components/schemas/Tsunami"
+        url:
+          oneOf:
+            - type: string
+              format: uri
+            - type: "null"
+        fetched_at:
+          type: string
+          format: date-time
+    CapSeverity:
+      type: string
+      enum: [minor, moderate, severe, extreme, unknown]
+    CapText:
+      type: object
+      description: Teks asli BMKG, ditampilkan apa adanya dengan label sumber.
+      required: [event, headline, description, instruction]
+      properties:
+        event:
+          type: string
+        headline:
+          type: string
+        description:
+          type: string
+        instruction:
+          type: string
+    WeatherDetail:
+      type: object
+      required:
+        - cap_identifier
+        - msg_type
+        - severity
+        - urgency
+        - certainty
+        - event_code
+        - sent_at
+        - effective_at
+        - onset_at
+        - area_desc
+        - area_km2
+        - message_count
+        - web_url
+        - source_url
+        - text_id
+        - text_en
+      properties:
+        cap_identifier:
+          type: string
+          description: Identifier pesan CAP terbaru yang berarea dalam rantai pembaruan.
+        msg_type:
+          type: string
+          enum: [alert, update, cancel]
+        severity:
+          $ref: "#/components/schemas/CapSeverity"
+        urgency:
+          type: string
+        certainty:
+          type: string
+        event_code:
+          type: string
+        sent_at:
+          type: string
+          format: date-time
+        effective_at:
+          type: string
+          format: date-time
+        onset_at:
+          oneOf:
+            - type: string
+              format: date-time
+            - type: "null"
+        area_desc:
+          type: string
+        area_km2:
+          type: number
+          exclusiveMinimum: 0
+        message_count:
+          type: integer
+          minimum: 1
+        web_url:
+          oneOf:
+            - type: string
+              format: uri
+            - type: "null"
+        source_url:
+          oneOf:
+            - type: string
+              format: uri
+            - type: "null"
+        text_id:
+          $ref: "#/components/schemas/CapText"
+        text_en:
+          description: Terjemahan resmi BMKG bila ada.
+          oneOf:
+            - $ref: "#/components/schemas/CapText"
+            - type: "null"
+    FloodThreshold:
+      type: object
+      description: Ambang efektif Info..Bahaya; satuan m³/s (debit) atau mm (indeks hujan).
+      required: [window_hours, info, waspada, siaga, bahaya]
+      properties:
+        window_hours:
+          description: Jendela akumulasi hujan; null untuk debit.
+          oneOf:
+            - type: integer
+              enum: [3, 6, 24]
+            - type: "null"
+        info:
+          type: number
+        waspada:
+          type: number
+        siaga:
+          type: number
+        bahaya:
+          type: number
+    FloodDay:
+      type: object
+      required:
+        - date
+        - level
+        - possible
+        - discharge_m3s
+        - discharge_p75_m3s
+        - discharge_max_m3s
+        - from_ensemble
+        - rain_3h_mm
+        - rain_6h_mm
+        - rain_24h_mm
+        - window_hours
+      properties:
+        date:
+          type: string
+          format: date
+          description: Tanggal UTC.
+        level:
+          type: integer
+          minimum: 0
+          maximum: 4
+          description: 0 = di bawah Info.
+        possible:
+          type: boolean
+          description: Hanya sebagian anggota ensemble yang melewati ambang (tingkat "mungkin").
+        discharge_m3s:
+          oneOf:
+            - type: number
+            - type: "null"
+        discharge_p75_m3s:
+          oneOf:
+            - type: number
+            - type: "null"
+        discharge_max_m3s:
+          oneOf:
+            - type: number
+            - type: "null"
+        from_ensemble:
+          type: boolean
+        rain_3h_mm:
+          oneOf:
+            - type: number
+            - type: "null"
+        rain_6h_mm:
+          oneOf:
+            - type: number
+            - type: "null"
+        rain_24h_mm:
+          oneOf:
+            - type: number
+            - type: "null"
+        window_hours:
+          description: Jendela indeks hujan penentu tingkat; null untuk debit atau di bawah Info.
+          oneOf:
+            - type: integer
+              enum: [3, 6, 24]
+            - type: "null"
+    FloodDetail:
+      type: object
+      required:
+        - indicator
+        - unit
+        - site_id
+        - site_name
+        - river
+        - model
+        - issued_at
+        - outlook_level
+        - possible
+        - peak_date
+        - max_level
+        - opened_at
+        - last_exceeded_at
+        - thresholds
+        - days
+      properties:
+        indicator:
+          type: string
+          description: discharge = debit model GloFAS; rainfall = indeks hujan sub-DAS (indikasi, paling tinggi Siaga).
+          enum: [discharge, rainfall]
+        unit:
+          type: string
+          enum: [m3/s, mm]
+        site_id:
+          type: string
+        site_name:
+          type: string
+        river:
+          oneOf:
+            - type: string
+            - type: "null"
+        model:
+          type: string
+        issued_at:
+          type: string
+          format: date-time
+        outlook_level:
+          type: integer
+          minimum: 0
+          maximum: 4
+        possible:
+          type: boolean
+        peak_date:
+          oneOf:
+            - type: string
+              format: date
+            - type: "null"
+        max_level:
+          $ref: "#/components/schemas/AlertLevel"
+        opened_at:
+          type: string
+          format: date-time
+        last_exceeded_at:
+          type: string
+          format: date-time
+        thresholds:
+          type: array
+          minItems: 1
+          maxItems: 3
+          items:
+            $ref: "#/components/schemas/FloodThreshold"
+        days:
+          type: array
+          items:
+            $ref: "#/components/schemas/FloodDay"
+    FireDetail:
+      type: object
+      required:
+        - detection_count
+        - overpass_count
+        - high_confidence_count
+        - first_detected_at
+        - last_detected_at
+        - products
+        - max_frp_mw
+      properties:
+        detection_count:
+          type: integer
+          minimum: 1
+        overpass_count:
+          type: integer
+          minimum: 1
+        high_confidence_count:
+          type: integer
+          minimum: 0
+        first_detected_at:
+          type: string
+          format: date-time
+        last_detected_at:
+          type: string
+          format: date-time
+        products:
+          type: array
+          items:
+            type: string
+            enum: [VIIRS_SNPP_NRT, VIIRS_NOAA20_NRT, VIIRS_NOAA21_NRT, MODIS_NRT]
+        max_frp_mw:
+          oneOf:
+            - type: number
+            - type: "null"
+    ImpactedRegion:
+      type: object
+      required: [code, name, kind, district, city, distance_km, level, within_felt, coverage]
+      properties:
+        code:
+          $ref: "#/components/schemas/RegionCode"
+        name:
+          type: string
+        kind:
+          type: string
+          enum: [kelurahan, desa]
+        district:
+          $ref: "#/components/schemas/RegionRef"
+        city:
+          $ref: "#/components/schemas/RegionRef"
+        distance_km:
+          type: number
+          minimum: 0
+          description: Gempa = jarak episenter ke tepi wilayah; cuaca = 0.
+        level:
+          type: integer
+          minimum: 2
+          maximum: 4
+        within_felt:
+          type: boolean
+        coverage:
+          description: Cuaca = bagian luas wilayah di dalam area peringatan (0..1]; gempa = null.
+          oneOf:
+            - type: number
+              exclusiveMinimum: 0
+              maximum: 1
+            - type: "null"
+    ImpactedRegionPage:
+      type: object
+      required: [basis, total, items, next_cursor]
+      properties:
+        basis:
+          type: string
+          description: felt_radius = estimasi radius dirasakan (gempa); area_overlap = irisan area peringatan (cuaca); none = jenis tanpa estimasi wilayah.
+          enum: [felt_radius, area_overlap, none]
+        total:
+          type: integer
+          minimum: 0
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ImpactedRegion"
         next_cursor:
           oneOf:
             - type: string
@@ -238,4 +1084,15 @@ components:
         trace_id:
           type: string
           description: ID trace OpenTelemetry untuk pelacakan.
+        errors:
+          type: array
+          description: Rincian parameter yang tidak valid (400).
+          items:
+            type: object
+            required: [parameter, message]
+            properties:
+              parameter:
+                type: string
+              message:
+                type: string
       additionalProperties: true

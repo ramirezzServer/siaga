@@ -11,8 +11,31 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Status layanan */
+        /**
+         * Status proses (liveness)
+         * @description Tidak memeriksa database, supaya database yang lambat tidak membuat proses dimulai ulang.
+         */
         get: operations["getHealth"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/readyz": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Siap melayani (readiness)
+         * @description Memeriksa koneksi database dengan query ringan.
+         */
+        get: operations["getReadiness"];
         put?: never;
         post?: never;
         delete?: never;
@@ -30,7 +53,9 @@ export interface paths {
         };
         /**
          * Daftar wilayah
-         * @description Menyaring berdasarkan induk, level, atau nama (toleran salah ketik).
+         * @description Menyaring berdasarkan induk, level, atau nama. Tanpa `q` diurutkan menurut kode dan
+         *     bisa dihalaman dengan `cursor`. Dengan `q` (toleran salah ketik) diurutkan menurut
+         *     kemiripan nama dan hanya satu halaman (`next_cursor` selalu null).
          */
         get: operations["listRegions"];
         put?: never;
@@ -50,6 +75,77 @@ export interface paths {
         };
         /** Detail wilayah */
         get: operations["getRegion"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/hazards": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Feed kejadian bahaya
+         * @description Kejadian terbaru lebih dulu (`occurred_at` menurun). Gempa yang dilaporkan BMKG dan
+         *     USGS sudah digabung menjadi satu kejadian; kejadian berstatus `merged` tidak pernah
+         *     muncul di feed (US-05).
+         *
+         *     - `status=active` (bawaan): kejadian aktif yang belum lewat `expires_at`.
+         *     - `status=all`: juga kejadian yang sudah berakhir (`expired`) atau ditarik sumber (`retracted`).
+         *     - `at`: kejadian yang aktif pada saat itu (untuk putar ulang); mengabaikan `status`.
+         */
+        get: operations["listHazards"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/hazards/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Detail kejadian bahaya
+         * @description Kejadian berstatus `merged` tetap bisa dibuka (tautan lama), dengan `merged_into`
+         *     menunjuk kejadian yang bertahan. Detail per jenis ada di `quake`, `weather`, `flood`,
+         *     atau `fire`; yang lain null.
+         */
+        get: operations["getHazard"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/hazards/{id}/regions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Kelurahan/desa terdampak (estimasi)
+         * @description Estimasi kelurahan/desa terdampak, hanya tingkat Waspada ke atas (US-06). Gempa:
+         *     kelurahan/desa dalam radius dirasakan, terdekat lebih dulu. Cuaca: yang beririsan
+         *     dengan area peringatan, cakupan terluas lebih dulu. Selalu ditampilkan berlabel
+         *     "estimasi".
+         */
+        get: operations["listImpactedRegions"];
         put?: never;
         post?: never;
         delete?: never;
@@ -83,6 +179,14 @@ export interface components {
             latitude: number;
             longitude: number;
         };
+        /** @description [min_lon, min_lat, max_lon, max_lat] */
+        BBox: number[];
+        /** @description GeoJSON MultiPolygon (WGS84), koordinat dibulatkan 5 desimal (±1 m). */
+        MultiPolygon: {
+            /** @constant */
+            type: "MultiPolygon";
+            coordinates: number[][][][];
+        };
         Region: {
             code: components["schemas"]["RegionCode"];
             name: string;
@@ -90,17 +194,273 @@ export interface components {
             kind: components["schemas"]["RegionKind"];
             parent_code: components["schemas"]["RegionCode"] | null;
             label_point: components["schemas"]["Point"];
-            /** @description [min_lon, min_lat, max_lon, max_lat] */
-            bbox?: number[];
-            /** @description GeoJSON MultiPolygon, hanya bila include=geometry. */
-            geometry?: {
-                /** @constant */
-                type: "MultiPolygon";
-                coordinates: number[][][][];
-            };
+            bbox?: components["schemas"]["BBox"];
+            geometry?: components["schemas"]["MultiPolygon"];
         };
         RegionPage: {
             items: components["schemas"]["Region"][];
+            next_cursor: string | null;
+        };
+        /** @description Wilayah induk ringkas untuk label. */
+        RegionRef: {
+            code: components["schemas"]["RegionCode"];
+            name: string;
+            kind: components["schemas"]["RegionKind"];
+        };
+        /**
+         * @description quake gempa, weather peringatan dini cuaca (CAP), flood potensi banjir, fire titik api, aq kualitas udara (fase 4).
+         * @enum {string}
+         */
+        HazardKind: "quake" | "weather" | "flood" | "fire" | "aq";
+        /**
+         * @description active; expired = masa aktif habis; merged = digabung ke kejadian lain; retracted = ditarik sumber.
+         * @enum {string}
+         */
+        HazardStatus: "active" | "expired" | "merged" | "retracted";
+        /**
+         * @description 1 Info, 2 Waspada, 3 Siaga, 4 Bahaya (sama dengan siaga.hazard.v1.AlertLevel).
+         * @enum {integer}
+         */
+        AlertLevel: 1 | 2 | 3 | 4;
+        /** @enum {string} */
+        HazardSource: "bmkg" | "usgs" | "openmeteo" | "openaq" | "firms" | "drill";
+        HazardSummary: {
+            /** Format: uuid */
+            id: string;
+            kind: components["schemas"]["HazardKind"];
+            level: components["schemas"]["AlertLevel"];
+            status: components["schemas"]["HazardStatus"];
+            primary_source: components["schemas"]["HazardSource"];
+            source_event_id: string;
+            /** @description Teks buatan SIAGA (dibedakan dari teks asli BMKG di UI). */
+            title: string;
+            summary: string;
+            /** Format: date-time */
+            occurred_at: string;
+            /** Format: date-time */
+            detected_at: string;
+            /** Format: date-time */
+            expires_at: string;
+            ended_at: string | null;
+            /** Format: date-time */
+            updated_at: string;
+            revision: number;
+            /** @description Kejadian latihan; UI wajib menandainya LATIHAN. */
+            drill: boolean;
+            location: components["schemas"]["Point"];
+            /** @description Kotak area kejadian; null bila kejadian tidak punya area. */
+            bbox: components["schemas"]["BBox"] | null;
+            /** @description Magnitudo gempa; null untuk jenis lain. */
+            magnitude: number | null;
+            /** @description Jumlah kelurahan/desa terdampak (estimasi, Waspada ke atas). */
+            impacted_region_count: number;
+        };
+        HazardPage: {
+            items: components["schemas"]["HazardSummary"][];
+            next_cursor: string | null;
+            /**
+             * Format: date-time
+             * @description Waktu server saat halaman dibuat.
+             */
+            generated_at: string;
+        };
+        /** @description Semua kolom HazardSummary ditambah detail per jenis (ditulis lengkap tanpa allOf supaya generator klien Dart tidak perlu komposisi). */
+        HazardDetail: {
+            /** Format: uuid */
+            id: string;
+            kind: components["schemas"]["HazardKind"];
+            level: components["schemas"]["AlertLevel"];
+            status: components["schemas"]["HazardStatus"];
+            primary_source: components["schemas"]["HazardSource"];
+            source_event_id: string;
+            /** @description Teks buatan SIAGA (dibedakan dari teks asli BMKG di UI). */
+            title: string;
+            summary: string;
+            /** Format: date-time */
+            occurred_at: string;
+            /** Format: date-time */
+            detected_at: string;
+            /** Format: date-time */
+            expires_at: string;
+            ended_at: string | null;
+            /** Format: date-time */
+            updated_at: string;
+            revision: number;
+            /** @description Kejadian latihan; UI wajib menandainya LATIHAN. */
+            drill: boolean;
+            location: components["schemas"]["Point"];
+            /** @description Kotak area kejadian; null bila kejadian tidak punya area. */
+            bbox: components["schemas"]["BBox"] | null;
+            /** @description Magnitudo gempa; null untuk jenis lain. */
+            magnitude: number | null;
+            /** @description Jumlah kelurahan/desa terdampak (estimasi, Waspada ke atas). */
+            impacted_region_count: number;
+            merged_into: string | null;
+            /** @description Hanya bila include=area dan kejadian punya area. */
+            area: components["schemas"]["MultiPolygon"] | null;
+            quake: components["schemas"]["QuakeDetail"] | null;
+            weather: components["schemas"]["WeatherDetail"] | null;
+            flood: components["schemas"]["FloodDetail"] | null;
+            fire: components["schemas"]["FireDetail"] | null;
+        };
+        /**
+         * @description Status potensi tsunami menurut sumber (unknown bila sumber tidak menyebut).
+         * @enum {string}
+         */
+        Tsunami: "unknown" | "none" | "potential";
+        QuakeDetail: {
+            magnitude: number;
+            magnitude_type: string;
+            depth_km: number;
+            /** @description Estimasi radius dirasakan di permukaan (ADR 0026); 0 bila tidak dirasakan. */
+            felt_radius_km: number;
+            place: string;
+            /** @description Teks wilayah dirasakan dari BMKG (MMI), apa adanya. */
+            felt_description: string;
+            tsunami: components["schemas"]["Tsunami"];
+            shakemap_url: string | null;
+            source_url: string | null;
+            /** @description Laporan tiap sumber dan feed yang tergabung ke kejadian ini; laporan sumber utama lebih dulu. */
+            reports: components["schemas"]["QuakeReport"][];
+        };
+        QuakeReport: {
+            source: components["schemas"]["HazardSource"];
+            /** @enum {string} */
+            feed: "bmkg-latest" | "bmkg-recent" | "bmkg-felt" | "usgs-summary";
+            source_event_id: string;
+            /** @description Laporan dari sumber utama kejadian. */
+            primary: boolean;
+            /** Format: date-time */
+            occurred_at: string;
+            location: components["schemas"]["Point"];
+            magnitude: number;
+            magnitude_type: string;
+            depth_km: number;
+            place: string;
+            tsunami: components["schemas"]["Tsunami"];
+            url: string | null;
+            /** Format: date-time */
+            fetched_at: string;
+        };
+        /** @enum {string} */
+        CapSeverity: "minor" | "moderate" | "severe" | "extreme" | "unknown";
+        /** @description Teks asli BMKG, ditampilkan apa adanya dengan label sumber. */
+        CapText: {
+            event: string;
+            headline: string;
+            description: string;
+            instruction: string;
+        };
+        WeatherDetail: {
+            /** @description Identifier pesan CAP terbaru yang berarea dalam rantai pembaruan. */
+            cap_identifier: string;
+            /** @enum {string} */
+            msg_type: "alert" | "update" | "cancel";
+            severity: components["schemas"]["CapSeverity"];
+            urgency: string;
+            certainty: string;
+            event_code: string;
+            /** Format: date-time */
+            sent_at: string;
+            /** Format: date-time */
+            effective_at: string;
+            onset_at: string | null;
+            area_desc: string;
+            area_km2: number;
+            message_count: number;
+            web_url: string | null;
+            source_url: string | null;
+            text_id: components["schemas"]["CapText"];
+            /** @description Terjemahan resmi BMKG bila ada. */
+            text_en: components["schemas"]["CapText"] | null;
+        };
+        /** @description Ambang efektif Info..Bahaya; satuan m³/s (debit) atau mm (indeks hujan). */
+        FloodThreshold: {
+            /** @description Jendela akumulasi hujan; null untuk debit. */
+            window_hours: (3 | 6 | 24) | null;
+            info: number;
+            waspada: number;
+            siaga: number;
+            bahaya: number;
+        };
+        FloodDay: {
+            /**
+             * Format: date
+             * @description Tanggal UTC.
+             */
+            date: string;
+            /** @description 0 = di bawah Info. */
+            level: number;
+            /** @description Hanya sebagian anggota ensemble yang melewati ambang (tingkat "mungkin"). */
+            possible: boolean;
+            discharge_m3s: number | null;
+            discharge_p75_m3s: number | null;
+            discharge_max_m3s: number | null;
+            from_ensemble: boolean;
+            rain_3h_mm: number | null;
+            rain_6h_mm: number | null;
+            rain_24h_mm: number | null;
+            /** @description Jendela indeks hujan penentu tingkat; null untuk debit atau di bawah Info. */
+            window_hours: (3 | 6 | 24) | null;
+        };
+        FloodDetail: {
+            /**
+             * @description discharge = debit model GloFAS; rainfall = indeks hujan sub-DAS (indikasi, paling tinggi Siaga).
+             * @enum {string}
+             */
+            indicator: "discharge" | "rainfall";
+            /** @enum {string} */
+            unit: "m3/s" | "mm";
+            site_id: string;
+            site_name: string;
+            river: string | null;
+            model: string;
+            /** Format: date-time */
+            issued_at: string;
+            outlook_level: number;
+            possible: boolean;
+            peak_date: string | null;
+            max_level: components["schemas"]["AlertLevel"];
+            /** Format: date-time */
+            opened_at: string;
+            /** Format: date-time */
+            last_exceeded_at: string;
+            thresholds: components["schemas"]["FloodThreshold"][];
+            days: components["schemas"]["FloodDay"][];
+        };
+        FireDetail: {
+            detection_count: number;
+            overpass_count: number;
+            high_confidence_count: number;
+            /** Format: date-time */
+            first_detected_at: string;
+            /** Format: date-time */
+            last_detected_at: string;
+            products: ("VIIRS_SNPP_NRT" | "VIIRS_NOAA20_NRT" | "VIIRS_NOAA21_NRT" | "MODIS_NRT")[];
+            max_frp_mw: number | null;
+        };
+        ImpactedRegion: {
+            code: components["schemas"]["RegionCode"];
+            name: string;
+            /** @enum {string} */
+            kind: "kelurahan" | "desa";
+            district: components["schemas"]["RegionRef"];
+            city: components["schemas"]["RegionRef"];
+            /** @description Gempa = jarak episenter ke tepi wilayah; cuaca = 0. */
+            distance_km: number;
+            level: number;
+            within_felt: boolean;
+            /** @description Cuaca = bagian luas wilayah di dalam area peringatan (0..1]; gempa = null. */
+            coverage: number | null;
+        };
+        ImpactedRegionPage: {
+            /**
+             * @description felt_radius = estimasi radius dirasakan (gempa); area_overlap = irisan area peringatan (cuaca); none = jenis tanpa estimasi wilayah.
+             * @enum {string}
+             */
+            basis: "felt_radius" | "area_overlap" | "none";
+            total: number;
+            items: components["schemas"]["ImpactedRegion"][];
             next_cursor: string | null;
         };
         /** @description RFC 9457 Problem Details. */
@@ -113,6 +473,11 @@ export interface components {
             instance?: string;
             /** @description ID trace OpenTelemetry untuk pelacakan. */
             trace_id?: string;
+            /** @description Rincian parameter yang tidak valid (400). */
+            errors?: {
+                parameter: string;
+                message: string;
+            }[];
         } & {
             [key: string]: unknown;
         };
@@ -132,6 +497,7 @@ export interface components {
         Limit: number;
         /** @description Kursor opak dari `next_cursor` halaman sebelumnya. */
         Cursor: string;
+        HazardId: string;
     };
     requestBodies: never;
     headers: never;
@@ -148,7 +514,28 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Layanan sehat */
+            /** @description Proses hidup */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Health"];
+                };
+            };
+            429: components["responses"]["Problem"];
+        };
+    };
+    getReadiness: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Siap melayani */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -190,6 +577,7 @@ export interface operations {
             };
             400: components["responses"]["Problem"];
             429: components["responses"]["Problem"];
+            503: components["responses"]["Problem"];
         };
     };
     getRegion: {
@@ -217,6 +605,108 @@ export interface operations {
             };
             400: components["responses"]["Problem"];
             404: components["responses"]["Problem"];
+            429: components["responses"]["Problem"];
+            503: components["responses"]["Problem"];
+        };
+    };
+    listHazards: {
+        parameters: {
+            query?: {
+                /** @description Jenis bahaya; boleh diulang (`kind=quake&kind=weather`). Tanpa ini semua jenis. */
+                kind?: components["schemas"]["HazardKind"][];
+                status?: "active" | "all";
+                /** @description Kejadian yang aktif pada waktu ini (paling jauh 400 hari ke belakang). */
+                at?: string;
+                /** @description `occurred_at` paling awal (inklusif). */
+                since?: string;
+                /** @description `occurred_at` paling akhir (eksklusif). */
+                until?: string;
+                min_level?: components["schemas"]["AlertLevel"];
+                /** @description Kotak lokasi kejadian: `min_lon,min_lat,max_lon,max_lat` (WGS84). */
+                bbox?: string;
+                /** @description Sertakan kejadian latihan (mode latihan, fase 3). Bawaan tidak. */
+                drill?: boolean;
+                limit?: components["parameters"]["Limit"];
+                /** @description Kursor opak dari `next_cursor` halaman sebelumnya. */
+                cursor?: components["parameters"]["Cursor"];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Satu halaman kejadian */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HazardPage"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            429: components["responses"]["Problem"];
+            503: components["responses"]["Problem"];
+        };
+    };
+    getHazard: {
+        parameters: {
+            query?: {
+                /** @description Sertakan area kejadian (GeoJSON). Default tidak; peta memakai vector tiles. */
+                include?: "area";
+            };
+            header?: never;
+            path: {
+                id: components["parameters"]["HazardId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Kejadian ditemukan */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HazardDetail"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            429: components["responses"]["Problem"];
+            503: components["responses"]["Problem"];
+        };
+    };
+    listImpactedRegions: {
+        parameters: {
+            query?: {
+                limit?: number;
+                /** @description Kursor opak dari `next_cursor` halaman sebelumnya. */
+                cursor?: components["parameters"]["Cursor"];
+            };
+            header?: never;
+            path: {
+                id: components["parameters"]["HazardId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Satu halaman wilayah terdampak */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImpactedRegionPage"];
+                };
+            };
+            400: components["responses"]["Problem"];
+            404: components["responses"]["Problem"];
+            429: components["responses"]["Problem"];
+            503: components["responses"]["Problem"];
         };
     };
 }

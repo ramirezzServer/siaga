@@ -50,3 +50,23 @@ describe("createClient", () => {
     expect(error?.status).toBe(404);
   });
 });
+
+describe("feed kejadian", () => {
+  it("parameter kind berulang diserialisasi sebagai kunci berulang", async () => {
+    const urls: string[] = [];
+    const client = createClient({
+      baseUrl: "https://api.test",
+      fetch: (input: Request) => {
+        urls.push(input.url);
+        return Promise.resolve(
+          Response.json({ items: [], next_cursor: null, generated_at: "2026-11-24T00:00:00Z" }),
+        );
+      },
+    });
+    const { data } = await client.GET("/v1/hazards", {
+      params: { query: { kind: ["quake", "weather"], min_level: 2 } },
+    });
+    expect(data?.items).toEqual([]);
+    expect(urls).toEqual(["https://api.test/v1/hazards?kind=quake&kind=weather&min_level=2"]);
+  });
+});
